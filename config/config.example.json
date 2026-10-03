@@ -1,0 +1,31 @@
+{
+  "audio_source": "",
+  "auto_commit": true,
+  "clipboard_restore": false,
+  "gain": 1.0,
+  "hotwords": "",
+  "llm": {
+    "allow_http": false,
+    "api_key_env": "HYPRVOICE_API_KEY",
+    "base_url": "https://api.openai.com/v1",
+    "model": "",
+    "timeout_seconds": 15
+  },
+  "max_recording_seconds": 180,
+  "offline_model": "~/.local/share/vinput/models/sherpa-onnx/x-asr-zipformer-transducer-zh-en-punct-int8",
+  "prompts": {
+    "correct": "纠正转录错误并补充标点。保留原意、否定、数字、专有名词，不添加事实。只返回修改后的文字。",
+    "format": "整理口述文字，去除无意义重复，适当分段。保留所有事实、数字和否定。只返回整理后的文字。",
+    "translate": "将输入翻译成英文，保留事实、数字与专有名词。只返回译文。"
+  },
+  "scene": "raw",
+  "streaming_model": "~/.local/share/vinput/models/sherpa-onnx/x-asr-960ms-streaming-zipformer-transducer-zh-en-punct-int8",
+  "terminal_classes": [
+    "kitty",
+    "Alacritty",
+    "org.wezfurlong.wezterm",
+    "com.mitchellh.ghostty",
+    "foot"
+  ],
+  "vad_model": "~/.local/share/hyprvoice/silero_vad.onnx"
+}

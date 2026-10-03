@@ -1,0 +1,7 @@
+Hyprvoice is licensed under GPL-3.0.
+
+The VAD trimmer and text joining helper are adapted from fcitx5-vinput
+(https://github.com/xifan2333/fcitx5-vinput), including quality improvements
+from the Mobius fork. Their original GPL-3.0 license is preserved.
+No runtime or build dependency on fcitx5-vinput is required.
+Model weights have separate licenses and are not included.
