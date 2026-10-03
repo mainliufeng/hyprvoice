@@ -73,7 +73,9 @@ App::App(Config c) : config_(std::move(c)), desktop_(config_) {
             {"raw", ""},
             {"error", ""},
             {"command_mode", false},
-            {"seconds", 0}};
+            {"seconds", 0},
+            {"context", ""},
+            {"context_note", ""}};
 }
 App::~App() {
   cancel_ = true;
@@ -96,6 +98,10 @@ App::~App() {
 void App::update(const Json &patch) {
   std::lock_guard lock(mutex_);
   state_.update(patch);
+  if (patch.contains("phase") && patch.at("phase") == "idle") {
+    state_["context"] = "";
+    state_["context_note"] = "";
+  }
 }
 Json App::snapshot() {
   std::lock_guard lock(mutex_);
@@ -174,17 +180,38 @@ void App::start(bool cmd) {
   cancel_ = false;
   level_ = 0;
   busy_ = true;
-  auto scene = scene_, selected = selected_, history = history_;
+  auto scene = scene_, selected = selected_;
+  auto target = target_;
+  bool contextual = config_.data.at("context").value("enabled", false);
   update({{"phase", "starting"},
           {"text", "正在连接麦克风…"},
           {"raw", ""},
           {"error", ""},
           {"command_mode", cmd},
-          {"seconds", 0}});
+          {"seconds", 0},
+          {"context", ""},
+          {"context_note", contextual ? "读取当前输入框前文…" : ""}});
   if (worker_.joinable())
     worker_.join();
-  worker_ = std::thread([this, scene, selected, history, cmd] {
+  worker_ = std::thread([this, scene, selected, target, contextual, cmd] {
     try {
+      std::string history;
+      bool protected_field = false;
+      if (contextual) {
+        auto context = desktop_.context(target);
+        protected_field = context.value("protected", false);
+        history = context.value("text", std::string());
+        std::string note = protected_field ? "密码输入框 · 不读取或发送前文"
+                           : !context.value("available", false)
+                               ? "未读到输入框前文"
+                           : history.empty() ? "当前输入框没有前文"
+                                             : "参考光标前文";
+        update({{"context", history}, {"context_note", note}});
+      }
+      if (protected_field && cmd)
+        throw std::runtime_error("密码输入框不能使用文本修改指令");
+      if (cancel_)
+        throw std::runtime_error("已取消");
       asr_->begin();
       audio_.start(config_.data.value("audio_source", std::string()));
       update({{"phase", "recording"}, {"text", "请开始说话…"}});
@@ -239,11 +266,12 @@ void App::start(bool cmd) {
         else {
           std::string output = result.text, error;
           update({{"raw", result.text}, {"text", result.text}});
-          if (cmd || scene != "raw") {
+          if (!protected_field && (cmd || scene != "raw" || !history.empty())) {
             update({{"phase", "rewriting"}});
             try {
-              output = Rewrite(config_, result.text, scene, selected, history,
-                               cancel_);
+              output = Rewrite(config_, result.text,
+                               scene == "raw" ? "correct" : scene, selected,
+                               history, cancel_);
             } catch (const std::exception &e) {
               error = e.what();
               if (cmd)
@@ -279,14 +307,11 @@ void App::commit(bool raw) {
   auto text = state.at(raw ? "raw" : "text").get<std::string>();
   desktop_.paste(target_, text, selected_);
   delivered_ = true;
-  history_ += text + '\n';
-  if (history_.size() > 16000)
-    history_.erase(0, history_.size() - 16000);
-  // Trim history on a UTF-8 boundary after applying the bounded byte limit.
-  while (!history_.empty() &&
-         (static_cast<unsigned char>(history_.front()) & 0xc0) == 0x80)
-    history_.erase(0, 1);
-  update({{"phase", "idle"}, {"text", "已发送粘贴请求"}, {"error", ""}});
+  update({{"phase", "idle"},
+          {"text", "已发送粘贴请求"},
+          {"error", ""},
+          {"context", ""},
+          {"context_note", ""}});
 }
 Json App::command(const std::string &cmd, const std::string &arg) {
   try {
@@ -383,11 +408,11 @@ void App::ui() {
   if (!busy_ && phase == "ready" && !delivered_ &&
       config_.data.value("auto_commit", true) &&
       !state.at("command_mode").get<bool>()) {
-    if (!focus_changed_) {
+    if (!focus_changed_ && state.at("error").get<std::string>().empty()) {
       auto reply = command("commit");
       if (!reply.value("ok", false))
         focus_changed_ = true;
-    } else
+    } else if (focus_changed_)
       update({{"error", "录音期间窗口已变化；请回到原窗口后点击提交"}});
     state = snapshot();
     phase = state.at("phase");
@@ -428,6 +453,17 @@ void App::ui() {
       --end;
     text = text.substr(0, end) + "…";
   }
+  auto previous = state.value("context", std::string());
+  auto context_note = state.value("context_note", std::string());
+  // Show a small tail of the exact context used; never interpret it as markup.
+  if (g_utf8_strlen(previous.c_str(), -1) > 96)
+    previous =
+        "…" + std::string(g_utf8_offset_to_pointer(
+                  previous.c_str(), g_utf8_strlen(previous.c_str(), -1) - 96));
+  auto context_display =
+      context_note + (previous.empty() ? "" : "\n" + previous);
+  gtk_label_set_text(GTK_LABEL(context_), context_display.c_str());
+  gtk_widget_set_visible(context_, !context_note.empty());
   const bool placeholder = text.empty();
   if (placeholder)
     text = recording ? "开始说话，文字会显示在这里…" : "正在处理这段语音…";
@@ -464,8 +500,9 @@ void App::ui() {
   gtk_widget_set_visible(commit_button_, ready);
   gtk_button_set_label(GTK_BUTTON(commit_button_),
                        command_mode ? "确认修改" : "插入文字");
-  gtk_widget_set_visible(raw_button_, ready && !command_mode &&
-                                          state.at("text") != state.at("raw"));
+  gtk_widget_set_visible(
+      raw_button_, ready && !command_mode &&
+                       (state.at("text") != state.at("raw") || !error.empty()));
   gtk_widget_set_visible(stop_button_, recording);
   gtk_button_set_label(GTK_BUTTON(cancel_button_),
                        phase == "error" ? "关闭" : "取消");
@@ -535,6 +572,14 @@ void App::run() {
   meter_ = gtk_level_bar_new_for_interval(0, 1);
   gtk_widget_add_css_class(meter_, "voice-meter");
   gtk_box_append(GTK_BOX(box), meter_);
+  context_ = gtk_label_new("");
+  gtk_widget_add_css_class(context_, "voice-context");
+  gtk_label_set_wrap(GTK_LABEL(context_), true);
+  gtk_label_set_xalign(GTK_LABEL(context_), 0);
+  gtk_label_set_max_width_chars(GTK_LABEL(context_), 48);
+  gtk_label_set_lines(GTK_LABEL(context_), 3);
+  gtk_label_set_ellipsize(GTK_LABEL(context_), PANGO_ELLIPSIZE_END);
+  gtk_box_append(GTK_BOX(box), context_);
   text_ = gtk_label_new("");
   gtk_widget_add_css_class(text_, "voice-transcript");
   gtk_label_set_wrap(GTK_LABEL(text_), true);

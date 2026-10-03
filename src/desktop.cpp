@@ -29,6 +29,17 @@ bool Desktop::matches(const Target &t) {
     return false;
   }
 }
+Json Desktop::context(const Target &t) {
+  requireTarget(t);
+  auto reply =
+      Run({"/proc/self/exe", "read-context", std::to_string(t.pid),
+           std::to_string(config_.data.at("context").value("max_chars", 1024))},
+          "", 1500);
+  requireTarget(t);
+  if (reply.code)
+    return {{"available", false}, {"protected", false}, {"text", ""}};
+  return Json::parse(reply.out);
+}
 void Desktop::requireTarget(const Target &t) {
   if (!matches(t))
     throw std::runtime_error("目标窗口已变化；结果已保留，请回到原窗口后提交");

@@ -12,7 +12,7 @@
 - 默认自动提交普通听写。录音期间切换窗口则保留结果，返回原窗口手动提交。
 - 非抢焦点的 GTK4 layer-shell 悬浮条；普通应用 Ctrl+C/V，配置中的终端 Ctrl+Shift+C/V。
 
-实时文字显示在悬浮条，最终一次上屏。没有输入框内预编辑，也无法读取任意应用的光标上下文。
+实时文字显示在悬浮条，最终一次上屏。没有输入框内预编辑。可选的 [前文辅助](docs/context.md) 通过无障碍接口读取当前输入框的光标前文，覆盖范围取决于应用。
 同一窗口内移动光标无法可靠检测；如果录音时需要编辑，关闭 `auto_commit`，完成后明确选择插入位置。
 指令模式始终需要确认，不会将识别出的指令原文当成替换文字。LLM 失败时普通听写保留原文，指令模式不修改选区。
 
@@ -22,8 +22,8 @@
 
 ## 构建
 
-本机需要 C++20、CMake、GTK4、gtk4-layer-shell、PipeWire、libcurl、sherpa-onnx C API、wl-clipboard、hyprctl。
-Arch 可用对应软件包 `gtk4 gtk4-layer-shell pipewire curl sherpa-onnx wl-clipboard cmake`。
+本机需要 C++20、CMake、GTK4、gtk4-layer-shell、PipeWire、AT-SPI、libcurl、sherpa-onnx C API、wl-clipboard、hyprctl。
+Arch 可用对应软件包 `gtk4 gtk4-layer-shell pipewire at-spi2-core curl sherpa-onnx wl-clipboard cmake`。
 JSON 依赖固定为 nlohmann/json 3.11.3 单文件版，随源码提供并保留 MIT 许可。
 
 ```bash
@@ -53,7 +53,7 @@ apps/hyprvoice/build/hyprvoice serve
 
 文本处理在配置中填写 `llm.base_url` 和 `llm.model`，密钥只从 `llm.api_key_env` 指定的环境变量读取，默认 `HYPRVOICE_API_KEY`。
 HTTPS 默认开启验证；可信本地 HTTP 服务需明确设置 `llm.allow_http=true`。场景提示词位于 `prompts`，修改配置后重启。
-默认 `scene=raw`，不调用任何大模型。启用文本处理时发送当前转录、指令模式的选中文字，以及本次进程内最近提交的文字（最多约 16 KB）；不发送录音。录音和转录不写入持久日志；CLI `status` 会返回当前转录。
+默认 `scene=raw`、`context.enabled=false`，不调用任何大模型。启用纠错／整理／翻译或指令模式会发送本次转录与选中文字；启用前文辅助还会发送当前输入框光标前最多 1024 个字符（可设置 1..2048）。不再缓存不同窗口的最近提交记录，不发送录音。转录和前文不写入持久日志；本地 CLI `status` 会返回本次转录与实际使用的前文，回到待机时清除前文。文本处理失败保留识别原文并等待用户确认，不自动插入失败后的替代结果。
 
 ## 日常运行
 

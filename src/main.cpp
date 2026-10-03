@@ -1,7 +1,9 @@
 #include "app.h"
+#include "context.h"
 #include "process.h"
 #include <fstream>
 #include <iostream>
+#include <sys/resource.h>
 int main(int argc, char **argv) {
   using namespace hv;
   try {
@@ -15,6 +17,17 @@ int main(int argc, char **argv) {
       return 0;
     }
     std::string cmd = argv[1];
+    if (cmd == "read-context") {
+      rlimit limit{0, 0};
+      setrlimit(RLIMIT_CORE, &limit);
+      if (argc != 4)
+        throw std::runtime_error(
+            "Expected application PID and context character limit");
+      std::cout
+          << ReadInputContext(std::stoi(argv[2]), std::stoi(argv[3])).dump()
+          << std::endl;
+      return 0;
+    }
     if (cmd == "init") {
       auto p = ConfigPath();
       if (std::filesystem::exists(p))

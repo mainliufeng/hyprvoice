@@ -16,6 +16,7 @@ parser.add_argument("output", type=Path)
 parser.add_argument("--llm-env", type=Path)
 parser.add_argument("--fcitx", action="store_true")
 parser.add_argument("--visual-only", action="store_true")
+parser.add_argument("--context-only", action="store_true")
 parser.add_argument("--coexist-only", action="store_true")
 args = parser.parse_args()
 if args.coexist_only and not args.fcitx:
@@ -24,7 +25,7 @@ root = Path(__file__).resolve().parents[1]
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=True)
 env = dict(os.environ, GTK_IM_MODULE="none", GDK_BACKEND="wayland")
-env["GTK_A11Y"] = "none"
+env["GTK_A11Y"] = "atspi" if args.context_only else "none"
 if env.get("XDG_RUNTIME_DIR") == f"/run/user/{os.getuid()}":
     parser.error("Refusing to operate the daily desktop; use an isolated Hyprland runtime")
 env["PIPEWIRE_REMOTE"] = f"/run/user/{os.getuid()}/pipewire-0"
@@ -37,7 +38,8 @@ if args.llm_env:
 config = json.loads(args.config.read_text())
 node = f"hyprvoice_qa_{os.getpid()}"
 config["audio_source"] = node + "_source"
-config["auto_commit"] = False
+config["auto_commit"] = args.context_only
+config["context"] = {"enabled": args.context_only, "max_chars": 1024}
 config["terminal_classes"].append("hyprvoice-qa-terminal")
 if args.llm_env and env.get("DEEPSEEK_BASE_URL"):
     config["llm"]["base_url"] = env["DEEPSEEK_BASE_URL"]
@@ -157,7 +159,10 @@ try:
         time.sleep(2)
     daemon = spawn(str(binary), "serve")
     phase("idle")
-    process, path = editor("拼音测试" if args.fcitx else "")
+    prefix = "我们正在开发 Hyprvoice，使用 Hyprland。" if args.context_only else ""
+    process, path = editor("拼音测试" if args.fcitx else prefix)
+    if args.context_only:
+        key("ctrl End")
     if args.fcitx:
         wait(lambda: "program:hyprvoice-test-editor frontend:dbus" in run("gdbus", "call", "--session", "--dest", "org.fcitx.Fcitx5", "--object-path", "/controller", "--method", "org.fcitx.Fcitx.Controller1.DebugInfo"))
         key("ctrl a")
@@ -176,11 +181,22 @@ try:
     check("real PipeWire speech produces a final transcript", state["phase"] == "ready" and bool(state["text"]))
     check("preview does not steal editor focus", json.loads(run("hyprctl", "activewindow", "-j"))["pid"] == process.pid)
     run("grim", str(out / "preview.png"))
-    call("commit")
-    wait(lambda: path.read_text() == state["text"])
+    if args.context_only:
+        check("production recording reads actual editor prefix", state["context"] == prefix)
+        check("unconfigured context model requires confirmation instead of auto-paste",
+              bool(state["error"]) and path.read_text() == prefix)
+    call("raw" if args.context_only else "commit")
+    wait(lambda: path.read_text() == prefix + state["text"])
     check("UTF-8 transcript is pasted into real GTK Wayland editor", True)
     original = path.read_text()
-    if args.visual_only:
+    if args.context_only:
+        check("commit clears context from idle state", call("status")["state"]["context"] == "")
+        call("start")
+        phase("recording")
+        call("cancel")
+        phase("idle")
+        check("cancel clears context and keeps editor text", call("status")["state"]["context"] == "" and path.read_text() == original)
+    if args.visual_only or args.context_only:
         (out / "result.json").write_text(json.dumps({"checks": checks, "transcript": state["text"]}, ensure_ascii=False, indent=2))
         raise SystemExit(0)
     noise = record(args.noise)

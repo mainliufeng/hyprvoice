@@ -1,0 +1,12 @@
+{
+  "checks": [
+    "real PipeWire speech produces a final transcript",
+    "preview does not steal editor focus",
+    "production recording reads actual editor prefix",
+    "unconfigured context model requires confirmation instead of auto-paste",
+    "UTF-8 transcript is pasted into real GTK Wayland editor",
+    "commit clears context from idle state",
+    "cancel clears context and keeps editor text"
+  ],
+  "transcript": "报告警告称， 没有人能保证目前在伊拉克采取的任何行动， 能够阻止宗派战争不断增长的暴力或走向混乱。"
+}

@@ -27,12 +27,12 @@ private:
   bool delivered_ = true, focus_changed_ = false, pressed_ = false;
   gint64 pressed_at_ = 0;
   Target target_;
-  std::string selected_, history_, scene_;
+  std::string selected_, scene_;
   GtkWidget *window_ = nullptr, *title_ = nullptr, *text_ = nullptr,
             *hint_ = nullptr, *meter_ = nullptr, *raw_button_ = nullptr,
             *commit_button_ = nullptr, *stop_button_ = nullptr,
             *cancel_button_ = nullptr, *mode_ = nullptr, *duration_ = nullptr,
-            *spinner_ = nullptr, *icon_ = nullptr;
+            *spinner_ = nullptr, *icon_ = nullptr, *context_ = nullptr;
   GMainLoop *loop_ = nullptr;
   int socket_ = -1, lock_ = -1, focus_socket_ = -1;
   std::string focus_events_;

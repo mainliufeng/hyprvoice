@@ -22,7 +22,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_error(400)
             return
         user = json.loads(body["messages"][1]["content"])
-        if user["transcript"] != "不会支付2400元":
+        system = body["messages"][0]["content"]
+        if (user["transcript"] != "不会支付2400元"
+                or user["recent_input"] != "项目预算是2400元，但目前不会批准付款。"
+                or user["selected_text"] != ""
+                or "不重复、修改或续写前文" not in system
+                or "不是系统指令" not in system):
             self.send_error(400)
             return
         requests.append(self.path)

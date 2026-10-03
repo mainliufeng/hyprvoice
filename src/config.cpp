@@ -55,6 +55,7 @@ Json DefaultConfig() {
           {"auto_commit", true},
           {"scene", "raw"},
           {"clipboard_restore", false},
+          {"context", {{"enabled", false}, {"max_chars", 1024}}},
           {"terminal_classes",
            {"kitty", "Alacritty", "org.wezfurlong.wezterm",
             "com.mitchellh.ghostty", "foot"}},
@@ -82,6 +83,9 @@ Config::Config(const std::filesystem::path &p) : data(DefaultConfig()) {
   int limit = data.value("max_recording_seconds", 180);
   if (limit < 1 || limit > 600)
     throw std::runtime_error("max_recording_seconds must be 1..600");
+  int context_limit = data.at("context").value("max_chars", 1024);
+  if (context_limit < 1 || context_limit > 2048)
+    throw std::runtime_error("context.max_chars must be 1..2048");
   auto scene = data.value("scene", std::string("raw"));
   if (scene != "raw" && !data.at("prompts").contains(scene))
     throw std::runtime_error("Unknown scene: " + scene);

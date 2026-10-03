@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "reads actual keyboard/editor text before caret",
+    "excludes text after caret",
+    "reflects later keyboard edits",
+    "Unicode context bounded by characters",
+    "isolates other window",
+    "inactive editor cannot supply context",
+    "restores current edited buffer context",
+    "password text never read"
+  ],
+  "passed": 8
+}

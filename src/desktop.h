@@ -13,6 +13,7 @@ public:
   ~Desktop();
   Target target();
   bool matches(const Target &target);
+  Json context(const Target &target);
   std::string selection(const Target &target);
   void paste(const Target &target, const std::string &text,
              const std::string &selection = "");

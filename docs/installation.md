@@ -6,7 +6,7 @@
 
 - 程序：`~/.local/bin/hyprvoice`，校验和与通过验收的 Mobius 构建一致。
 - 用户服务：`~/.config/systemd/user/hyprvoice.service`，已启用并处于 `active/running`。
-- 配置：`~/.config/hyprvoice/config.json`，权限 600；本地原文听写、默认自动提交，未配置 LLM。
+- 配置：`~/.config/hyprvoice/config.json`，权限 600；本地原文听写、默认自动提交，未配置 LLM；本轮黑白灰界面已更新，前文辅助暂未开启。
 - 热词：`~/.config/hyprvoice/hotwords.txt`，权限 600。
 - 流式／离线模型：`~/.local/share/hyprvoice/models/`；Silero：`~/.local/share/hyprvoice/silero_vad.onnx`。模型是实际复制文件，运行不依赖 Mobius 的构建目录或旧项目代码。
 - Hyprland 的 dotfiles 主配置加载 `~/dotfiles/linux/desktop/hyprland/hyprvoice.conf`。命令使用 `~/.local/bin/hyprvoice`，不依赖合成器的 PATH。
@@ -36,3 +36,5 @@
 如果需要停用新工具，先在 Hyprland 主配置中注释新增的 `source` 和 `exec-once` 两行，运行 `hyprctl reload`，再执行 `systemctl --user disable --now hyprvoice.service`。仅 disable 服务不会阻止现存登录脚本显式启动它。
 
 安装前的 Hyprland 配置备份在 `~/.config/hyprvoice/install-backup/hyprland.conf.before-install`；只应还原本次新增行，避免覆盖后续其他修改。安装状态备份也记录了原先麦克风静音及旧服务运行状态。需要恢复麦克风静音时执行 `wpctl set-mute @DEFAULT_AUDIO_SOURCE@ 1`。
+
+本轮安装的 SHA-256 为 `6e887bf8189fcd4bb5a9a8e847a0ee602d142638d399bfb656e3b244c806e1f1`，与验收构建、安装路径及正在运行的 `/proc/<MainPID>/exe` 三方相同；更新前等待服务持续待机，重启后实际 IPC 为 `idle`、空错误。上下文真实读取检查已通过，模型推断仍待授权及真实对照验收，见 [前文说明](context.md)。
