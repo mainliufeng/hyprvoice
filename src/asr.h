@@ -1,11 +1,10 @@
 #pragma once
 #include "config.h"
-#include "vad_trimmer.h"
+#include "speech.h"
 #include <sherpa-onnx/c-api/c-api.h>
 #include <span>
 #include <vector>
 namespace hv {
-std::vector<std::vector<float>> SplitAudio(const std::vector<float> &samples);
 struct Transcript {
   std::string streaming, text;
   bool speech = false;
@@ -25,7 +24,7 @@ private:
   const SherpaOnnxOnlineRecognizer *online_ = nullptr;
   const SherpaOnnxOfflineRecognizer *offline_ = nullptr;
   const SherpaOnnxOnlineStream *stream_ = nullptr;
-  VadTrimmer vad_;
+  std::unique_ptr<SpeechDetector> speech_;
   std::vector<float> samples_;
   std::string current();
   std::string decodeOffline(const std::vector<float> &samples);

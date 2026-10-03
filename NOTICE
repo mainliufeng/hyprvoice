@@ -1,18 +1,23 @@
-Hyprvoice is licensed under GPL-3.0; see LICENSE.
+Hyprvoice remains licensed under GPL-3.0; see LICENSE.
 
-Adapted source from fcitx5-vinput (https://github.com/xifan2333/fcitx5-vinput)
-and its Mobius fork, source snapshot d571be21:
-- src/vad_trimmer.cpp and src/vad_trimmer.h: VAD detection and trimming,
-  from apps/voice-input/src/daemon/asr/vad_trimmer.*.
-- src/text_join.h: recognized-text joining,
-  from apps/voice-input/src/daemon/asr/text_join.h.
-- Quiet-boundary long-audio splitting in src/asr.cpp,
-  from apps/voice-input/src/daemon/asr/backends/refining_backend.cpp.
+Current implementation:
+- src/speech.* implements speech detection and recognition-job planning using
+  the public sherpa-onnx C API. Long recordings preserve every original sample.
+- src/transcript_text.* implements Unicode-aware transcript assembly using GLib.
+- No source, build target, runtime process, or plugin from apps/voice-input or
+  fcitx5-vinput is required by the application.
 
-These portions were adapted or reformatted for Hyprvoice on 2026-10-03.
-Their original GPL-3.0 license is preserved. Other application modules were
-implemented for this independent application. No runtime or build dependency
-on fcitx5-vinput is required.
+Historical provenance:
+The earlier Hyprvoice implementation delivered on 2026-10-03 (6bcd93af) adapted
+vad_trimmer.*, text_join.h, and quiet-boundary splitting from fcitx5-vinput
+(https://github.com/xifan2333/fcitx5-vinput) and its Mobius fork, snapshot d571be21.
+Those helper files and that splitting implementation have now been removed.
+Their historical versions remain subject to their original GPL-3.0 license.
+This technical rewrite is not a claim of legally certified clean-room origin,
+and does not relicense prior releases or third-party dependencies.
 
-nlohmann/json has its separate MIT license under third_party/nlohmann/.
-Model weights have separate licenses and are not included in the source tree.
+nlohmann/json retains its MIT license under third_party/nlohmann/.
+sherpa-onnx is a separately installed Apache-2.0 dependency. GTK/GLib, PipeWire,
+curl, desktop utilities, and model weights retain their respective licenses.
+Model weights and audio recordings are not included in the source distribution.
+Public regression-data provenance is recorded in tests/fixtures/manifest.jsonl.

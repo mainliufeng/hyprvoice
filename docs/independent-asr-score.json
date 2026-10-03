@@ -1,0 +1,375 @@
+{
+  "normalization": "NFKC, casefold, Unicode alphanumeric characters",
+  "summary": {
+    "dev/cmn_hans_cn/clean": {
+      "cases": 10,
+      "characters": 286,
+      "edits": 16,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.055944055944055944
+    },
+    "dev/cmn_hans_cn/white-20db": {
+      "cases": 10,
+      "characters": 286,
+      "edits": 15,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.05244755244755245
+    },
+    "dev/cmn_hans_cn/white-10db": {
+      "cases": 10,
+      "characters": 286,
+      "edits": 17,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.05944055944055944
+    },
+    "holdout/cmn_hans_cn/clean": {
+      "cases": 10,
+      "characters": 390,
+      "edits": 36,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.09230769230769231
+    },
+    "holdout/cmn_hans_cn/white-20db": {
+      "cases": 10,
+      "characters": 390,
+      "edits": 37,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.09487179487179487
+    },
+    "holdout/cmn_hans_cn/white-10db": {
+      "cases": 10,
+      "characters": 390,
+      "edits": 40,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.10256410256410256
+    },
+    "dev/en_us/clean": {
+      "cases": 5,
+      "characters": 453,
+      "edits": 30,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.06622516556291391
+    },
+    "dev/en_us/white-20db": {
+      "cases": 5,
+      "characters": 453,
+      "edits": 54,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.11920529801324503
+    },
+    "dev/en_us/white-10db": {
+      "cases": 5,
+      "characters": 453,
+      "edits": 59,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.13024282560706402
+    },
+    "holdout/en_us/clean": {
+      "cases": 5,
+      "characters": 445,
+      "edits": 25,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.056179775280898875
+    },
+    "holdout/en_us/white-20db": {
+      "cases": 5,
+      "characters": 445,
+      "edits": 40,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.0898876404494382
+    },
+    "holdout/en_us/white-10db": {
+      "cases": 5,
+      "characters": 445,
+      "edits": 58,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.1303370786516854
+    },
+    "dev/cmn_hans_cn/long": {
+      "cases": 1,
+      "characters": 173,
+      "edits": 3,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.017341040462427744
+    },
+    "dev/en_us/long": {
+      "cases": 1,
+      "characters": 453,
+      "edits": 72,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.15894039735099338
+    },
+    "holdout/cmn_hans_cn/long": {
+      "cases": 1,
+      "characters": 152,
+      "edits": 2,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.013157894736842105
+    },
+    "holdout/en_us/long": {
+      "cases": 1,
+      "characters": 445,
+      "edits": 12,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.02696629213483146
+    },
+    "dev/no-speech": {
+      "cases": 2,
+      "characters": 0,
+      "edits": 0,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": null
+    },
+    "dev/cmn_hans_cn/train-10db": {
+      "cases": 10,
+      "characters": 286,
+      "edits": 14,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.04895104895104895
+    },
+    "holdout/cmn_hans_cn/train-10db": {
+      "cases": 10,
+      "characters": 390,
+      "edits": 36,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.09230769230769231
+    },
+    "dev/en_us/train-10db": {
+      "cases": 5,
+      "characters": 453,
+      "edits": 24,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.052980132450331126
+    },
+    "holdout/en_us/train-10db": {
+      "cases": 5,
+      "characters": 445,
+      "edits": 110,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.24719101123595505
+    },
+    "dev/no-speech/train": {
+      "cases": 1,
+      "characters": 0,
+      "edits": 0,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": null
+    }
+  },
+  "baseline_summary": {
+    "dev/cmn_hans_cn/clean": {
+      "cases": 10,
+      "characters": 286,
+      "edits": 14,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.04895104895104895
+    },
+    "dev/cmn_hans_cn/white-20db": {
+      "cases": 10,
+      "characters": 286,
+      "edits": 15,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.05244755244755245
+    },
+    "dev/cmn_hans_cn/white-10db": {
+      "cases": 10,
+      "characters": 286,
+      "edits": 17,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.05944055944055944
+    },
+    "holdout/cmn_hans_cn/clean": {
+      "cases": 10,
+      "characters": 390,
+      "edits": 36,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.09230769230769231
+    },
+    "holdout/cmn_hans_cn/white-20db": {
+      "cases": 10,
+      "characters": 390,
+      "edits": 37,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.09487179487179487
+    },
+    "holdout/cmn_hans_cn/white-10db": {
+      "cases": 10,
+      "characters": 390,
+      "edits": 40,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.10256410256410256
+    },
+    "dev/en_us/clean": {
+      "cases": 5,
+      "characters": 453,
+      "edits": 30,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.06622516556291391
+    },
+    "dev/en_us/white-20db": {
+      "cases": 5,
+      "characters": 453,
+      "edits": 54,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.11920529801324503
+    },
+    "dev/en_us/white-10db": {
+      "cases": 5,
+      "characters": 453,
+      "edits": 59,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.13024282560706402
+    },
+    "holdout/en_us/clean": {
+      "cases": 5,
+      "characters": 445,
+      "edits": 25,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.056179775280898875
+    },
+    "holdout/en_us/white-20db": {
+      "cases": 5,
+      "characters": 445,
+      "edits": 40,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.0898876404494382
+    },
+    "holdout/en_us/white-10db": {
+      "cases": 5,
+      "characters": 445,
+      "edits": 58,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.1303370786516854
+    },
+    "dev/cmn_hans_cn/long": {
+      "cases": 1,
+      "characters": 173,
+      "edits": 3,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.017341040462427744
+    },
+    "dev/en_us/long": {
+      "cases": 1,
+      "characters": 453,
+      "edits": 56,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.12362030905077263
+    },
+    "holdout/cmn_hans_cn/long": {
+      "cases": 1,
+      "characters": 152,
+      "edits": 2,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.013157894736842105
+    },
+    "holdout/en_us/long": {
+      "cases": 1,
+      "characters": 445,
+      "edits": 50,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.11235955056179775
+    },
+    "dev/no-speech": {
+      "cases": 2,
+      "characters": 0,
+      "edits": 0,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": null
+    },
+    "dev/cmn_hans_cn/train-10db": {
+      "cases": 10,
+      "characters": 286,
+      "edits": 14,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.04895104895104895
+    },
+    "holdout/cmn_hans_cn/train-10db": {
+      "cases": 10,
+      "characters": 390,
+      "edits": 36,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.09230769230769231
+    },
+    "dev/en_us/train-10db": {
+      "cases": 5,
+      "characters": 453,
+      "edits": 24,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.052980132450331126
+    },
+    "holdout/en_us/train-10db": {
+      "cases": 5,
+      "characters": 445,
+      "edits": 108,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.24269662921348314
+    },
+    "dev/no-speech/train": {
+      "cases": 1,
+      "characters": 0,
+      "edits": 0,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": null
+    }
+  },
+  "changed_cases": [
+    "fleurs-cmn_hans_cn-validation-7",
+    "fleurs-cmn_hans_cn-validation-7-white-20db",
+    "fleurs-cmn_hans_cn-validation-7-white-10db",
+    "fleurs-cmn_hans_cn-validation-16",
+    "fleurs-cmn_hans_cn-validation-16-white-20db",
+    "fleurs-cmn_hans_cn-validation-16-white-10db",
+    "long-cmn_hans_cn-dev",
+    "long-en_us-dev",
+    "long-cmn_hans_cn-holdout",
+    "long-en_us-holdout",
+    "fleurs-cmn_hans_cn-validation-7-train-10db",
+    "fleurs-cmn_hans_cn-validation-16-train-10db",
+    "fleurs-en_us-validation-9-train-10db"
+  ],
+  "identical_cases": 114
+}

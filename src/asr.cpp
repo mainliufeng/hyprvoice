@@ -1,41 +1,14 @@
-// Quiet-boundary audio splitting adapted from the Mobius fcitx5-vinput fork.
-// Modified for Hyprvoice on 2026-10-03; GPL-3.0, see NOTICE.
 #include "asr.h"
-#include "text_join.h"
+#include "transcript_text.h"
 #include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <glib.h>
 #include <iostream>
-#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <unistd.h>
 namespace hv {
-std::vector<std::vector<float>> SplitAudio(const std::vector<float> &pcm) {
-  constexpr size_t max = 16000 * 30, window = 3200, search = 16000 * 3;
-  std::vector<std::vector<float>> chunks;
-  size_t begin = 0;
-  while (pcm.size() - begin > max) {
-    size_t nominal = begin + max, lo = nominal - search,
-           hi = std::min(pcm.size() - window, nominal + search), cut = nominal;
-    double best = std::numeric_limits<double>::max();
-    for (size_t pos = lo; pos + window <= hi; pos += window / 2) {
-      double energy = 0;
-      for (size_t i = pos; i < pos + window; ++i)
-        energy += double(pcm[i]) * pcm[i];
-      if (energy < best) {
-        best = energy;
-        cut = pos;
-      }
-    }
-    chunks.emplace_back(pcm.begin() + begin, pcm.begin() + cut);
-    begin = cut;
-  }
-  if (begin < pcm.size())
-    chunks.emplace_back(pcm.begin() + begin, pcm.end());
-  return chunks;
-}
 static std::string Asset(const std::string &dir, const std::string &name) {
   auto p = std::filesystem::path(dir) / name;
   if (!std::filesystem::is_regular_file(p))
@@ -128,9 +101,7 @@ Asr::Asr(const Config &c) {
       throw std::runtime_error("Offline model initialization failed");
     Asset(std::filesystem::path(c.path("vad_model")).parent_path().string(),
           std::filesystem::path(c.path("vad_model")).filename().string());
-    std::string error;
-    if (!vad_.Init(c.path("vad_model"), 16000, "cpu", {}, &error))
-      throw std::runtime_error(error);
+    speech_ = std::make_unique<SpeechDetector>(c.path("vad_model"));
   } catch (...) {
     if (offline_)
       SherpaOnnxDestroyOfflineRecognizer(offline_);
@@ -186,9 +157,9 @@ Transcript Asr::finish() {
   Transcript result;
   if (!stream_)
     return result;
-  vad_.Trim(samples_, 16000);
-  result.speech = vad_.DetectedSpeech();
-  if (!result.speech || samples_.size() < 3200) {
+  auto intervals = speech_->locate(samples_);
+  result.speech = !intervals.empty();
+  if (!result.speech) {
     cancel();
     return result;
   }
@@ -201,31 +172,17 @@ Transcript Asr::finish() {
   result.streaming = current();
   result.text = result.streaming;
   try {
-    std::string refined;
-    bool complete = true;
-    for (auto &chunk : SplitAudio(samples_)) {
-      auto trimmed = vad_.Trim(chunk, 16000);
-      if (!vad_.DetectedSpeech() || trimmed.size() < 3200)
-        continue;
-      std::vector<std::vector<float>> parts;
-      if (chunk.size() > 16000 * 20 && vad_.SpeechRanges().size() > 1)
-        for (auto [a, b] : vad_.SpeechRanges())
-          parts.emplace_back(chunk.begin() + a, chunk.begin() + b);
-      else
-        parts.push_back(std::move(trimmed));
-      for (auto &part : parts) {
-        auto text = decodeOffline(part);
-        if (text.empty()) {
-          complete = false;
-          break;
-        }
-        vinput::daemon::asr::AppendRecognizedText(refined, text);
-      }
-      if (!complete)
-        break;
+    std::vector<std::string> utterances;
+    auto jobs = RecognitionJobs(samples_, intervals);
+    for (const auto &job : jobs) {
+      auto text = decodeOffline(job);
+      if (text.empty())
+        throw std::runtime_error("Offline recognition left an utterance empty");
+      utterances.push_back(std::move(text));
     }
-    if (complete && !refined.empty())
-      result.text = refined;
+    auto refined = AssembleTranscript(utterances);
+    if (!refined.empty())
+      result.text = std::move(refined);
   } catch (const std::exception &e) {
     std::cerr << "Refinement failed; preserving streaming result: " << e.what()
               << '\n';

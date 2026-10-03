@@ -1,6 +1,7 @@
 #include "asr.h"
 #include "process.h"
-#include "text_join.h"
+#include "speech.h"
+#include "transcript_text.h"
 #include <cstdlib>
 #include <iostream>
 #include <stdexcept>
@@ -10,27 +11,63 @@ static void check(bool b, const char *msg) {
 }
 int main() {
   try {
-    // Long-input safety must preserve every sample, in order, without
-    // duplicating the protective boundary windows.
+    // Long jobs must preserve every recording sample once and in order.
     std::vector<float> pcm(16000 * 73);
     for (size_t i = 0; i < pcm.size(); ++i)
-      pcm[i] = i % 71;
-    auto chunks = hv::SplitAudio(pcm);
-    check(chunks.size() >= 3, "long audio not split");
+      pcm[i] = static_cast<float>(i);
+    auto chunks = hv::RecognitionJobs(pcm, {{0, pcm.size()}});
+    check(chunks.size() == 3, "continuous long speech not bounded");
     std::vector<float> joined;
     for (auto &c : chunks) {
-      check(c.size() <= 16000 * 33, "unsafe long chunk");
+      check(c.size() <= 16000 * 30, "recognition job exceeds model budget");
       joined.insert(joined.end(), c.begin(), c.end());
     }
-    check(joined == pcm, "audio duplicated or lost across cuts");
-    check(hv::SplitAudio({}).empty(), "empty audio split");
-    std::string text;
-    vinput::daemon::asr::AppendRecognizedText(text, "hello");
-    vinput::daemon::asr::AppendRecognizedText(text, "world");
-    check(text == "hello world", "English words merged");
-    text = "你好";
-    vinput::daemon::asr::AppendRecognizedText(text, "世界");
-    check(text == "你好世界", "CJK spacing changed");
+    check(joined == pcm, "speech samples duplicated or lost");
+    check(hv::RecognitionJobs(pcm, {}).empty(), "silence creates jobs");
+    auto ranges = hv::ExpandSpeech({{20, 30}, {5, 15}, {25, 40}}, 50, 3);
+    check(ranges.size() == 1 && ranges[0].begin == 2 && ranges[0].end == 43,
+          "padded speech overlap not merged");
+    auto jobs = hv::RecognitionJobs(std::span(pcm).first(50),
+                                    {{2, 10}, {20, 30}, {30, 40}}, 16);
+    joined.clear();
+    for (auto &job : jobs) {
+      check(job.size() <= 16, "job limit ignored");
+      joined.insert(joined.end(), job.begin(), job.end());
+    }
+    std::vector<float> expected(pcm.begin(), pcm.begin() + 50);
+    check(joined == expected, "long recording samples were discarded");
+    auto envelope =
+        hv::RecognitionJobs(std::span(pcm).first(50), {{2, 10}, {20, 40}}, 64);
+    check(envelope.size() == 1 &&
+              envelope[0] ==
+                  std::vector<float>(pcm.begin() + 2, pcm.begin() + 40),
+          "quiet interior speech was removed from a short recording");
+    bool invalid = false;
+    try {
+      hv::ExpandSpeech({{0, 51}}, 50, 0);
+    } catch (const std::exception &) {
+      invalid = true;
+    }
+    check(invalid, "out-of-recording range accepted");
+    check(hv::AssembleTranscript({"hello", "world"}) == "hello world",
+          "English word boundary lost");
+    check(hv::AssembleTranscript({"你好", "世界"}) == "你好世界",
+          "CJK boundary has unwanted spaces");
+    check(hv::AssembleTranscript({"Café", "déjà", "vu."}) == "Café déjà vu.",
+          "Unicode Latin word boundary lost");
+    check(hv::AssembleTranscript({"hello.", "World"}) == "hello. World",
+          "English sentence boundary lost");
+    check(hv::AssembleTranscript({"hello ", "world"}) == "hello world",
+          "existing whitespace duplicated");
+    check(hv::AssembleTranscript({"GPT", "模型", "很好"}) == "GPT模型很好",
+          "mixed-language boundary changed");
+    invalid = false;
+    try {
+      hv::AssembleTranscript({std::string(1, char(0xff))});
+    } catch (const std::exception &) {
+      invalid = true;
+    }
+    check(invalid, "invalid recognition UTF-8 accepted");
     auto r = hv::Run({"cat"}, "中文\n$(not-a-command) `literal`");
     check(r.code == 0 && r.out == "中文\n$(not-a-command) `literal`",
           "process corrupted literal text");

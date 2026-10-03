@@ -43,9 +43,9 @@ std::string ReadFile(const std::filesystem::path &path, size_t limit) {
 }
 Json DefaultConfig() {
   return {{"streaming_model",
-           "~/.local/share/vinput/models/sherpa-onnx/"
+           "~/.local/share/hyprvoice/models/"
            "x-asr-960ms-streaming-zipformer-transducer-zh-en-punct-int8"},
-          {"offline_model", "~/.local/share/vinput/models/sherpa-onnx/"
+          {"offline_model", "~/.local/share/hyprvoice/models/"
                             "x-asr-zipformer-transducer-zh-en-punct-int8"},
           {"vad_model", "~/.local/share/hyprvoice/silero_vad.onnx"},
           {"hotwords", ""},

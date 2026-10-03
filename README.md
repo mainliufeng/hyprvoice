@@ -1,7 +1,7 @@
 # Hyprvoice
 
 独立的 Hyprland 语音输入工具。保留现有 Fcitx 拼音，用快捷键录音，通过悬浮条预览，最终粘贴到应用。
-构建与运行不依赖 `voice-input`、Fcitx 开发库或 `vinput-registry`。本地模型文件可复用现有下载。
+构建与运行不依赖 `voice-input`、Fcitx 开发库或 `vinput-registry`。本地模型文件可复用现有下载。旧项目移植的辅助代码已移除，独立实现范围见 [实现说明](docs/independent-implementation.md)。
 
 ## 能力与边界
 
@@ -39,8 +39,8 @@ ctest --test-dir apps/hyprvoice/build --output-on-failure
 
 ```bash
 python3 apps/hyprvoice/scripts/configure.py \
-  --streaming ~/.local/share/vinput/models/sherpa-onnx/x-asr-960ms-streaming-zipformer-transducer-zh-en-punct-int8 \
-  --offline ~/.local/share/vinput/models/sherpa-onnx/x-asr-zipformer-transducer-zh-en-punct-int8 \
+  --streaming ~/.local/share/hyprvoice/models/x-asr-960ms-streaming-zipformer-transducer-zh-en-punct-int8 \
+  --offline ~/.local/share/hyprvoice/models/x-asr-zipformer-transducer-zh-en-punct-int8 \
   --vad ~/.local/share/hyprvoice/silero_vad.onnx \
   --hotwords ~/.config/hyprvoice/hotwords.txt
 apps/hyprvoice/build/hyprvoice doctor
@@ -86,7 +86,7 @@ CLI 同样支持 `start stop toggle press release command cancel commit raw stat
 
 ## 模块
 
-`src/app.*` 为会话与悬浮界面；`audio.*` 获取 PipeWire 音频；`asr.*` 和 `vad_trimmer.*` 识别、精修、无语音拒绝；
+`src/app.*` 为会话与悬浮界面；`audio.*` 获取 PipeWire 音频；`asr.*` 连接模型，`speech.*` 检测人声并规划长录音任务，`transcript_text.*` 拼接识别文字；
 `rewrite.*` 为文本处理；`desktop.*` 为 Hyprland 窗口与剪贴板上屏；`config.*` 和 `process.*` 为配置与进程调用。
 常驻程序通过同用户 Unix socket 接收控制命令。没有自定义输入法协议、插件加载框架、模型市场、数据库或跨桌面适配。
 
@@ -99,4 +99,5 @@ hyprvoice replay /绝对路径/manifest.jsonl > results.jsonl
 
 重放清单每行包含 `id` 和 `audio`（或 `wav`）；相对音频路径相对于清单所在目录。读取失败输出 `error` 并最终返回非零。
 `transcribe` 和 `replay` 调用正式识别代码，不录音、不上屏、不调用 LLM。现有语音测试清单可以直接重放。
+本应用自带独立评分器与公开测试清单，录音准备及许可见 [测试集说明](tests/fixtures/README.md)。
 具体实际结果和未验证范围见 [验收记录](docs/verification.md)。
