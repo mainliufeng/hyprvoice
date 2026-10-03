@@ -15,6 +15,7 @@ parser.add_argument("noise", type=Path)
 parser.add_argument("output", type=Path)
 parser.add_argument("--llm-env", type=Path)
 parser.add_argument("--fcitx", action="store_true")
+parser.add_argument("--visual-only", action="store_true")
 parser.add_argument("--coexist-only", action="store_true")
 args = parser.parse_args()
 if args.coexist_only and not args.fcitx:
@@ -117,7 +118,14 @@ def editor(initial="", backend="wayland"):
 def record(wav, command="start"):
     call(command)
     phase("recording")
-    run("paplay", f"--device={node}_sink", str(wav.resolve()))
+    if command == "start" and not (out / "recording.png").exists():
+        with subprocess.Popen(["paplay", f"--device={node}_sink", str(wav.resolve())], env=env) as player:
+            time.sleep(4)
+            run("grim", str(out / "recording.png"))
+            if player.wait(timeout=40):
+                raise RuntimeError("Public speech playback failed")
+    else:
+        run("paplay", f"--device={node}_sink", str(wav.resolve()))
     time.sleep(0.25)
     call("stop")
     def completed():
@@ -172,6 +180,9 @@ try:
     wait(lambda: path.read_text() == state["text"])
     check("UTF-8 transcript is pasted into real GTK Wayland editor", True)
     original = path.read_text()
+    if args.visual_only:
+        (out / "result.json").write_text(json.dumps({"checks": checks, "transcript": state["text"]}, ensure_ascii=False, indent=2))
+        raise SystemExit(0)
     noise = record(args.noise)
     check("pure noise produces no pending result", noise["phase"] == "idle" and not noise["raw"])
     check("pure noise does not insert text", path.read_text() == original)

@@ -1,6 +1,6 @@
 # Hyprvoice 实际验收 · 2026-10-03
 
-实现目标是独立的 Hyprland 语音工具：保留 Fcitx 拼音，录音、识别、悬浮预览、粘贴，以及可选文本处理。未修改旧 `apps/voice-input` 或日常桌面的配置与服务。
+实现目标是独立的 Hyprland 语音工具：保留 Fcitx 拼音，录音、识别、悬浮预览、粘贴，以及可选文本处理。研发验收阶段未修改旧 `apps/voice-input` 或日常桌面的配置与服务。用户随后授权安装，当前本机状态见 [安装记录](installation.md)。
 
 ## 独立实现识别回归
 
@@ -25,6 +25,8 @@ python3 tests/score.py tests/fixtures/manifest.jsonl build/results.jsonl \
 `asr-results.jsonl` 和 `asr-score.json` 是改写前历史基线。旧版当时与旧插件的 127 条结果相同；这项历史结论不适用于本次独立实现。新旧结果均由新的独立评分器重算后比较。
 
 ## 真实桌面与文本处理
+
+随后根据用户反馈更新了正式悬浮界面，新的实际截图与桌面复测见 [界面更新](ui-update.md)。
 
 **本次独立实现复测：** [20 项真实桌面检查](independent-desktop-result.json)全部通过，包括 PipeWire 录音、Wayland／XWayland／Kitty 上屏、噪声拒绝、轻按／长按、自动提交、切换窗口保护及未配置 LLM 时的选区保护。[实际预览截图](independent-preview.png)已视觉检查，显示中文转录和提交控制，编辑器焦点保持不变。本次不发送外部 LLM 请求。[本次真实拼音共存](independent-pinyin-result.json)也通过：旧语音插件禁用时，用实际键盘输入 `nihao` 和空格，编辑器收到“你好”。
 
@@ -54,7 +56,7 @@ HYPRVOICE_CONFIG="$PWD/apps/hyprvoice/build/local-config.json" \
   apps/hyprvoice/build/hyprvoice serve
 ```
 
-本机没有自动运行这条命令、安装用户服务或接管旧快捷键。
+以上是研发阶段的工作区启动方式。后续已按用户要求安装用户服务和 F8 快捷键，见 [安装记录](installation.md)。
 
 ## 构建与自动检查
 
@@ -62,7 +64,7 @@ CMake 构建通过；生产构建可以关闭 `BUILD_TESTING`，不依赖测试�
 
 ## 尚未覆盖
 
-- 没有真人对物理麦克风讲话；本机默认麦克风保持原来的静音状态。未接管当前语音快捷键或启用新服务。
+- 没有真人对物理麦克风讲话。后续安装时已解除默认麦克风静音、启用新服务和 F8 快捷键；这不等于已完成真人口述质量验收。
 - 用户无法使用微信／豆包输入法，因此没有同录音竞品结果，也不声称质量已对标或胜过它们。
 - Clipboard paste 没有应用完成回执；同窗口移动光标无法可靠检测。富文本剪贴板恢复、所有终端、浏览器密码框、所有应用复制行为不在本次覆盖范围。
 - 一条真实 LLM 修改验收不等于语义保真、纠错／翻译／整理的完整质量评估。

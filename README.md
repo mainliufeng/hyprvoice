@@ -57,6 +57,8 @@ HTTPS 默认开启验证；可信本地 HTTP 服务需明确设置 `llm.allow_ht
 
 ## 日常运行
 
+本机已按用户要求安装，当前状态和快捷键见 [安装记录](docs/installation.md)。下面是其他机器的通用安装步骤。
+
 ```bash
 bash apps/hyprvoice/scripts/install.sh
 systemctl --user import-environment WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE DISPLAY

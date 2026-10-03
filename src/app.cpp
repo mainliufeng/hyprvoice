@@ -1,4 +1,5 @@
 #include "app.h"
+#include "overlay_style.h"
 #include "process.h"
 #include "rewrite.h"
 #include <algorithm>
@@ -8,8 +9,10 @@
 #include <fcntl.h>
 #include <glib-unix.h>
 #include <gtk4-layer-shell.h>
+#include <iomanip>
 #include <iostream>
 #include <poll.h>
+#include <sstream>
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -393,18 +396,31 @@ void App::ui() {
       {"loading", "加载模型"},    {"idle", "就绪"},
       {"starting", "连接麦克风"}, {"recording", "录音中"},
       {"finalizing", "精修中"},   {"rewriting", "整理中"},
-      {"ready", "待提交"},        {"error", "处理失败"},
+      {"ready", "等待确认"},      {"error", "需要处理"},
       {"cancelling", "取消中"}};
-  std::string heading = "● " + names.at(phase) + "  ·  " +
-                        (state.at("command_mode").get<bool>()
-                             ? std::string("选区修改")
-                             : state.at("scene").get<std::string>());
-  if (phase == "recording")
-    heading +=
-        "  ·  " +
-        std::to_string(static_cast<int>(state.at("seconds").get<double>())) +
-        "s";
-  gtk_label_set_text(GTK_LABEL(title_), heading.c_str());
+  const bool recording = phase == "recording", ready = phase == "ready";
+  const bool command_mode = state.at("command_mode").get<bool>();
+  const bool processing = phase == "loading" || phase == "starting" ||
+                          phase == "finalizing" || phase == "rewriting" ||
+                          phase == "cancelling";
+  static const std::map<std::string, std::string> scenes = {
+      {"raw", "听写"},
+      {"correct", "纠错"},
+      {"format", "整理"},
+      {"translate", "翻译"}};
+  const auto scene = state.at("scene").get<std::string>();
+  const auto mode =
+      command_mode ? std::string("修改选中文字") : scenes.at(scene);
+  gtk_label_set_text(GTK_LABEL(title_), names.at(phase).c_str());
+  gtk_label_set_text(GTK_LABEL(mode_), mode.c_str());
+  int seconds = static_cast<int>(state.at("seconds").get<double>());
+  std::ostringstream elapsed;
+  elapsed << std::setfill('0') << std::setw(2) << seconds / 60 << ':'
+          << std::setw(2) << seconds % 60;
+  gtk_label_set_text(GTK_LABEL(duration_), elapsed.str().c_str());
+  gtk_widget_set_visible(duration_, recording);
+  gtk_spinner_set_spinning(GTK_SPINNER(spinner_), processing);
+  gtk_widget_set_visible(spinner_, processing);
   auto text = state.at("text").get<std::string>();
   if (text.size() > 2400) {
     size_t end = 2400;
@@ -412,18 +428,47 @@ void App::ui() {
       --end;
     text = text.substr(0, end) + "…";
   }
+  const bool placeholder = text.empty();
+  if (placeholder)
+    text = recording ? "开始说话，文字会显示在这里…" : "正在处理这段语音…";
+  if (placeholder)
+    gtk_widget_add_css_class(text_, "placeholder");
+  else
+    gtk_widget_remove_css_class(text_, "placeholder");
   gtk_label_set_text(GTK_LABEL(text_), text.c_str());
   auto error = state.at("error").get<std::string>();
   std::string hint = error;
-  if (hint.empty())
-    hint = state.at("command_mode").get<bool>()
-               ? "确认修改结果后提交 · 原文选区会再次核对 · 取消保留原文"
-               : "按住说话 · 轻按切换录音 · 原文和整理结果均可提交";
+  if (hint.empty()) {
+    if (recording)
+      hint = command_mode
+                 ? "松开 F9 结束指令"
+                 : (pressed_ ? "松开 F8 结束录音" : "再按 F8 结束录音");
+    else if (ready)
+      hint = command_mode ? "确认后替换选中文字 · 取消会保留原文"
+                          : "确认后插入原来的输入框";
+    else
+      hint =
+          phase == "rewriting" ? "正在按你的要求处理文字" : "正在准备识别结果";
+  }
   gtk_label_set_text(GTK_LABEL(hint_), hint.c_str());
+  gtk_widget_set_tooltip_text(hint_, error.empty() ? nullptr : error.c_str());
+  if (error.empty())
+    gtk_widget_remove_css_class(hint_, "warning");
+  else
+    gtk_widget_add_css_class(hint_, "warning");
+  gtk_image_set_from_icon_name(GTK_IMAGE(icon_),
+                               error.empty() ? "audio-input-microphone-symbolic"
+                                             : "dialog-warning-symbolic");
   gtk_level_bar_set_value(GTK_LEVEL_BAR(meter_), level_);
-  gtk_widget_set_visible(meter_, phase == "recording");
-  gtk_widget_set_sensitive(
-      raw_button_, phase == "ready" && !state.at("command_mode").get<bool>());
+  gtk_widget_set_visible(meter_, recording);
+  gtk_widget_set_visible(commit_button_, ready);
+  gtk_button_set_label(GTK_BUTTON(commit_button_),
+                       command_mode ? "确认修改" : "插入文字");
+  gtk_widget_set_visible(raw_button_, ready && !command_mode &&
+                                          state.at("text") != state.at("raw"));
+  gtk_widget_set_visible(stop_button_, recording);
+  gtk_button_set_label(GTK_BUTTON(cancel_button_),
+                       phase == "error" ? "关闭" : "取消");
   gtk_widget_set_visible(window_, phase != "idle" || !error.empty());
 }
 void App::run() {
@@ -432,7 +477,10 @@ void App::run() {
     throw std::runtime_error("A Wayland layer-shell compositor is required");
   bindSocket();
   window_ = gtk_window_new();
+  gtk_widget_add_css_class(window_, "hyprvoice");
   gtk_window_set_title(GTK_WINDOW(window_), "Hyprvoice");
+  gtk_window_set_decorated(GTK_WINDOW(window_), false);
+  gtk_window_set_resizable(GTK_WINDOW(window_), false);
   gtk_layer_init_for_window(GTK_WINDOW(window_));
   gtk_layer_set_namespace(GTK_WINDOW(window_), "hyprvoice");
   gtk_layer_set_layer(GTK_WINDOW(window_), GTK_LAYER_SHELL_LAYER_OVERLAY);
@@ -442,42 +490,74 @@ void App::run() {
   gtk_layer_set_margin(GTK_WINDOW(window_), GTK_LAYER_SHELL_EDGE_BOTTOM, 28);
   gtk_layer_set_exclusive_zone(GTK_WINDOW(window_), 0);
   auto css = gtk_css_provider_new();
-  gtk_css_provider_load_from_string(
-      css, "window { background: #17212b; color: #e9f0f5; border: 1px solid "
-           "#42576a; border-radius: 18px; } label { font-size: 15px; } "
-           ".heading { color: #71dac6; font-weight: 700; } .hint { color: "
-           "#acbdc9; font-size: 12px; } button { border-radius: 10px; padding: "
-           "7px 14px; } levelbar block.filled { background: #71dac6; }");
+  gtk_css_provider_load_from_string(css, OverlayStyle);
   gtk_style_context_add_provider_for_display(
       gdk_display_get_default(), GTK_STYLE_PROVIDER(css),
       GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
   g_object_unref(css);
+  auto outer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  gtk_widget_set_margin_top(outer, 18);
+  gtk_widget_set_margin_bottom(outer, 18);
+  gtk_widget_set_margin_start(outer, 18);
+  gtk_widget_set_margin_end(outer, 18);
+  gtk_window_set_child(GTK_WINDOW(window_), outer);
+  auto panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+  gtk_widget_add_css_class(panel, "voice-panel");
+  gtk_box_append(GTK_BOX(outer), panel);
   auto box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
-  gtk_widget_set_margin_top(box, 18);
-  gtk_widget_set_margin_bottom(box, 18);
-  gtk_widget_set_margin_start(box, 22);
-  gtk_widget_set_margin_end(box, 22);
-  gtk_widget_set_size_request(box, 600, -1);
-  gtk_window_set_child(GTK_WINDOW(window_), box);
+  gtk_widget_set_margin_top(box, 16);
+  gtk_widget_set_margin_bottom(box, 16);
+  gtk_widget_set_margin_start(box, 18);
+  gtk_widget_set_margin_end(box, 18);
+  gtk_widget_set_size_request(box, 460, -1);
+  gtk_box_append(GTK_BOX(panel), box);
+  auto header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+  gtk_box_append(GTK_BOX(box), header);
+  icon_ = gtk_image_new_from_icon_name("audio-input-microphone-symbolic");
+  gtk_widget_add_css_class(icon_, "voice-icon");
+  gtk_box_append(GTK_BOX(header), icon_);
   title_ = gtk_label_new("");
-  gtk_widget_add_css_class(title_, "heading");
+  gtk_widget_add_css_class(title_, "voice-heading");
   gtk_label_set_xalign(GTK_LABEL(title_), 0);
-  gtk_box_append(GTK_BOX(box), title_);
+  gtk_box_append(GTK_BOX(header), title_);
+  mode_ = gtk_label_new("");
+  gtk_widget_add_css_class(mode_, "voice-mode");
+  gtk_box_append(GTK_BOX(header), mode_);
+  auto space = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+  gtk_widget_set_hexpand(space, true);
+  gtk_box_append(GTK_BOX(header), space);
+  duration_ = gtk_label_new("");
+  gtk_widget_add_css_class(duration_, "voice-time");
+  gtk_box_append(GTK_BOX(header), duration_);
+  spinner_ = gtk_spinner_new();
+  gtk_widget_add_css_class(spinner_, "voice-spinner");
+  gtk_box_append(GTK_BOX(header), spinner_);
   meter_ = gtk_level_bar_new_for_interval(0, 1);
+  gtk_widget_add_css_class(meter_, "voice-meter");
   gtk_box_append(GTK_BOX(box), meter_);
   text_ = gtk_label_new("");
+  gtk_widget_add_css_class(text_, "voice-transcript");
   gtk_label_set_wrap(GTK_LABEL(text_), true);
   gtk_label_set_xalign(GTK_LABEL(text_), 0);
-  gtk_label_set_max_width_chars(GTK_LABEL(text_), 60);
-  gtk_label_set_lines(GTK_LABEL(text_), 8);
+  gtk_label_set_max_width_chars(GTK_LABEL(text_), 44);
+  gtk_label_set_lines(GTK_LABEL(text_), 6);
   gtk_label_set_ellipsize(GTK_LABEL(text_), PANGO_ELLIPSIZE_END);
   gtk_box_append(GTK_BOX(box), text_);
-  auto row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+  auto row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
   gtk_box_append(GTK_BOX(box), row);
+  hint_ = gtk_label_new("");
+  gtk_widget_add_css_class(hint_, "voice-hint");
+  gtk_label_set_wrap(GTK_LABEL(hint_), true);
+  gtk_label_set_xalign(GTK_LABEL(hint_), 0);
+  gtk_label_set_max_width_chars(GTK_LABEL(hint_), 30);
+  gtk_label_set_lines(GTK_LABEL(hint_), 3);
+  gtk_label_set_ellipsize(GTK_LABEL(hint_), PANGO_ELLIPSIZE_END);
+  gtk_widget_set_hexpand(hint_, true);
+  gtk_box_append(GTK_BOX(row), hint_);
   for (auto [label, cmd] : std::vector<std::pair<const char *, const char *>>{
-           {"提交结果", "commit"},
-           {"提交原文", "raw"},
-           {"停止录音", "stop"},
+           {"插入文字", "commit"},
+           {"使用原文", "raw"},
+           {"结束录音", "stop"},
            {"取消", "cancel"}}) {
     auto button = gtk_button_new_with_label(label);
     g_object_set_data_full(G_OBJECT(button), "command", g_strdup(cmd), g_free);
@@ -489,15 +569,19 @@ void App::run() {
                      }),
                      this);
     gtk_box_append(GTK_BOX(row), button);
-    if (std::string(cmd) == "raw")
+    if (std::string(cmd) == "commit") {
+      commit_button_ = button;
+      gtk_widget_add_css_class(button, "primary");
+    } else if (std::string(cmd) == "raw")
       raw_button_ = button;
+    else if (std::string(cmd) == "stop") {
+      stop_button_ = button;
+      gtk_widget_add_css_class(button, "primary");
+    } else {
+      cancel_button_ = button;
+      gtk_widget_add_css_class(button, "quiet");
+    }
   }
-  hint_ = gtk_label_new("");
-  gtk_widget_add_css_class(hint_, "hint");
-  gtk_label_set_wrap(GTK_LABEL(hint_), true);
-  gtk_label_set_xalign(GTK_LABEL(hint_), 0);
-  gtk_label_set_max_width_chars(GTK_LABEL(hint_), 65);
-  gtk_box_append(GTK_BOX(box), hint_);
   loop_ = g_main_loop_new(nullptr, false);
   busy_ = true;
   worker_ = std::thread([this] {
