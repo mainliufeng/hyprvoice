@@ -1,7 +1,18 @@
-Hyprvoice is licensed under GPL-3.0.
+Hyprvoice is licensed under GPL-3.0; see LICENSE.
 
-The VAD trimmer and text joining helper are adapted from fcitx5-vinput
-(https://github.com/xifan2333/fcitx5-vinput), including quality improvements
-from the Mobius fork. Their original GPL-3.0 license is preserved.
-No runtime or build dependency on fcitx5-vinput is required.
-Model weights have separate licenses and are not included.
+Adapted source from fcitx5-vinput (https://github.com/xifan2333/fcitx5-vinput)
+and its Mobius fork, source snapshot d571be21:
+- src/vad_trimmer.cpp and src/vad_trimmer.h: VAD detection and trimming,
+  from apps/voice-input/src/daemon/asr/vad_trimmer.*.
+- src/text_join.h: recognized-text joining,
+  from apps/voice-input/src/daemon/asr/text_join.h.
+- Quiet-boundary long-audio splitting in src/asr.cpp,
+  from apps/voice-input/src/daemon/asr/backends/refining_backend.cpp.
+
+These portions were adapted or reformatted for Hyprvoice on 2026-10-03.
+Their original GPL-3.0 license is preserved. Other application modules were
+implemented for this independent application. No runtime or build dependency
+on fcitx5-vinput is required.
+
+nlohmann/json has its separate MIT license under third_party/nlohmann/.
+Model weights have separate licenses and are not included in the source tree.

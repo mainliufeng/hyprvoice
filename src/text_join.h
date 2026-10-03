@@ -1,4 +1,5 @@
 // Adapted from fcitx5-vinput (GPL-3.0); see NOTICE.
+// Modified for Hyprvoice on 2026-10-03.
 #pragma once
 
 #include <string>

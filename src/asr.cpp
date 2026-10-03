@@ -1,3 +1,5 @@
+// Quiet-boundary audio splitting adapted from the Mobius fcitx5-vinput fork.
+// Modified for Hyprvoice on 2026-10-03; GPL-3.0, see NOTICE.
 #include "asr.h"
 #include "text_join.h"
 #include <algorithm>
