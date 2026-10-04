@@ -1,0 +1,25 @@
+{
+  "checks": [
+    "real PipeWire speech produces a final transcript",
+    "preview does not steal editor focus",
+    "UTF-8 transcript is pasted into real GTK Wayland editor",
+    "pure noise produces no pending result",
+    "pure noise does not insert text",
+    "cancel leaves editor unchanged",
+    "commit is rejected after target window changes",
+    "other window receives no transcript",
+    "UTF-8 transcript is pasted into real GTK XWayland editor",
+    "Ctrl+Shift+V delivers UTF-8 transcript to real Kitty terminal",
+    "terminal command-mode replacement is rejected",
+    "command with unconfigured LLM preserves selected text",
+    "spoken instruction cannot be committed as replacement",
+    "daemon remains alive",
+    "graceful shutdown removes control socket",
+    "tap toggles recording and default auto-commit pastes once",
+    "duplicate commit is rejected",
+    "switching away and back disables automatic insertion",
+    "manual confirmation inserts preserved result",
+    "hold-to-talk finishes and inserts on release"
+  ],
+  "transcript": "报告警告称， 没有人能保证目前在伊拉克采取的任何行动， 能够阻止宗派战争不断增长的暴力或走向混乱。"
+}

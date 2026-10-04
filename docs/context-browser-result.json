@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "launcher loads accessibility flag and reads textarea",
+    "Chrome text after caret is excluded",
+    "Chrome keyboard edits update context",
+    "Chrome password value is never read",
+    "Chrome contenteditable context is read"
+  ],
+  "default_chrome_context_available": false,
+  "version": "Google Chrome 154.0.8037.57"
+}

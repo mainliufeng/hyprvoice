@@ -38,7 +38,7 @@ if args.llm_env:
 config = json.loads(args.config.read_text())
 node = f"hyprvoice_qa_{os.getpid()}"
 config["audio_source"] = node + "_source"
-config["auto_commit"] = args.context_only
+config["auto_commit"] = args.context_only and not args.llm_env
 config["context"] = {"enabled": args.context_only, "max_chars": 1024}
 config["terminal_classes"].append("hyprvoice-qa-terminal")
 if args.llm_env and env.get("DEEPSEEK_BASE_URL"):
@@ -183,9 +183,14 @@ try:
     run("grim", str(out / "preview.png"))
     if args.context_only:
         check("production recording reads actual editor prefix", state["context"] == prefix)
-        check("unconfigured context model requires confirmation instead of auto-paste",
-              bool(state["error"]) and path.read_text() == prefix)
-    call("raw" if args.context_only else "commit")
+        check("speech beginning survives context lookup", state["raw"].startswith("报告"))
+        if args.llm_env:
+            check("actual editor context and transcript reach real model",
+                  not state["error"] and bool(state["text"]) and path.read_text() == prefix)
+        else:
+            check("unconfigured context model requires confirmation instead of auto-paste",
+                  bool(state["error"]) and path.read_text() == prefix)
+    call("raw" if args.context_only and not args.llm_env else "commit")
     wait(lambda: path.read_text() == prefix + state["text"])
     check("UTF-8 transcript is pasted into real GTK Wayland editor", True)
     original = path.read_text()
@@ -196,6 +201,23 @@ try:
         call("cancel")
         phase("idle")
         check("cancel clears context and keeps editor text", call("status")["state"]["context"] == "" and path.read_text() == original)
+        if args.llm_env:
+            call("quit")
+            daemon.wait(timeout=10)
+            config["auto_commit"] = True
+            config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2))
+            daemon = spawn(str(binary), "serve")
+            phase("idle")
+            run("hyprctl", "dispatch", "focuswindow", f"pid:{process.pid}")
+            auto = record(args.speech)
+            wait(lambda: path.read_text() != original)
+            check("contextual auto-commit appends only new dictation once",
+                  auto["phase"] == "idle" and not auto["error"]
+                  and path.read_text().startswith(original)
+                  and path.read_text().count(prefix) == 1
+                  and path.read_text().count("报告") == 2)
+            check("contextual auto-commit clears input context",
+                  call("status")["state"]["context"] == "")
     if args.visual_only or args.context_only:
         (out / "result.json").write_text(json.dumps({"checks": checks, "transcript": state["text"]}, ensure_ascii=False, indent=2))
         raise SystemExit(0)

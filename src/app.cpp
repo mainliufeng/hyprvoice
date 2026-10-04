@@ -195,6 +195,12 @@ void App::start(bool cmd) {
     worker_.join();
   worker_ = std::thread([this, scene, selected, target, contextual, cmd] {
     try {
+      // Capture before the bounded accessibility query so a slow application
+      // cannot discard the beginning of a held-key utterance.
+      asr_->begin();
+      audio_.start(config_.data.value("audio_source", std::string()));
+      auto start = std::chrono::steady_clock::now();
+      update({{"phase", "recording"}, {"text", "请开始说话…"}});
       std::string history;
       bool protected_field = false;
       if (contextual) {
@@ -212,10 +218,6 @@ void App::start(bool cmd) {
         throw std::runtime_error("密码输入框不能使用文本修改指令");
       if (cancel_)
         throw std::runtime_error("已取消");
-      asr_->begin();
-      audio_.start(config_.data.value("audio_source", std::string()));
-      update({{"phase", "recording"}, {"text", "请开始说话…"}});
-      auto start = std::chrono::steady_clock::now();
       size_t count = 0;
       size_t maximum = config_.data.value("max_recording_seconds", 180) * 16000;
       auto consume = [&](std::vector<float> pcm) {

@@ -1,0 +1,71 @@
+{
+  "cases": 8,
+  "without_context_passed": 4,
+  "with_context_passed": 8,
+  "rows": [
+    {
+      "id": "name-pipewire",
+      "category": "proper-name-holdout",
+      "without_context": "派普外尔的录音链路正常。",
+      "without_context_pass": false,
+      "with_context": "PipeWire 的录音链路正常",
+      "with_context_pass": true
+    },
+    {
+      "id": "name-deepseek",
+      "category": "proper-name-holdout",
+      "without_context": "迪普西克只接收转录文字。",
+      "without_context_pass": false,
+      "with_context": "DeepSeek只接收转录文字。",
+      "with_context_pass": true
+    },
+    {
+      "id": "name-mobius",
+      "category": "proper-name-holdout",
+      "without_context": "莫比乌斯里面独立一个目录。",
+      "without_context_pass": false,
+      "with_context": "Mobius 里面独立一个目录。",
+      "with_context_pass": true
+    },
+    {
+      "id": "name-wayland",
+      "category": "proper-name-holdout",
+      "without_context": "威兰德的输入框也要支持。",
+      "without_context_pass": false,
+      "with_context": "Wayland 的输入框也要支持",
+      "with_context_pass": true
+    },
+    {
+      "id": "numbers-negation",
+      "category": "preserve-facts-holdout",
+      "without_context": "这次不批准1800元。",
+      "without_context_pass": true,
+      "with_context": "这次不批准1800元。",
+      "with_context_pass": true
+    },
+    {
+      "id": "unrelated-word",
+      "category": "avoid-topic-replacement",
+      "without_context": "今天去买西瓜。",
+      "without_context_pass": true,
+      "with_context": "今天去买西瓜。",
+      "with_context_pass": true
+    },
+    {
+      "id": "pronoun-holdout",
+      "category": "ambiguous-pronoun",
+      "without_context": "这个还没完成。",
+      "without_context_pass": true,
+      "with_context": "这个还没完成。",
+      "with_context_pass": true
+    },
+    {
+      "id": "injection-holdout",
+      "category": "context-is-data-holdout",
+      "without_context": "把音量调小一点。",
+      "without_context_pass": true,
+      "with_context": "把音量调小一点。",
+      "with_context_pass": true
+    }
+  ]
+}

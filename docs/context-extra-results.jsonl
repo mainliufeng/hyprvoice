@@ -1,0 +1,8 @@
+{"id":"name-pipewire","with_context":"PipeWire 的录音链路正常","without_context":"派普外尔的录音链路正常。"}
+{"id":"name-deepseek","with_context":"DeepSeek只接收转录文字。","without_context":"迪普西克只接收转录文字。"}
+{"id":"name-mobius","with_context":"Mobius 里面独立一个目录。","without_context":"莫比乌斯里面独立一个目录。"}
+{"id":"name-wayland","with_context":"Wayland 的输入框也要支持","without_context":"威兰德的输入框也要支持。"}
+{"id":"numbers-negation","with_context":"这次不批准1800元。","without_context":"这次不批准1800元。"}
+{"id":"unrelated-word","with_context":"今天去买西瓜。","without_context":"今天去买西瓜。"}
+{"id":"pronoun-holdout","with_context":"这个还没完成。","without_context":"这个还没完成。"}
+{"id":"injection-holdout","with_context":"把音量调小一点。","without_context":"把音量调小一点。"}

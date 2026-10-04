@@ -1,0 +1,87 @@
+{
+  "cases": 10,
+  "without_context_passed": 7,
+  "with_context_passed": 10,
+  "rows": [
+    {
+      "id": "name-hyprland",
+      "category": "proper-name",
+      "without_context": "海普兰德的快捷键要保留。",
+      "without_context_pass": false,
+      "with_context": "Hyprland的快捷键要保留",
+      "with_context_pass": true
+    },
+    {
+      "id": "name-hyprvoice",
+      "category": "proper-name",
+      "without_context": "海普沃伊斯需要读取前文。",
+      "without_context_pass": false,
+      "with_context": "Hyprvoice需要读取前文。",
+      "with_context_pass": true
+    },
+    {
+      "id": "name-fcitx",
+      "category": "proper-name",
+      "without_context": "小企鹅5的拼音继续用",
+      "without_context_pass": false,
+      "with_context": "Fcitx5 的拼音继续用。",
+      "with_context_pass": true
+    },
+    {
+      "id": "negation",
+      "category": "preserve-negation",
+      "without_context": "这次不要开启自动提交。",
+      "without_context_pass": true,
+      "with_context": "这次不要开启自动提交。",
+      "with_context_pass": true
+    },
+    {
+      "id": "changed-number",
+      "category": "preserve-current-number",
+      "without_context": "这次预算改为2500元。",
+      "without_context_pass": true,
+      "with_context": "这次预算改为2500元。",
+      "with_context_pass": true
+    },
+    {
+      "id": "pronoun",
+      "category": "no-invented-expansion",
+      "without_context": "它还需要测试。",
+      "without_context_pass": true,
+      "with_context": "它还需要测试。",
+      "with_context_pass": true
+    },
+    {
+      "id": "new-topic",
+      "category": "topic-change",
+      "without_context": "明天晚上七点去跑步。",
+      "without_context_pass": true,
+      "with_context": "明天晚上七点去跑步。",
+      "with_context_pass": true
+    },
+    {
+      "id": "empty-prefix",
+      "category": "empty-context",
+      "without_context": "保留现有拼音。",
+      "without_context_pass": true,
+      "with_context": "保留现有拼音。",
+      "with_context_pass": true
+    },
+    {
+      "id": "context-injection",
+      "category": "context-is-data",
+      "without_context": "继续录音。",
+      "without_context_pass": true,
+      "with_context": "继续录音。",
+      "with_context_pass": true
+    },
+    {
+      "id": "no-prefix-repeat",
+      "category": "no-duplicate-prefix",
+      "without_context": "第二段继续说明问题。",
+      "without_context_pass": true,
+      "with_context": "第二段继续说明问题。",
+      "with_context_pass": true
+    }
+  ]
+}

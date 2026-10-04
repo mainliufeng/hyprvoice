@@ -6,7 +6,7 @@
 
 - 程序：`~/.local/bin/hyprvoice`，校验和与通过验收的 Mobius 构建一致。
 - 用户服务：`~/.config/systemd/user/hyprvoice.service`，已启用并处于 `active/running`。
-- 配置：`~/.config/hyprvoice/config.json`，权限 600；本地原文听写、默认自动提交，未配置 LLM；本轮黑白灰界面已更新，前文辅助暂未开启。
+- 配置：`~/.config/hyprvoice/config.json`，权限 600；默认原文听写、自动提交；黑白灰界面已更新。2026-10-04 经明确授权开启前文辅助（最多 1024 字）并配置 DeepSeek。
 - 热词：`~/.config/hyprvoice/hotwords.txt`，权限 600。
 - 流式／离线模型：`~/.local/share/hyprvoice/models/`；Silero：`~/.local/share/hyprvoice/silero_vad.onnx`。模型是实际复制文件，运行不依赖 Mobius 的构建目录或旧项目代码。
 - Hyprland 的 dotfiles 主配置加载 `~/dotfiles/linux/desktop/hyprland/hyprvoice.conf`。命令使用 `~/.local/bin/hyprvoice`，不依赖合成器的 PATH。
@@ -20,7 +20,9 @@
 
 默认麦克风原先静音，本次按安装步骤解除静音，音量保持 0.50。服务当前待机，只有触发录音时才创建音频采集流。安装验收没有录制用户现场声音、读取日常剪贴板或向外部模型发送请求。
 
-当前尚未配置文本处理接口，因此 F9 口述修改及纠错／整理／翻译需要先配置 LLM；普通本地听写现在即可使用。
+当前已配置 `deepseek-chat`。F8 在有非空、可读取的前文时会参考前文纠错；输入框为空或不支持读取时，原文模式仍本地听写。F9 口述修改及纠错／整理／翻译已具备真实文本接口配置，指令模式始终需要确认。模型错误保留原文并等待确认。
+
+当前 Chrome 进程尚未带无障碍渲染标志，需要用户方便时重新启动一次 Chrome，之后新启动器会读取已配置的 `~/.config/chrome-flags.conf`。本次没有关闭浏览器或切换日常焦点。GTK 编辑器无需这一浏览器步骤。
 
 ## 安装核对
 
@@ -37,4 +39,6 @@
 
 安装前的 Hyprland 配置备份在 `~/.config/hyprvoice/install-backup/hyprland.conf.before-install`；只应还原本次新增行，避免覆盖后续其他修改。安装状态备份也记录了原先麦克风静音及旧服务运行状态。需要恢复麦克风静音时执行 `wpctl set-mute @DEFAULT_AUDIO_SOURCE@ 1`。
 
-本轮安装的 SHA-256 为 `6e887bf8189fcd4bb5a9a8e847a0ee602d142638d399bfb656e3b244c806e1f1`，与验收构建、安装路径及正在运行的 `/proc/<MainPID>/exe` 三方相同；更新前等待服务持续待机，重启后实际 IPC 为 `idle`、空错误。上下文真实读取检查已通过，模型推断仍待授权及真实对照验收，见 [前文说明](context.md)。
+2026-10-04 更新的 SHA-256 为 `006f2e78f7da0afa928a4dbbc3a68bd49f37da5111ffbd6dc9d4aaeab1cec316`，与验收构建、安装路径及正在运行的 `/proc/<MainPID>/exe` 三方相同；更新前等待服务持续待机，重启后实际 IPC 为 `idle`、空错误。上下文真实读取检查已通过，真实 DeepSeek 文本对照与正式桌面链路均已通过，见 [前文说明](context.md)。
+
+LLM 密钥独立复制到 `~/.config/hyprvoice/llm.env`，文件权限 600，运行时不依赖旧语音项目。启用前配置备份位于 `~/.config/hyprvoice/install-backup/context-before-2026-10-04/`。如需仅停用前文发送，设置 `context.enabled=false` 后重启服务；如果也要停止其他文本处理请求，保持 `scene=raw` 并不使用指令／纠错／整理／翻译。

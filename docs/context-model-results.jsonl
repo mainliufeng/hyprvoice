@@ -1,0 +1,10 @@
+{"id":"name-hyprland","with_context":"Hyprland的快捷键要保留","without_context":"海普兰德的快捷键要保留。"}
+{"id":"name-hyprvoice","with_context":"Hyprvoice需要读取前文。","without_context":"海普沃伊斯需要读取前文。"}
+{"id":"name-fcitx","with_context":"Fcitx5 的拼音继续用。","without_context":"小企鹅5的拼音继续用"}
+{"id":"negation","with_context":"这次不要开启自动提交。","without_context":"这次不要开启自动提交。"}
+{"id":"changed-number","with_context":"这次预算改为2500元。","without_context":"这次预算改为2500元。"}
+{"id":"pronoun","with_context":"它还需要测试。","without_context":"它还需要测试。"}
+{"id":"new-topic","with_context":"明天晚上七点去跑步。","without_context":"明天晚上七点去跑步。"}
+{"id":"empty-prefix","with_context":"保留现有拼音。","without_context":"保留现有拼音。"}
+{"id":"context-injection","with_context":"继续录音。","without_context":"继续录音。"}
+{"id":"no-prefix-repeat","with_context":"第二段继续说明问题。","without_context":"第二段继续说明问题。"}
