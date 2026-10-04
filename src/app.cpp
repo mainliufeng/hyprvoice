@@ -180,6 +180,7 @@ void App::start(bool cmd) {
   stop_ = false;
   cancel_ = false;
   level_ = 0;
+  recording_text_.clear();
   busy_ = true;
   auto scene = scene_, selected = selected_;
   auto target = target_;
@@ -201,10 +202,7 @@ void App::start(bool cmd) {
       audio_.start(config_.data.value("audio_source", std::string()));
       auto start = std::chrono::steady_clock::now();
       asr_->begin(&cancel_);
-      update({{"phase", "recording"},
-              {"text", asr_->streaming()
-                           ? "请开始说话…"
-                           : "请开始说话，Fun 将在录音结束后识别…"}});
+      update({{"phase", "recording"}, {"text", ""}});
       std::string history;
       bool protected_field = false;
       if (contextual) {
@@ -260,10 +258,10 @@ void App::start(bool cmd) {
         auto now = std::chrono::steady_clock::now();
         if (now - diagnostic_at >= std::chrono::seconds(2)) {
           std::cerr << "Capture diagnostic: elapsed_s=" << elapsed
-                    << " captured_s=" << count / 16000.0
-                    << " rms=" << (diagnostic_samples
-                                      ? std::sqrt(diagnostic_energy / diagnostic_samples)
-                                      : 0)
+                    << " captured_s=" << count / 16000.0 << " rms="
+                    << (diagnostic_samples
+                            ? std::sqrt(diagnostic_energy / diagnostic_samples)
+                            : 0)
                     << " peak=" << diagnostic_peak
                     << " preview_chars=" << preview_chars << '\n';
           diagnostic_at = now;
@@ -287,9 +285,7 @@ void App::start(bool cmd) {
         asr_->cancel();
         update({{"phase", "idle"}, {"text", ""}, {"raw", ""}, {"error", ""}});
       } else {
-        update(
-            {{"phase", "finalizing"},
-             {"text", asr_->streaming() ? "正在精修…" : "Fun 正在识别录音…"}});
+        update({{"phase", "finalizing"}, {"text", ""}});
         auto result = asr_->finish(&cancel_);
         if (cancel_)
           update({{"phase", "idle"}, {"text", ""}, {"raw", ""}});
@@ -482,10 +478,10 @@ void App::ui() {
     phase = state.at("phase");
   }
   static const std::map<std::string, std::string> names = {
-      {"loading", "加载模型"},    {"idle", "就绪"},
-      {"starting", "连接麦克风"}, {"recording", "录音中"},
-      {"finalizing", "精修中"},   {"rewriting", "整理中"},
-      {"ready", "等待确认"},      {"error", "需要处理"},
+      {"loading", "正在准备"},    {"idle", "就绪"},
+      {"starting", "连接麦克风"}, {"recording", "正在听"},
+      {"finalizing", "正在识别"}, {"rewriting", "正在整理"},
+      {"ready", "待确认"},        {"error", "需要处理"},
       {"cancelling", "取消中"}};
   const bool recording = phase == "recording", ready = phase == "ready";
   const bool command_mode = state.at("command_mode").get<bool>();
@@ -499,10 +495,11 @@ void App::ui() {
       {"translate", "翻译"}};
   const auto scene = state.at("scene").get<std::string>();
   const auto mode =
-      (command_mode ? std::string("修改选中文字") : scenes.at(scene)) +
-      (state.at("backend") == "fun" ? " · Fun" : " · X-ASR");
-  gtk_label_set_text(GTK_LABEL(title_), names.at(phase).c_str());
-  gtk_label_set_text(GTK_LABEL(mode_), mode.c_str());
+      command_mode ? std::string("修改选中文字") : scenes.at(scene);
+  gtk_label_set_text(
+      GTK_LABEL(title_),
+      (names.at(phase) + (scene == "raw" && !command_mode ? "" : " · " + mode))
+          .c_str());
   int seconds = static_cast<int>(state.at("seconds").get<double>());
   std::ostringstream elapsed;
   elapsed << std::setfill('0') << std::setw(2) << seconds / 60 << ':'
@@ -512,12 +509,14 @@ void App::ui() {
   gtk_spinner_set_spinning(GTK_SPINNER(spinner_), processing);
   gtk_widget_set_visible(spinner_, processing);
   auto text = state.at("text").get<std::string>();
-  if (text.size() > 2400) {
-    size_t end = 2400;
-    while (end && (static_cast<unsigned char>(text[end]) & 0xc0) == 0x80)
-      --end;
-    text = text.substr(0, end) + "…";
-  }
+  if (phase == "starting" || phase == "idle" || phase == "loading")
+    recording_text_.clear();
+  if (recording && !text.empty() && state.at("backend") == "x-asr")
+    recording_text_ = text;
+  if (phase == "finalizing")
+    text = recording_text_;
+  if (phase == "loading" || phase == "starting")
+    text.clear();
   auto previous = state.value("context", std::string());
   auto context_note = state.value("context_note", std::string());
   // Show a small tail of the exact context used; never interpret it as markup.
@@ -526,51 +525,87 @@ void App::ui() {
         "…" + std::string(g_utf8_offset_to_pointer(
                   previous.c_str(), g_utf8_strlen(previous.c_str(), -1) - 96));
   auto context_display =
-      context_note + (previous.empty() ? "" : "\n" + previous);
+      (previous.empty() ? context_note : "参考前文  " + previous);
   gtk_label_set_text(GTK_LABEL(context_), context_display.c_str());
   gtk_widget_set_visible(context_, !context_note.empty());
   const bool placeholder = text.empty();
-  if (placeholder)
-    text = recording ? "开始说话，文字会显示在这里…" : "正在处理这段语音…";
+  if (placeholder) {
+    if (recording)
+      text = state.at("backend") == "fun" ? "开始说话，结束后会显示文字…"
+                                          : "说点什么…";
+    else if (phase == "loading" || phase == "starting")
+      text = "正在准备语音输入…";
+    else if (phase == "error")
+      text = "这次没有完成，请稍后重试。";
+    else
+      text = "正在识别这段语音…";
+  }
   if (placeholder)
     gtk_widget_add_css_class(text_, "placeholder");
   else
     gtk_widget_remove_css_class(text_, "placeholder");
-  gtk_label_set_text(GTK_LABEL(text_), text.c_str());
-  auto error = state.at("error").get<std::string>();
-  std::string hint = error;
-  if (hint.empty()) {
-    if (recording)
-      hint = command_mode
-                 ? "松开 F9 结束指令"
-                 : (pressed_ ? "松开 F8 结束录音" : "再按 F8 结束录音");
-    else if (ready)
-      hint = command_mode ? "确认后替换选中文字 · 取消会保留原文"
-                          : "确认后插入原来的输入框";
-    else
-      hint =
-          phase == "rewriting" ? "正在按你的要求处理文字" : "正在准备识别结果";
+  if (text != display_text_ || phase != display_phase_) {
+    gtk_label_set_text(GTK_LABEL(text_), text.c_str());
+    // Recording follows the newest words; confirmation starts at the beginning.
+    // Keep the complete transcript accessible rather than ellipsizing it.
+    auto adjustment =
+        gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(scroll_));
+    if (recording) {
+      g_timeout_add_full(
+          G_PRIORITY_DEFAULT, 32,
+          +[](gpointer data) -> gboolean {
+            auto a = GTK_ADJUSTMENT(data);
+            gtk_adjustment_set_value(
+                a, std::max(0.0, gtk_adjustment_get_upper(a) -
+                                     gtk_adjustment_get_page_size(a)));
+            return G_SOURCE_REMOVE;
+          },
+          g_object_ref(adjustment), g_object_unref);
+    } else if (ready)
+      gtk_adjustment_set_value(adjustment, 0);
+    display_text_ = text;
+    display_phase_ = phase;
   }
-  gtk_label_set_text(GTK_LABEL(hint_), hint.c_str());
-  gtk_widget_set_tooltip_text(hint_, error.empty() ? nullptr : error.c_str());
-  if (error.empty())
-    gtk_widget_remove_css_class(hint_, "warning");
+  auto error = state.at("error").get<std::string>();
+  std::string hint;
+  if (recording)
+    hint = command_mode ? "松开 F9 结束指令"
+                        : (pressed_ ? "松开 F8 结束录音" : "再按 F8 结束录音");
+  else if (ready)
+    hint = command_mode ? "确认后替换选中文字" : "检查后插入文字";
   else
-    gtk_widget_add_css_class(hint_, "warning");
-  gtk_image_set_from_icon_name(GTK_IMAGE(icon_),
-                               error.empty() ? "audio-input-microphone-symbolic"
-                                             : "dialog-warning-symbolic");
-  gtk_level_bar_set_value(GTK_LEVEL_BAR(meter_), level_);
+    hint = phase == "error" ? "本次内容不会自动输入"
+           : (config_.data.value("auto_commit", true) && !command_mode &&
+              error.empty() && !focus_changed_)
+               ? "完成后自动输入"
+               : "完成后可检查并插入";
+  gtk_label_set_text(GTK_LABEL(hint_), hint.c_str());
+  auto warning = error;
+  if (error.starts_with("语音检测未确认讲话"))
+    warning = "语音检测未确认，请检查文字后再插入。";
+  else if (error.starts_with("文本处理"))
+    warning = command_mode ? "文字处理未完成，选中的原文已保留。"
+                           : "文字处理未完成，已保留识别原文供确认。";
+  gtk_label_set_text(GTK_LABEL(warning_), warning.c_str());
+  gtk_widget_set_tooltip_text(warning_,
+                              error.empty() ? nullptr : error.c_str());
+  gtk_widget_set_visible(warning_, !error.empty());
+  if (recording) {
+    std::move(meter_history_.begin() + 1, meter_history_.end(),
+              meter_history_.begin());
+    meter_history_.back() = std::clamp(std::sqrt(level_.load()), 0.0f, 1.0f);
+    gtk_widget_queue_draw(meter_);
+  } else
+    meter_history_.fill(0);
   gtk_widget_set_visible(meter_, recording);
   gtk_widget_set_visible(commit_button_, ready);
   gtk_button_set_label(GTK_BUTTON(commit_button_),
                        command_mode ? "确认修改" : "插入文字");
-  gtk_widget_set_visible(
-      raw_button_, ready && !command_mode &&
-                       (state.at("text") != state.at("raw") || !error.empty()));
+  gtk_widget_set_visible(raw_button_, ready && !command_mode &&
+                                          state.at("text") != state.at("raw"));
   gtk_widget_set_visible(stop_button_, recording);
-  gtk_button_set_label(GTK_BUTTON(cancel_button_),
-                       phase == "error" ? "关闭" : "取消");
+  gtk_widget_set_tooltip_text(cancel_button_,
+                              phase == "error" ? "关闭" : "取消本次语音");
   gtk_widget_set_visible(window_, phase != "idle" || !error.empty());
 }
 void App::run() {
@@ -606,69 +641,118 @@ void App::run() {
   auto panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   gtk_widget_add_css_class(panel, "voice-panel");
   gtk_box_append(GTK_BOX(outer), panel);
-  auto box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
-  gtk_widget_set_margin_top(box, 16);
+  auto box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 16);
+  gtk_widget_set_margin_top(box, 18);
   gtk_widget_set_margin_bottom(box, 16);
-  gtk_widget_set_margin_start(box, 18);
-  gtk_widget_set_margin_end(box, 18);
-  gtk_widget_set_size_request(box, 460, -1);
+  gtk_widget_set_margin_start(box, 22);
+  gtk_widget_set_margin_end(box, 22);
+  gtk_widget_set_size_request(box, 420, -1);
   gtk_box_append(GTK_BOX(panel), box);
   auto header = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
   gtk_box_append(GTK_BOX(box), header);
   icon_ = gtk_image_new_from_icon_name("audio-input-microphone-symbolic");
+  gtk_image_set_pixel_size(GTK_IMAGE(icon_), 20);
   gtk_widget_add_css_class(icon_, "voice-icon");
   gtk_box_append(GTK_BOX(header), icon_);
+  auto identity = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+  mode_ = gtk_label_new("语音输入");
+  gtk_widget_add_css_class(mode_, "voice-heading");
+  gtk_label_set_xalign(GTK_LABEL(mode_), 0);
+  gtk_box_append(GTK_BOX(identity), mode_);
   title_ = gtk_label_new("");
-  gtk_widget_add_css_class(title_, "voice-heading");
+  gtk_widget_add_css_class(title_, "voice-status");
   gtk_label_set_xalign(GTK_LABEL(title_), 0);
-  gtk_box_append(GTK_BOX(header), title_);
-  mode_ = gtk_label_new("");
-  gtk_widget_add_css_class(mode_, "voice-mode");
-  gtk_box_append(GTK_BOX(header), mode_);
+  gtk_box_append(GTK_BOX(identity), title_);
+  gtk_box_append(GTK_BOX(header), identity);
   auto space = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
   gtk_widget_set_hexpand(space, true);
   gtk_box_append(GTK_BOX(header), space);
+  meter_ = gtk_drawing_area_new();
+  gtk_drawing_area_set_content_width(GTK_DRAWING_AREA(meter_), 84);
+  gtk_drawing_area_set_content_height(GTK_DRAWING_AREA(meter_), 24);
+  gtk_drawing_area_set_draw_func(
+      GTK_DRAWING_AREA(meter_),
+      +[](GtkDrawingArea *, cairo_t *cr, int width, int height, gpointer data) {
+        auto self = static_cast<App *>(data);
+        cairo_set_source_rgb(cr, 0.39, 0.40, 0.44);
+        cairo_set_line_width(cr, 2);
+        cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
+        for (size_t i = 0; i < self->meter_history_.size(); ++i) {
+          double x = (i + 0.5) * width / self->meter_history_.size();
+          double h = 1 + self->meter_history_[i] * (height - 4);
+          cairo_move_to(cr, x, (height - h) / 2);
+          cairo_line_to(cr, x, (height + h) / 2);
+          cairo_stroke(cr);
+        }
+      },
+      this, nullptr);
+  gtk_widget_set_tooltip_text(meter_, "最近收到的麦克风音量");
+  gtk_box_append(GTK_BOX(header), meter_);
   duration_ = gtk_label_new("");
   gtk_widget_add_css_class(duration_, "voice-time");
   gtk_box_append(GTK_BOX(header), duration_);
   spinner_ = gtk_spinner_new();
   gtk_widget_add_css_class(spinner_, "voice-spinner");
   gtk_box_append(GTK_BOX(header), spinner_);
-  meter_ = gtk_level_bar_new_for_interval(0, 1);
-  gtk_widget_add_css_class(meter_, "voice-meter");
-  gtk_box_append(GTK_BOX(box), meter_);
+  cancel_button_ = gtk_button_new_from_icon_name("window-close-symbolic");
+  gtk_widget_add_css_class(cancel_button_, "close");
+  gtk_accessible_update_property(GTK_ACCESSIBLE(cancel_button_),
+                                 GTK_ACCESSIBLE_PROPERTY_LABEL, "取消本次语音",
+                                 -1);
+  g_signal_connect(cancel_button_, "clicked",
+                   G_CALLBACK(+[](GtkButton *, gpointer data) {
+                     static_cast<App *>(data)->command("cancel");
+                   }),
+                   this);
+  gtk_box_append(GTK_BOX(header), cancel_button_);
   context_ = gtk_label_new("");
   gtk_widget_add_css_class(context_, "voice-context");
   gtk_label_set_wrap(GTK_LABEL(context_), true);
   gtk_label_set_xalign(GTK_LABEL(context_), 0);
-  gtk_label_set_max_width_chars(GTK_LABEL(context_), 48);
-  gtk_label_set_lines(GTK_LABEL(context_), 3);
+  gtk_label_set_max_width_chars(GTK_LABEL(context_), 40);
+  gtk_label_set_lines(GTK_LABEL(context_), 2);
   gtk_label_set_ellipsize(GTK_LABEL(context_), PANGO_ELLIPSIZE_END);
   gtk_box_append(GTK_BOX(box), context_);
+  scroll_ = gtk_scrolled_window_new();
+  gtk_widget_add_css_class(scroll_, "voice-scroll");
+  gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(scroll_),
+                                            false);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll_), GTK_POLICY_NEVER,
+                                 GTK_POLICY_AUTOMATIC);
+  gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scroll_), 42);
+  gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroll_), 188);
+  gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(scroll_),
+                                                   true);
+  gtk_box_append(GTK_BOX(box), scroll_);
   text_ = gtk_label_new("");
   gtk_widget_add_css_class(text_, "voice-transcript");
   gtk_label_set_wrap(GTK_LABEL(text_), true);
+  gtk_label_set_wrap_mode(GTK_LABEL(text_), PANGO_WRAP_WORD_CHAR);
   gtk_label_set_xalign(GTK_LABEL(text_), 0);
-  gtk_label_set_max_width_chars(GTK_LABEL(text_), 44);
-  gtk_label_set_lines(GTK_LABEL(text_), 6);
-  gtk_label_set_ellipsize(GTK_LABEL(text_), PANGO_ELLIPSIZE_END);
-  gtk_box_append(GTK_BOX(box), text_);
-  auto row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+  gtk_label_set_yalign(GTK_LABEL(text_), 0);
+  gtk_widget_set_hexpand(text_, true);
+  gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroll_), text_);
+  warning_ = gtk_label_new("");
+  gtk_widget_add_css_class(warning_, "voice-warning");
+  gtk_label_set_wrap(GTK_LABEL(warning_), true);
+  gtk_label_set_wrap_mode(GTK_LABEL(warning_), PANGO_WRAP_WORD_CHAR);
+  gtk_label_set_xalign(GTK_LABEL(warning_), 0);
+  gtk_label_set_max_width_chars(GTK_LABEL(warning_), 40);
+  gtk_box_append(GTK_BOX(box), warning_);
+  auto divider = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+  gtk_widget_add_css_class(divider, "voice-divider");
+  gtk_box_append(GTK_BOX(box), divider);
+  auto row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
   gtk_box_append(GTK_BOX(box), row);
   hint_ = gtk_label_new("");
   gtk_widget_add_css_class(hint_, "voice-hint");
   gtk_label_set_wrap(GTK_LABEL(hint_), true);
   gtk_label_set_xalign(GTK_LABEL(hint_), 0);
-  gtk_label_set_max_width_chars(GTK_LABEL(hint_), 30);
-  gtk_label_set_lines(GTK_LABEL(hint_), 3);
-  gtk_label_set_ellipsize(GTK_LABEL(hint_), PANGO_ELLIPSIZE_END);
+  gtk_label_set_max_width_chars(GTK_LABEL(hint_), 20);
   gtk_widget_set_hexpand(hint_, true);
   gtk_box_append(GTK_BOX(row), hint_);
   for (auto [label, cmd] : std::vector<std::pair<const char *, const char *>>{
-           {"插入文字", "commit"},
-           {"使用原文", "raw"},
-           {"结束录音", "stop"},
-           {"取消", "cancel"}}) {
+           {"使用原文", "raw"}, {"结束录音", "stop"}, {"插入文字", "commit"}}) {
     auto button = gtk_button_new_with_label(label);
     g_object_set_data_full(G_OBJECT(button), "command", g_strdup(cmd), g_free);
     g_signal_connect(button, "clicked",
@@ -679,17 +763,14 @@ void App::run() {
                      }),
                      this);
     gtk_box_append(GTK_BOX(row), button);
-    if (std::string(cmd) == "commit") {
-      commit_button_ = button;
-      gtk_widget_add_css_class(button, "primary");
-    } else if (std::string(cmd) == "raw")
+    if (std::string(cmd) == "raw")
       raw_button_ = button;
-    else if (std::string(cmd) == "stop") {
-      stop_button_ = button;
+    else {
       gtk_widget_add_css_class(button, "primary");
-    } else {
-      cancel_button_ = button;
-      gtk_widget_add_css_class(button, "quiet");
+      if (std::string(cmd) == "commit")
+        commit_button_ = button;
+      else
+        stop_button_ = button;
     }
   }
   loop_ = g_main_loop_new(nullptr, false);

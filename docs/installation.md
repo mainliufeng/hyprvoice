@@ -42,3 +42,5 @@
 2026-10-04 更新的 SHA-256 为 `006f2e78f7da0afa928a4dbbc3a68bd49f37da5111ffbd6dc9d4aaeab1cec316`，与验收构建、安装路径及正在运行的 `/proc/<MainPID>/exe` 三方相同；更新前等待服务持续待机，重启后实际 IPC 为 `idle`、空错误。上下文真实读取检查已通过，真实 DeepSeek 文本对照与正式桌面链路均已通过，见 [前文说明](context.md)。
 
 LLM 密钥独立复制到 `~/.config/hyprvoice/llm.env`，文件权限 600，运行时不依赖旧语音项目。启用前配置备份位于 `~/.config/hyprvoice/install-backup/context-before-2026-10-04/`。如需仅停用前文发送，设置 `context.enabled=false` 后重启服务；如果也要停止其他文本处理请求，保持 `scene=raw` 并不使用指令／纠错／整理／翻译。
+
+2026-10-04 界面再次精修并安装，最新 SHA-256 为 `dee84c58b8b6af4a73680b252d2df1789c75e5d73feaa066ca35e3128c1da60c`，构建、安装路径和正在运行的二进制一致；服务待机、空错误，仍为 X-ASR，用户配置未改动。备份位于 `~/.config/hyprvoice/install-backup/ui-refresh-20261004-183718/`。新版截图和实际按钮、长文本滚动验收见 [界面精修记录](ui-refresh.md)。

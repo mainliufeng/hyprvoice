@@ -21,6 +21,9 @@ parser.add_argument("--visual-only", action="store_true")
 parser.add_argument("--context-only", action="store_true")
 parser.add_argument("--coexist-only", action="store_true")
 parser.add_argument("--backend-switch", action="store_true", help="Exercise real Fun selection, cancellation, persistence and X-ASR rollback")
+parser.add_argument("--scroll-preview", action="store_true", help="Verify actual long-preview scrollbar via accessibility")
+parser.add_argument("--ui-controls", action="store_true", help="Use actual visible GTK buttons through accessibility in QA")
+parser.add_argument("--capture-processing", action="store_true", help="Capture the actual ASR processing state before preview")
 parser.add_argument("--binary", type=Path, help="Exercise a particular installed or baseline binary")
 parser.add_argument("--continuity-only", action="store_true", help="Verify quiet prefix and suffix survive real capture and paste")
 parser.add_argument("--hardware-source", help="Explicit real microphone; requires --hardware-sink and --continuity-only")
@@ -41,7 +44,7 @@ root = Path(__file__).resolve().parents[1]
 out = args.output.resolve()
 out.mkdir(parents=True, exist_ok=True)
 env = dict(os.environ, GTK_IM_MODULE="none", GDK_BACKEND="wayland")
-env["GTK_A11Y"] = "atspi" if args.context_only else "none"
+env["GTK_A11Y"] = "atspi" if (args.context_only or args.ui_controls) else "none"
 if env.get("XDG_RUNTIME_DIR") == f"/run/user/{os.getuid()}":
     parser.error("Refusing to operate the daily desktop; use an isolated Hyprland runtime")
 env["PIPEWIRE_REMOTE"] = f"/run/user/{os.getuid()}/pipewire-0"
@@ -85,6 +88,19 @@ def key(command):
 
 def run(*command, **kwargs):
     return subprocess.run(command, env=env, check=True, capture_output=True, text=True, timeout=40, **kwargs).stdout
+
+
+def capture(name):
+    run("grim", str(out / name))
+    if args.ui_controls:
+        layers = json.loads(run("hyprctl", "layers", "-j"))
+        panels = [layer for monitor in layers.values()
+                  for group in monitor["levels"].values() for layer in group
+                  if layer["namespace"] == "hyprvoice"]
+        if len(panels) == 1:
+            panel = panels[0]
+            geometry = f'{panel["x"]},{panel["y"]} {panel["w"]}x{panel["h"]}'
+            run("grim", "-g", geometry, str(out / name.replace(".png", "-panel.png")))
 
 
 def spawn(*command, **extra):
@@ -150,14 +166,23 @@ def record(wav, command="start"):
     if command == "start" and not (out / "recording.png").exists():
         with subprocess.Popen(playback, env=env) as player:
             time.sleep(4)
-            run("grim", str(out / "recording.png"))
+            capture("recording.png")
             if player.wait(timeout=playback_timeout):
                 raise RuntimeError("Public speech playback failed")
     else:
         subprocess.run(playback,
                        env=env, check=True, timeout=playback_timeout)
     time.sleep(0.25)
-    call("release" if hardware else "stop")
+    if args.ui_controls:
+        run("/usr/bin/python3", str(root / "tests/ui_action.py"), "结束录音")
+        check("visible GTK stop button ends recording", True)
+    else:
+        call("release" if hardware else "stop")
+    if args.capture_processing and wav == args.speech and not (out / "processing.png").exists():
+        processing = wait(lambda: (s if s["phase"] in ("finalizing", "rewriting") else None)
+                          if (s := call("status")["state"]) else None, 10)
+        capture("processing.png")
+        (out / "processing-state.json").write_text(json.dumps(processing, ensure_ascii=False, indent=2))
     def completed():
         state = call("status")["state"]
         return state if state["phase"] in ("ready", "idle", "error") else None
@@ -233,7 +258,7 @@ try:
         reference = next(c["reference"] for c in cases
                          if Path(c["audio"]).resolve() == args.speech.resolve())
         expected, actual = normalized(reference), normalized(path.read_text())
-        run("grim", str(out / "committed.png"))
+        capture("committed.png")
         (out / "result.json").write_text(json.dumps(
             {"checks": checks, "state": state, "editor_text": path.read_text(),
              "hardware": True, "stream_volume": args.hardware_volume,
@@ -248,7 +273,7 @@ try:
         check("backend switch preserves pending preview", switch.returncode != 0 and call("status")["state"]["text"] == state["text"])
     check("real PipeWire speech produces a final transcript", state["phase"] == "ready" and bool(state["text"]))
     check("preview does not steal editor focus", json.loads(run("hyprctl", "activewindow", "-j"))["pid"] == process.pid)
-    run("grim", str(out / "preview.png"))
+    capture("preview.png")
     if args.context_only:
         check("production recording reads actual editor prefix", state["context"] == prefix)
         check("speech beginning survives context lookup",
@@ -265,8 +290,19 @@ try:
         check("negative VAD retains visible speech and confirmation warning",
               bool(state["raw"]) and "语音检测未确认讲话" in state["error"])
         check("uncertain speech never auto-pastes", path.read_text() == prefix)
-        run("grim", str(out / "warning.png"))
-    call("raw" if args.context_only and not args.llm_env else "commit")
+        capture("warning.png")
+    if args.scroll_preview:
+        if not args.ui_controls:
+            raise RuntimeError("--scroll-preview requires --ui-controls")
+        run("/usr/bin/python3", str(root / "tests/ui_action.py"), "--scroll-end")
+        time.sleep(0.2)
+        capture("preview-bottom.png")
+        check("real long-preview scrollbar reaches end", True)
+    if args.ui_controls:
+        run("/usr/bin/python3", str(root / "tests/ui_action.py"), "插入文字")
+        check("visible GTK insert button activates", True)
+    else:
+        call("raw" if args.context_only and not args.llm_env else "commit")
     wait(lambda: path.read_text() == prefix + state["text"])
     check("UTF-8 transcript is pasted into real GTK Wayland editor", True)
     original = path.read_text()
@@ -324,7 +360,11 @@ try:
     check("pure noise does not insert text", path.read_text() == original)
     call("start")
     phase("recording")
-    call("cancel")
+    if args.ui_controls:
+        run("/usr/bin/python3", str(root / "tests/ui_action.py"), "取消本次语音")
+        check("visible GTK close button cancels recording", True)
+    else:
+        call("cancel")
     phase("idle")
     check("cancel leaves editor unchanged", path.read_text() == original)
     state = record(args.speech)
@@ -362,7 +402,7 @@ try:
     if args.llm_env:
         check("selected-text voice instruction reaches real LLM", transformed["phase"] == "ready" and bool(transformed["text"]))
         check("command waits for explicit confirmation", path.read_text() == before)
-        run("grim", str(out / "command-preview.png"))
+        capture("command-preview.png")
         call("commit")
         wait(lambda: path.read_text() == transformed["text"])
         check("confirmed voice command replaces original selection", True)

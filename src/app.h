@@ -2,6 +2,7 @@
 #include "asr.h"
 #include "audio.h"
 #include "desktop.h"
+#include <array>
 #include <atomic>
 #include <gtk/gtk.h>
 #include <mutex>
@@ -32,7 +33,10 @@ private:
             *hint_ = nullptr, *meter_ = nullptr, *raw_button_ = nullptr,
             *commit_button_ = nullptr, *stop_button_ = nullptr,
             *cancel_button_ = nullptr, *mode_ = nullptr, *duration_ = nullptr,
-            *spinner_ = nullptr, *icon_ = nullptr, *context_ = nullptr;
+            *spinner_ = nullptr, *icon_ = nullptr, *context_ = nullptr,
+            *warning_ = nullptr, *scroll_ = nullptr;
+  std::array<float, 21> meter_history_{};
+  std::string display_text_, display_phase_, recording_text_;
   GMainLoop *loop_ = nullptr;
   int socket_ = -1, lock_ = -1, focus_socket_ = -1;
   std::string focus_events_;

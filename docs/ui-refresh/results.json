@@ -1,0 +1,155 @@
+{
+  "scope": "Real public human speech, real models, isolated native Hyprland and actual GTK accessibility actions; no injected app state or daily desktop access",
+  "final_build_sha256": "dee84c58b8b6af4a73680b252d2df1789c75e5d73feaa066ca35e3128c1da60c",
+  "final_groups": {
+    "polished": {
+      "checks": [
+        "visible GTK stop button ends recording",
+        "real PipeWire speech produces a final transcript",
+        "preview does not steal editor focus",
+        "visible GTK insert button activates",
+        "UTF-8 transcript is pasted into real GTK Wayland editor",
+        "continuous recording retains 因为远离大陆",
+        "continuous recording retains 哺乳动物",
+        "continuous recording retains 亚马逊河",
+        "continuous recording retains 河段"
+      ],
+      "state": {
+        "backend": "x-asr",
+        "command_mode": false,
+        "context": "",
+        "context_note": "",
+        "error": "",
+        "phase": "ready",
+        "raw": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+        "scene": "raw",
+        "seconds": 17.75622042,
+        "text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。"
+      },
+      "editor_text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。"
+    },
+    "polished-warning": {
+      "checks": [
+        "visible GTK stop button ends recording",
+        "real PipeWire speech produces a final transcript",
+        "preview does not steal editor focus",
+        "negative VAD retains visible speech and confirmation warning",
+        "uncertain speech never auto-pastes",
+        "visible GTK insert button activates",
+        "UTF-8 transcript is pasted into real GTK Wayland editor",
+        "continuous recording retains 因为远离大陆",
+        "continuous recording retains 哺乳动物",
+        "continuous recording retains 亚马逊河",
+        "continuous recording retains 河段"
+      ],
+      "state": {
+        "backend": "x-asr",
+        "command_mode": false,
+        "context": "",
+        "context_note": "",
+        "error": "语音检测未确认讲话，已保留识别文字；请确认后插入或取消",
+        "phase": "ready",
+        "raw": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+        "scene": "raw",
+        "seconds": 17.72498747,
+        "text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。"
+      },
+      "editor_text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。"
+    },
+    "polished-context": {
+      "checks": [
+        "visible GTK stop button ends recording",
+        "real PipeWire speech produces a final transcript",
+        "preview does not steal editor focus",
+        "production recording reads actual editor prefix",
+        "speech beginning survives context lookup",
+        "actual editor context and transcript reach real model",
+        "visible GTK insert button activates",
+        "UTF-8 transcript is pasted into real GTK Wayland editor",
+        "continuous recording retains 因为远离大陆",
+        "continuous recording retains 哺乳动物",
+        "continuous recording retains 亚马逊河",
+        "continuous recording retains 河段"
+      ],
+      "state": {
+        "backend": "x-asr",
+        "command_mode": false,
+        "context": "我们正在开发 Hyprvoice，使用 Hyprland。",
+        "context_note": "参考光标前文",
+        "error": "",
+        "phase": "ready",
+        "raw": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为科隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+        "scene": "raw",
+        "seconds": 17.705540897,
+        "text": "因为远离大陆，哺乳动物无法长途跋涉而来，使得巨龟成为科隆群岛主要的食草动物。亚马逊河也是地球上最宽的河流，有些河段的宽度可达六英里。"
+      },
+      "editor_text": "我们正在开发 Hyprvoice，使用 Hyprland。因为远离大陆，哺乳动物无法长途跋涉而来，使得巨龟成为科隆群岛主要的食草动物。亚马逊河也是地球上最宽的河流，有些河段的宽度可达六英里。"
+    },
+    "polished-scroll": {
+      "checks": [
+        "visible GTK stop button ends recording",
+        "real PipeWire speech produces a final transcript",
+        "preview does not steal editor focus",
+        "real long-preview scrollbar reaches end",
+        "visible GTK insert button activates",
+        "UTF-8 transcript is pasted into real GTK Wayland editor"
+      ],
+      "transcript": "报告警告称， 没有人能保证目前在伊拉克采取的任何行动， 能够阻止宗派战争不断增长的暴力或走向混乱。因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。迦南没有大森林， 所以木材非常昂贵。据警方称， 撞倒摄影师的汽车司机未必会面临刑事指控。游猎活动也许是非洲最吸引人的旅游活动， 也是许多游客行程中的亮点。"
+    }
+  },
+  "layout_workflow_before_copy_polish": {
+    "checks": [
+      "visible GTK stop button ends recording",
+      "real PipeWire speech produces a final transcript",
+      "preview does not steal editor focus",
+      "visible GTK insert button activates",
+      "UTF-8 transcript is pasted into real GTK Wayland editor",
+      "visible GTK stop button ends recording",
+      "pure noise produces no pending result",
+      "pure noise does not insert text",
+      "visible GTK close button cancels recording",
+      "cancel leaves editor unchanged",
+      "visible GTK stop button ends recording",
+      "commit is rejected after target window changes",
+      "other window receives no transcript",
+      "visible GTK stop button ends recording",
+      "UTF-8 transcript is pasted into real GTK XWayland editor",
+      "visible GTK stop button ends recording",
+      "Ctrl+Shift+V delivers UTF-8 transcript to real Kitty terminal",
+      "terminal command-mode replacement is rejected",
+      "visible GTK stop button ends recording",
+      "command with unconfigured LLM preserves selected text",
+      "spoken instruction cannot be committed as replacement",
+      "daemon remains alive",
+      "graceful shutdown removes control socket",
+      "tap toggles recording and default auto-commit pastes once",
+      "duplicate commit is rejected",
+      "switching away and back disables automatic insertion",
+      "manual confirmation inserts preserved result",
+      "hold-to-talk finishes and inserts on release"
+    ],
+    "transcript": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。"
+  },
+  "ctest": {
+    "passed": 4,
+    "failed": 0
+  },
+  "gtk_warnings_final": 0,
+  "python_syntax_check": "passed",
+  "installation": {
+    "binary_sha256": "dee84c58b8b6af4a73680b252d2df1789c75e5d73feaa066ca35e3128c1da60c",
+    "build_matches_install": true,
+    "running_binary_matches": true,
+    "config_unchanged": true,
+    "phase": "idle",
+    "backend": "x-asr",
+    "error_present": false,
+    "backup": "~/.config/hyprvoice/install-backup/ui-refresh-20261004-183718"
+  },
+  "external_request_retry": {
+    "first_attempt": "DeepSeek request timed out; raw transcript retained for confirmation",
+    "retry": "Real public context and transcription completed through existing local proxy"
+  },
+  "warning_test": "Only the VAD classifier is an explicit test double; real ASR and GTK widgets. Test-only classifier was never installed.",
+  "final_checks": 38
+}
