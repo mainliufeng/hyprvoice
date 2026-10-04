@@ -1,0 +1,139 @@
+[
+  {
+    "repo": "CAiRE/ASCEND",
+    "revision": "737e9800ae31be9932ba8464c80366559bd28424",
+    "folder": "ascend",
+    "files": [
+      {
+        "name": "main/test-00000-of-00001.parquet",
+        "size": 105756434,
+        "sha256": "a4c81d2b5ed6124f052089a695972808c16e0ce0c365ec9773c5d1a8fcf043a7",
+        "git_blob_sha1": null
+      },
+      {
+        "name": "README.md",
+        "size": 4557,
+        "sha256": null,
+        "git_blob_sha1": "b6e5c2307f7c9c327d36fb60e9b16221b0a3d8fd"
+      }
+    ]
+  },
+  {
+    "repo": "FunAudioLLM/fsmn-vad-GGUF",
+    "revision": "6840bae4c5c92ee8c04faaf4db23dd0105098d7f",
+    "folder": "fun-vad",
+    "files": [
+      {
+        "name": "fsmn-vad.gguf",
+        "size": 1720512,
+        "sha256": "1270f2559c495f4e7b6e739541151027d360761a3fda43fc147034f5719f5479",
+        "git_blob_sha1": null
+      }
+    ]
+  },
+  {
+    "repo": "FunAudioLLM/Fun-ASR-Nano-GGUF",
+    "revision": "46e849502a867080d66d351b8dfb1018b607e509",
+    "folder": "fun-nano",
+    "files": [
+      {
+        "name": "funasr-encoder-f16.gguf",
+        "size": 469331008,
+        "sha256": "f92f91d01a24fbed6c863495b2ee8c6a6788144a02858b75743f0946668de8a2",
+        "git_blob_sha1": null
+      },
+      {
+        "name": "qwen3-0.6b-q8_0.gguf",
+        "size": 804753280,
+        "sha256": "819f385dc0e035dccc3d9e7edaf6b7b044b8ba7ace63cbcbf84c7e397eecbf27",
+        "git_blob_sha1": null
+      }
+    ]
+  },
+  {
+    "repo": "Qwen/Qwen3-ASR-0.6B",
+    "revision": "5eb144179a02acc5e5ba31e748d22b0cf3e303b0",
+    "folder": "qwen06",
+    "files": [
+      {
+        "name": "config.json",
+        "size": 6193,
+        "sha256": null,
+        "git_blob_sha1": "8113d596dec2d1a2ef4552edfe005ee84d16d9ec"
+      },
+      {
+        "name": "generation_config.json",
+        "size": 142,
+        "sha256": null,
+        "git_blob_sha1": "7382a4d347c0a865b76bb1b8277f66a5ac312854"
+      },
+      {
+        "name": "model.safetensors",
+        "size": 1876091704,
+        "sha256": "79d6cbd4c98c7bbffe9db2edac07f56cd6637d0d5944b27f6c2b8353840323ea",
+        "git_blob_sha1": null
+      },
+      {
+        "name": "vocab.json",
+        "size": 2776833,
+        "sha256": null,
+        "git_blob_sha1": "4783fe10ac3adce15ac8f358ef5462739852c569"
+      },
+      {
+        "name": "merges.txt",
+        "size": 1671853,
+        "sha256": null,
+        "git_blob_sha1": "31349551d90c7606f325fe0f11bbb8bd5fa0d7c7"
+      }
+    ]
+  },
+  {
+    "repo": "Qwen/Qwen3-ASR-1.7B",
+    "revision": "7278e1e70fe206f11671096ffdd38061171dd6e5",
+    "folder": "qwen17",
+    "files": [
+      {
+        "name": "config.json",
+        "size": 6194,
+        "sha256": null,
+        "git_blob_sha1": "2bc16c9d4ca08963715cfb94d879799b9adbd0e9"
+      },
+      {
+        "name": "generation_config.json",
+        "size": 142,
+        "sha256": null,
+        "git_blob_sha1": "7382a4d347c0a865b76bb1b8277f66a5ac312854"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "size": 64821,
+        "sha256": null,
+        "git_blob_sha1": "1048a4eb4f21fef9aea06d8568a784b2b5595689"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "size": 4220320824,
+        "sha256": "a4cd1f1a04d90b757dc7f7dd26254e69a013b19e80efe590a83c6a3bde8608d6",
+        "git_blob_sha1": null
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "size": 478200688,
+        "sha256": "6e0b9d9e09e2e0238e7ef3cc8a484ab387e91b90f1900bedf88bc92d7929ccfc",
+        "git_blob_sha1": null
+      },
+      {
+        "name": "vocab.json",
+        "size": 2776833,
+        "sha256": null,
+        "git_blob_sha1": "4783fe10ac3adce15ac8f358ef5462739852c569"
+      },
+      {
+        "name": "merges.txt",
+        "size": 1671853,
+        "sha256": null,
+        "git_blob_sha1": "31349551d90c7606f325fe0f11bbb8bd5fa0d7c7"
+      }
+    ]
+  }
+]

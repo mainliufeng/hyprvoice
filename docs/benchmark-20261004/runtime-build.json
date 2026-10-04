@@ -1,0 +1,27 @@
+{
+  "sources": [
+    {
+      "repo": "antirez/qwen-asr",
+      "revision": "924694251d9e0f18e5d86bbd06aa3ab5f870002d",
+      "archive_url": "https://codeload.github.com/antirez/qwen-asr/tar.gz/924694251d9e0f18e5d86bbd06aa3ab5f870002d",
+      "archive_sha256": "c197e4381a14019f254b910260fdbae08ea28fdfb7ec3003dbf22560f37f839f"
+    },
+    {
+      "repo": "QwenAudio/Fun-ASR",
+      "revision": "0339018ba74a7defa3b6b6a96718d17b816be77b",
+      "archive_url": "https://codeload.github.com/QwenAudio/Fun-ASR/tar.gz/0339018ba74a7defa3b6b6a96718d17b816be77b",
+      "archive_sha256": "c6ffb715b3f72e51b8fd8859bbb8d3ed4cae60c22b6d6d21bac12f6dcbe80e6c"
+    },
+    {
+      "repo": "ggml-org/llama.cpp",
+      "revision": "8086439a4cea94c71a5dfb8fe4ad1546aebd640f",
+      "archive_url": "https://codeload.github.com/ggml-org/llama.cpp/tar.gz/8086439a4cea94c71a5dfb8fe4ad1546aebd640f",
+      "archive_sha256": "1984103666eb25bd45110a40cba22b9d4286116f26e51bbc76f6f41dc86bc7b5"
+    }
+  ],
+  "qwen_cflags": "-Wall -Wextra -O3 -march=native -ffast-math -DUSE_BLAS -DUSE_OPENBLAS -I{benchmark_dir}/openblas/usr/include/openblas",
+  "qwen_ldflags": "-lm -lpthread -L{benchmark_dir}/openblas/usr/lib -Wl,-rpath,{benchmark_dir}/openblas/usr/lib -lopenblas",
+  "candidate_threads": 8,
+  "qwen_segment_seconds": 20,
+  "fun_vad_max_segment_ms": 30000
+}

@@ -103,3 +103,5 @@ hyprvoice replay /绝对路径/manifest.jsonl > results.jsonl
 `transcribe` 和 `replay` 调用正式识别代码，不录音、不上屏、不调用 LLM。现有语音测试清单可以直接重放。
 本应用自带独立评分器与公开测试清单，录音准备及许可见 [测试集说明](tests/fixtures/README.md)。
 具体实际结果和未验证范围见 [验收记录](docs/verification.md)。
+
+本机与 Qwen3-ASR 0.6B/1.7B、Fun-ASR-Nano 的真实对比，以及 ASR＋DeepSeek 工作流的分开评分见 [2026-10-04 笔记本测评](docs/benchmark-20261004.md)。采样、前文条件与复现方式见 [benchmark 协议](docs/benchmark-protocol.md)。

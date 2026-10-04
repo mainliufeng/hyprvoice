@@ -1,0 +1,1496 @@
+{
+  "normalization": "NFKC + casefold; CER keeps alphanumeric; MER uses Han chars + English words; no number verbalization equivalence",
+  "timing": "compute_ms/compute_rtf and asr percentiles describe ASR only; rewrite times are separate; unknown timing is null",
+  "summary": {
+    "ascend/en/clean": {
+      "cases": 40,
+      "characters": 1447,
+      "character_edits": 269,
+      "tokens": 368,
+      "token_edits": 103,
+      "errors": 0,
+      "rewrite_errors": 0,
+      "auto_commit_blocked": 0,
+      "false_insertions": 0,
+      "audio_seconds": 152.771625,
+      "compute_ms": 19902.924858,
+      "timed_cases": 40,
+      "exact_cases": 9,
+      "cer": 0.18590186592950933,
+      "mer": 0.2798913043478261,
+      "compute_rtf": 0.13027893666772217,
+      "asr_p50_ms": 457.600859,
+      "asr_p95_ms": 792.5328509999998,
+      "rewrite_calls": 40,
+      "rewrite_p50_ms": 687.3655,
+      "rewrite_p95_ms": 985.1245999999999
+    },
+    "ascend/zh/clean": {
+      "cases": 40,
+      "characters": 558,
+      "character_edits": 73,
+      "tokens": 556,
+      "token_edits": 64,
+      "errors": 0,
+      "rewrite_errors": 0,
+      "auto_commit_blocked": 0,
+      "false_insertions": 0,
+      "audio_seconds": 142.9906875,
+      "compute_ms": 18916.588412000005,
+      "timed_cases": 40,
+      "exact_cases": 12,
+      "cer": 0.13082437275985664,
+      "mer": 0.11510791366906475,
+      "compute_rtf": 0.1322924502478527,
+      "asr_p50_ms": 439.690379,
+      "asr_p95_ms": 756.0224559499995,
+      "rewrite_calls": 39,
+      "rewrite_p50_ms": 725.839,
+      "rewrite_p95_ms": 969.9473
+    },
+    "ascend/mixed/clean": {
+      "cases": 40,
+      "characters": 1134,
+      "character_edits": 191,
+      "tokens": 680,
+      "token_edits": 104,
+      "errors": 0,
+      "rewrite_errors": 0,
+      "auto_commit_blocked": 0,
+      "false_insertions": 0,
+      "audio_seconds": 192.82025000000002,
+      "compute_ms": 23619.984956,
+      "timed_cases": 40,
+      "exact_cases": 11,
+      "cer": 0.16843033509700175,
+      "mer": 0.15294117647058825,
+      "compute_rtf": 0.12249742937269295,
+      "asr_p50_ms": 549.3109555000001,
+      "asr_p95_ms": 932.0822075499996,
+      "rewrite_calls": 40,
+      "rewrite_p50_ms": 746.234,
+      "rewrite_p95_ms": 972.0514
+    },
+    "ascend/en/white-10db": {
+      "cases": 12,
+      "characters": 433,
+      "character_edits": 86,
+      "tokens": 110,
+      "token_edits": 33,
+      "errors": 0,
+      "rewrite_errors": 0,
+      "auto_commit_blocked": 0,
+      "false_insertions": 0,
+      "audio_seconds": 48.6301875,
+      "compute_ms": 6356.179668000001,
+      "timed_cases": 12,
+      "exact_cases": 1,
+      "cer": 0.19861431870669746,
+      "mer": 0.3,
+      "compute_rtf": 0.13070440388493262,
+      "asr_p50_ms": 454.754998,
+      "asr_p95_ms": 825.7660455499998,
+      "rewrite_calls": 12,
+      "rewrite_p50_ms": 646.106,
+      "rewrite_p95_ms": 819.92725
+    },
+    "ascend/mixed/white-10db": {
+      "cases": 7,
+      "characters": 156,
+      "character_edits": 37,
+      "tokens": 97,
+      "token_edits": 16,
+      "errors": 0,
+      "rewrite_errors": 0,
+      "auto_commit_blocked": 0,
+      "false_insertions": 0,
+      "audio_seconds": 26.34,
+      "compute_ms": 3638.193988,
+      "timed_cases": 7,
+      "exact_cases": 1,
+      "cer": 0.23717948717948717,
+      "mer": 0.16494845360824742,
+      "compute_rtf": 0.13812429719058467,
+      "asr_p50_ms": 495.168496,
+      "asr_p95_ms": 646.7552110999999,
+      "rewrite_calls": 7,
+      "rewrite_p50_ms": 581.531,
+      "rewrite_p95_ms": 701.4703000000001
+    },
+    "ascend/zh/white-10db": {
+      "cases": 11,
+      "characters": 166,
+      "character_edits": 32,
+      "tokens": 166,
+      "token_edits": 32,
+      "errors": 0,
+      "rewrite_errors": 1,
+      "auto_commit_blocked": 1,
+      "false_insertions": 0,
+      "audio_seconds": 44.210562499999995,
+      "compute_ms": 5580.789953000001,
+      "timed_cases": 11,
+      "exact_cases": 2,
+      "cer": 0.1927710843373494,
+      "mer": 0.1927710843373494,
+      "compute_rtf": 0.12623205038388738,
+      "asr_p50_ms": 410.477536,
+      "asr_p95_ms": 963.2489,
+      "rewrite_calls": 11,
+      "rewrite_p50_ms": 639.662,
+      "rewrite_p95_ms": 2967.627
+    }
+  },
+  "per_case": [
+    {
+      "id": "ascend-test-00012",
+      "category": "ascend/en/clean",
+      "character_edits": 7,
+      "characters": 25,
+      "token_edits": 6,
+      "tokens": 10,
+      "base_id": "ascend-test-00012"
+    },
+    {
+      "id": "ascend-test-00045",
+      "category": "ascend/en/clean",
+      "character_edits": 11,
+      "characters": 43,
+      "token_edits": 3,
+      "tokens": 8,
+      "base_id": "ascend-test-00045"
+    },
+    {
+      "id": "ascend-test-00046",
+      "category": "ascend/en/clean",
+      "character_edits": 2,
+      "characters": 19,
+      "token_edits": 1,
+      "tokens": 5,
+      "base_id": "ascend-test-00046"
+    },
+    {
+      "id": "ascend-test-00077",
+      "category": "ascend/en/clean",
+      "character_edits": 10,
+      "characters": 34,
+      "token_edits": 4,
+      "tokens": 7,
+      "base_id": "ascend-test-00077"
+    },
+    {
+      "id": "ascend-test-00099",
+      "category": "ascend/zh/clean",
+      "character_edits": 5,
+      "characters": 15,
+      "token_edits": 5,
+      "tokens": 15,
+      "base_id": "ascend-test-00099"
+    },
+    {
+      "id": "ascend-test-00110",
+      "category": "ascend/en/clean",
+      "character_edits": 0,
+      "characters": 53,
+      "token_edits": 0,
+      "tokens": 13,
+      "base_id": "ascend-test-00110"
+    },
+    {
+      "id": "ascend-test-00116",
+      "category": "ascend/en/clean",
+      "character_edits": 2,
+      "characters": 37,
+      "token_edits": 3,
+      "tokens": 9,
+      "base_id": "ascend-test-00116"
+    },
+    {
+      "id": "ascend-test-00119",
+      "category": "ascend/en/clean",
+      "character_edits": 10,
+      "characters": 54,
+      "token_edits": 3,
+      "tokens": 18,
+      "base_id": "ascend-test-00119"
+    },
+    {
+      "id": "ascend-test-00127",
+      "category": "ascend/zh/clean",
+      "character_edits": 0,
+      "characters": 9,
+      "token_edits": 0,
+      "tokens": 9,
+      "base_id": "ascend-test-00127"
+    },
+    {
+      "id": "ascend-test-00136",
+      "category": "ascend/en/clean",
+      "character_edits": 16,
+      "characters": 109,
+      "token_edits": 7,
+      "tokens": 27,
+      "base_id": "ascend-test-00136"
+    },
+    {
+      "id": "ascend-test-00153",
+      "category": "ascend/zh/clean",
+      "character_edits": 1,
+      "characters": 10,
+      "token_edits": 1,
+      "tokens": 10,
+      "base_id": "ascend-test-00153"
+    },
+    {
+      "id": "ascend-test-00165",
+      "category": "ascend/en/clean",
+      "character_edits": 0,
+      "characters": 14,
+      "token_edits": 0,
+      "tokens": 4,
+      "base_id": "ascend-test-00165"
+    },
+    {
+      "id": "ascend-test-00190",
+      "category": "ascend/mixed/clean",
+      "character_edits": 7,
+      "characters": 21,
+      "token_edits": 3,
+      "tokens": 9,
+      "base_id": "ascend-test-00190"
+    },
+    {
+      "id": "ascend-test-00199",
+      "category": "ascend/mixed/clean",
+      "character_edits": 9,
+      "characters": 19,
+      "token_edits": 5,
+      "tokens": 7,
+      "base_id": "ascend-test-00199"
+    },
+    {
+      "id": "ascend-test-00203",
+      "category": "ascend/zh/clean",
+      "character_edits": 0,
+      "characters": 15,
+      "token_edits": 0,
+      "tokens": 15,
+      "base_id": "ascend-test-00203"
+    },
+    {
+      "id": "ascend-test-00215",
+      "category": "ascend/mixed/clean",
+      "character_edits": 2,
+      "characters": 17,
+      "token_edits": 2,
+      "tokens": 14,
+      "base_id": "ascend-test-00215"
+    },
+    {
+      "id": "ascend-test-00245",
+      "category": "ascend/zh/clean",
+      "character_edits": 2,
+      "characters": 11,
+      "token_edits": 2,
+      "tokens": 11,
+      "base_id": "ascend-test-00245"
+    },
+    {
+      "id": "ascend-test-00249",
+      "category": "ascend/mixed/clean",
+      "character_edits": 2,
+      "characters": 22,
+      "token_edits": 2,
+      "tokens": 14,
+      "base_id": "ascend-test-00249"
+    },
+    {
+      "id": "ascend-test-00268",
+      "category": "ascend/zh/clean",
+      "character_edits": 1,
+      "characters": 8,
+      "token_edits": 1,
+      "tokens": 8,
+      "base_id": "ascend-test-00268"
+    },
+    {
+      "id": "ascend-test-00280",
+      "category": "ascend/zh/clean",
+      "character_edits": 1,
+      "characters": 12,
+      "token_edits": 1,
+      "tokens": 12,
+      "base_id": "ascend-test-00280"
+    },
+    {
+      "id": "ascend-test-00302",
+      "category": "ascend/zh/clean",
+      "character_edits": 1,
+      "characters": 9,
+      "token_edits": 1,
+      "tokens": 9,
+      "base_id": "ascend-test-00302"
+    },
+    {
+      "id": "ascend-test-00303",
+      "category": "ascend/zh/clean",
+      "character_edits": 12,
+      "characters": 12,
+      "token_edits": 3,
+      "tokens": 10,
+      "base_id": "ascend-test-00303"
+    },
+    {
+      "id": "ascend-test-00316",
+      "category": "ascend/zh/clean",
+      "character_edits": 2,
+      "characters": 7,
+      "token_edits": 2,
+      "tokens": 7,
+      "base_id": "ascend-test-00316"
+    },
+    {
+      "id": "ascend-test-00330",
+      "category": "ascend/zh/clean",
+      "character_edits": 0,
+      "characters": 7,
+      "token_edits": 0,
+      "tokens": 7,
+      "base_id": "ascend-test-00330"
+    },
+    {
+      "id": "ascend-test-00333",
+      "category": "ascend/zh/clean",
+      "character_edits": 1,
+      "characters": 7,
+      "token_edits": 1,
+      "tokens": 7,
+      "base_id": "ascend-test-00333"
+    },
+    {
+      "id": "ascend-test-00335",
+      "category": "ascend/mixed/clean",
+      "character_edits": 2,
+      "characters": 21,
+      "token_edits": 2,
+      "tokens": 15,
+      "base_id": "ascend-test-00335"
+    },
+    {
+      "id": "ascend-test-00336",
+      "category": "ascend/zh/clean",
+      "character_edits": 0,
+      "characters": 7,
+      "token_edits": 0,
+      "tokens": 7,
+      "base_id": "ascend-test-00336"
+    },
+    {
+      "id": "ascend-test-00344",
+      "category": "ascend/zh/clean",
+      "character_edits": 0,
+      "characters": 7,
+      "token_edits": 0,
+      "tokens": 7,
+      "base_id": "ascend-test-00344"
+    },
+    {
+      "id": "ascend-test-00346",
+      "category": "ascend/mixed/clean",
+      "character_edits": 8,
+      "characters": 20,
+      "token_edits": 2,
+      "tokens": 14,
+      "base_id": "ascend-test-00346"
+    },
+    {
+      "id": "ascend-test-00358",
+      "category": "ascend/mixed/clean",
+      "character_edits": 1,
+      "characters": 17,
+      "token_edits": 1,
+      "tokens": 10,
+      "base_id": "ascend-test-00358"
+    },
+    {
+      "id": "ascend-test-00379",
+      "category": "ascend/zh/clean",
+      "character_edits": 1,
+      "characters": 18,
+      "token_edits": 1,
+      "tokens": 18,
+      "base_id": "ascend-test-00379"
+    },
+    {
+      "id": "ascend-test-00387",
+      "category": "ascend/zh/clean",
+      "character_edits": 2,
+      "characters": 13,
+      "token_edits": 2,
+      "tokens": 13,
+      "base_id": "ascend-test-00387"
+    },
+    {
+      "id": "ascend-test-00404",
+      "category": "ascend/mixed/clean",
+      "character_edits": 1,
+      "characters": 23,
+      "token_edits": 1,
+      "tokens": 14,
+      "base_id": "ascend-test-00404"
+    },
+    {
+      "id": "ascend-test-00408",
+      "category": "ascend/zh/clean",
+      "character_edits": 0,
+      "characters": 6,
+      "token_edits": 0,
+      "tokens": 6,
+      "base_id": "ascend-test-00408"
+    },
+    {
+      "id": "ascend-test-00420",
+      "category": "ascend/zh/clean",
+      "character_edits": 3,
+      "characters": 38,
+      "token_edits": 3,
+      "tokens": 38,
+      "base_id": "ascend-test-00420"
+    },
+    {
+      "id": "ascend-test-00422",
+      "category": "ascend/zh/clean",
+      "character_edits": 3,
+      "characters": 10,
+      "token_edits": 3,
+      "tokens": 10,
+      "base_id": "ascend-test-00422"
+    },
+    {
+      "id": "ascend-test-00425",
+      "category": "ascend/mixed/clean",
+      "character_edits": 4,
+      "characters": 36,
+      "token_edits": 4,
+      "tokens": 20,
+      "base_id": "ascend-test-00425"
+    },
+    {
+      "id": "ascend-test-00430",
+      "category": "ascend/mixed/clean",
+      "character_edits": 0,
+      "characters": 16,
+      "token_edits": 0,
+      "tokens": 12,
+      "base_id": "ascend-test-00430"
+    },
+    {
+      "id": "ascend-test-00437",
+      "category": "ascend/mixed/clean",
+      "character_edits": 20,
+      "characters": 25,
+      "token_edits": 9,
+      "tokens": 14,
+      "base_id": "ascend-test-00437"
+    },
+    {
+      "id": "ascend-test-00464",
+      "category": "ascend/en/clean",
+      "character_edits": 8,
+      "characters": 30,
+      "token_edits": 4,
+      "tokens": 11,
+      "base_id": "ascend-test-00464"
+    },
+    {
+      "id": "ascend-test-00466",
+      "category": "ascend/en/clean",
+      "character_edits": 1,
+      "characters": 35,
+      "token_edits": 1,
+      "tokens": 8,
+      "base_id": "ascend-test-00466"
+    },
+    {
+      "id": "ascend-test-00467",
+      "category": "ascend/en/clean",
+      "character_edits": 3,
+      "characters": 38,
+      "token_edits": 1,
+      "tokens": 11,
+      "base_id": "ascend-test-00467"
+    },
+    {
+      "id": "ascend-test-00487",
+      "category": "ascend/zh/clean",
+      "character_edits": 5,
+      "characters": 14,
+      "token_edits": 5,
+      "tokens": 14,
+      "base_id": "ascend-test-00487"
+    },
+    {
+      "id": "ascend-test-00508",
+      "category": "ascend/en/clean",
+      "character_edits": 0,
+      "characters": 21,
+      "token_edits": 0,
+      "tokens": 5,
+      "base_id": "ascend-test-00508"
+    },
+    {
+      "id": "ascend-test-00509",
+      "category": "ascend/en/clean",
+      "character_edits": 26,
+      "characters": 26,
+      "token_edits": 8,
+      "tokens": 7,
+      "base_id": "ascend-test-00509"
+    },
+    {
+      "id": "ascend-test-00514",
+      "category": "ascend/en/clean",
+      "character_edits": 8,
+      "characters": 30,
+      "token_edits": 4,
+      "tokens": 9,
+      "base_id": "ascend-test-00514"
+    },
+    {
+      "id": "ascend-test-00520",
+      "category": "ascend/en/clean",
+      "character_edits": 4,
+      "characters": 19,
+      "token_edits": 1,
+      "tokens": 4,
+      "base_id": "ascend-test-00520"
+    },
+    {
+      "id": "ascend-test-00586",
+      "category": "ascend/en/clean",
+      "character_edits": 1,
+      "characters": 20,
+      "token_edits": 1,
+      "tokens": 6,
+      "base_id": "ascend-test-00586"
+    },
+    {
+      "id": "ascend-test-00587",
+      "category": "ascend/en/clean",
+      "character_edits": 3,
+      "characters": 18,
+      "token_edits": 2,
+      "tokens": 9,
+      "base_id": "ascend-test-00587"
+    },
+    {
+      "id": "ascend-test-00589",
+      "category": "ascend/en/clean",
+      "character_edits": 6,
+      "characters": 28,
+      "token_edits": 1,
+      "tokens": 8,
+      "base_id": "ascend-test-00589"
+    },
+    {
+      "id": "ascend-test-00634",
+      "category": "ascend/mixed/clean",
+      "character_edits": 0,
+      "characters": 43,
+      "token_edits": 0,
+      "tokens": 18,
+      "base_id": "ascend-test-00634"
+    },
+    {
+      "id": "ascend-test-00648",
+      "category": "ascend/zh/clean",
+      "character_edits": 1,
+      "characters": 9,
+      "token_edits": 1,
+      "tokens": 9,
+      "base_id": "ascend-test-00648"
+    },
+    {
+      "id": "ascend-test-00655",
+      "category": "ascend/en/clean",
+      "character_edits": 8,
+      "characters": 29,
+      "token_edits": 1,
+      "tokens": 6,
+      "base_id": "ascend-test-00655"
+    },
+    {
+      "id": "ascend-test-00662",
+      "category": "ascend/zh/clean",
+      "character_edits": 2,
+      "characters": 7,
+      "token_edits": 2,
+      "tokens": 7,
+      "base_id": "ascend-test-00662"
+    },
+    {
+      "id": "ascend-test-00675",
+      "category": "ascend/mixed/clean",
+      "character_edits": 6,
+      "characters": 42,
+      "token_edits": 4,
+      "tokens": 14,
+      "base_id": "ascend-test-00675"
+    },
+    {
+      "id": "ascend-test-00680",
+      "category": "ascend/zh/clean",
+      "character_edits": 0,
+      "characters": 10,
+      "token_edits": 0,
+      "tokens": 10,
+      "base_id": "ascend-test-00680"
+    },
+    {
+      "id": "ascend-test-00682",
+      "category": "ascend/mixed/clean",
+      "character_edits": 0,
+      "characters": 21,
+      "token_edits": 0,
+      "tokens": 16,
+      "base_id": "ascend-test-00682"
+    },
+    {
+      "id": "ascend-test-00685",
+      "category": "ascend/zh/clean",
+      "character_edits": 0,
+      "characters": 14,
+      "token_edits": 0,
+      "tokens": 14,
+      "base_id": "ascend-test-00685"
+    },
+    {
+      "id": "ascend-test-00688",
+      "category": "ascend/zh/clean",
+      "character_edits": 0,
+      "characters": 12,
+      "token_edits": 0,
+      "tokens": 12,
+      "base_id": "ascend-test-00688"
+    },
+    {
+      "id": "ascend-test-00691",
+      "category": "ascend/mixed/clean",
+      "character_edits": 1,
+      "characters": 18,
+      "token_edits": 1,
+      "tokens": 13,
+      "base_id": "ascend-test-00691"
+    },
+    {
+      "id": "ascend-test-00701",
+      "category": "ascend/mixed/clean",
+      "character_edits": 13,
+      "characters": 54,
+      "token_edits": 6,
+      "tokens": 13,
+      "base_id": "ascend-test-00701"
+    },
+    {
+      "id": "ascend-test-00703",
+      "category": "ascend/en/clean",
+      "character_edits": 0,
+      "characters": 31,
+      "token_edits": 0,
+      "tokens": 6,
+      "base_id": "ascend-test-00703"
+    },
+    {
+      "id": "ascend-test-00708",
+      "category": "ascend/en/clean",
+      "character_edits": 15,
+      "characters": 36,
+      "token_edits": 3,
+      "tokens": 6,
+      "base_id": "ascend-test-00708"
+    },
+    {
+      "id": "ascend-test-00714",
+      "category": "ascend/zh/clean",
+      "character_edits": 1,
+      "characters": 16,
+      "token_edits": 1,
+      "tokens": 16,
+      "base_id": "ascend-test-00714"
+    },
+    {
+      "id": "ascend-test-00716",
+      "category": "ascend/mixed/clean",
+      "character_edits": 0,
+      "characters": 17,
+      "token_edits": 0,
+      "tokens": 14,
+      "base_id": "ascend-test-00716"
+    },
+    {
+      "id": "ascend-test-00723",
+      "category": "ascend/mixed/clean",
+      "character_edits": 23,
+      "characters": 25,
+      "token_edits": 11,
+      "tokens": 15,
+      "base_id": "ascend-test-00723"
+    },
+    {
+      "id": "ascend-test-00726",
+      "category": "ascend/zh/clean",
+      "character_edits": 0,
+      "characters": 12,
+      "token_edits": 0,
+      "tokens": 12,
+      "base_id": "ascend-test-00726"
+    },
+    {
+      "id": "ascend-test-00748",
+      "category": "ascend/mixed/clean",
+      "character_edits": 1,
+      "characters": 22,
+      "token_edits": 1,
+      "tokens": 17,
+      "base_id": "ascend-test-00748"
+    },
+    {
+      "id": "ascend-test-00750",
+      "category": "ascend/mixed/clean",
+      "character_edits": 3,
+      "characters": 32,
+      "token_edits": 3,
+      "tokens": 25,
+      "base_id": "ascend-test-00750"
+    },
+    {
+      "id": "ascend-test-00777",
+      "category": "ascend/en/clean",
+      "character_edits": 5,
+      "characters": 46,
+      "token_edits": 1,
+      "tokens": 9,
+      "base_id": "ascend-test-00777"
+    },
+    {
+      "id": "ascend-test-00778",
+      "category": "ascend/en/clean",
+      "character_edits": 56,
+      "characters": 56,
+      "token_edits": 16,
+      "tokens": 14,
+      "base_id": "ascend-test-00778"
+    },
+    {
+      "id": "ascend-test-00788",
+      "category": "ascend/en/clean",
+      "character_edits": 18,
+      "characters": 34,
+      "token_edits": 7,
+      "tokens": 9,
+      "base_id": "ascend-test-00788"
+    },
+    {
+      "id": "ascend-test-00792",
+      "category": "ascend/en/clean",
+      "character_edits": 2,
+      "characters": 28,
+      "token_edits": 1,
+      "tokens": 7,
+      "base_id": "ascend-test-00792"
+    },
+    {
+      "id": "ascend-test-00809",
+      "category": "ascend/zh/clean",
+      "character_edits": 0,
+      "characters": 28,
+      "token_edits": 0,
+      "tokens": 28,
+      "base_id": "ascend-test-00809"
+    },
+    {
+      "id": "ascend-test-00813",
+      "category": "ascend/en/clean",
+      "character_edits": 0,
+      "characters": 43,
+      "token_edits": 0,
+      "tokens": 9,
+      "base_id": "ascend-test-00813"
+    },
+    {
+      "id": "ascend-test-00854",
+      "category": "ascend/en/clean",
+      "character_edits": 0,
+      "characters": 55,
+      "token_edits": 4,
+      "tokens": 12,
+      "base_id": "ascend-test-00854"
+    },
+    {
+      "id": "ascend-test-00858",
+      "category": "ascend/zh/clean",
+      "character_edits": 1,
+      "characters": 16,
+      "token_edits": 1,
+      "tokens": 16,
+      "base_id": "ascend-test-00858"
+    },
+    {
+      "id": "ascend-test-00878",
+      "category": "ascend/en/clean",
+      "character_edits": 8,
+      "characters": 39,
+      "token_edits": 3,
+      "tokens": 9,
+      "base_id": "ascend-test-00878"
+    },
+    {
+      "id": "ascend-test-00880",
+      "category": "ascend/en/clean",
+      "character_edits": 0,
+      "characters": 33,
+      "token_edits": 0,
+      "tokens": 8,
+      "base_id": "ascend-test-00880"
+    },
+    {
+      "id": "ascend-test-00888",
+      "category": "ascend/mixed/clean",
+      "character_edits": 6,
+      "characters": 32,
+      "token_edits": 6,
+      "tokens": 27,
+      "base_id": "ascend-test-00888"
+    },
+    {
+      "id": "ascend-test-00937",
+      "category": "ascend/mixed/clean",
+      "character_edits": 3,
+      "characters": 23,
+      "token_edits": 3,
+      "tokens": 16,
+      "base_id": "ascend-test-00937"
+    },
+    {
+      "id": "ascend-test-00950",
+      "category": "ascend/zh/clean",
+      "character_edits": 3,
+      "characters": 37,
+      "token_edits": 3,
+      "tokens": 37,
+      "base_id": "ascend-test-00950"
+    },
+    {
+      "id": "ascend-test-00962",
+      "category": "ascend/mixed/clean",
+      "character_edits": 1,
+      "characters": 28,
+      "token_edits": 1,
+      "tokens": 16,
+      "base_id": "ascend-test-00962"
+    },
+    {
+      "id": "ascend-test-00968",
+      "category": "ascend/mixed/clean",
+      "character_edits": 15,
+      "characters": 64,
+      "token_edits": 8,
+      "tokens": 31,
+      "base_id": "ascend-test-00968"
+    },
+    {
+      "id": "ascend-test-01005",
+      "category": "ascend/mixed/clean",
+      "character_edits": 0,
+      "characters": 35,
+      "token_edits": 0,
+      "tokens": 25,
+      "base_id": "ascend-test-01005"
+    },
+    {
+      "id": "ascend-test-01010",
+      "category": "ascend/zh/clean",
+      "character_edits": 3,
+      "characters": 13,
+      "token_edits": 3,
+      "tokens": 13,
+      "base_id": "ascend-test-01010"
+    },
+    {
+      "id": "ascend-test-01016",
+      "category": "ascend/mixed/clean",
+      "character_edits": 11,
+      "characters": 60,
+      "token_edits": 4,
+      "tokens": 51,
+      "base_id": "ascend-test-01016"
+    },
+    {
+      "id": "ascend-test-01018",
+      "category": "ascend/en/clean",
+      "character_edits": 12,
+      "characters": 57,
+      "token_edits": 3,
+      "tokens": 13,
+      "base_id": "ascend-test-01018"
+    },
+    {
+      "id": "ascend-test-01019",
+      "category": "ascend/mixed/clean",
+      "character_edits": 0,
+      "characters": 59,
+      "token_edits": 0,
+      "tokens": 21,
+      "base_id": "ascend-test-01019"
+    },
+    {
+      "id": "ascend-test-01039",
+      "category": "ascend/mixed/clean",
+      "character_edits": 20,
+      "characters": 38,
+      "token_edits": 9,
+      "tokens": 27,
+      "base_id": "ascend-test-01039"
+    },
+    {
+      "id": "ascend-test-01040",
+      "category": "ascend/zh/clean",
+      "character_edits": 3,
+      "characters": 23,
+      "token_edits": 3,
+      "tokens": 23,
+      "base_id": "ascend-test-01040"
+    },
+    {
+      "id": "ascend-test-01064",
+      "category": "ascend/mixed/clean",
+      "character_edits": 6,
+      "characters": 15,
+      "token_edits": 2,
+      "tokens": 4,
+      "base_id": "ascend-test-01064"
+    },
+    {
+      "id": "ascend-test-01065",
+      "category": "ascend/en/clean",
+      "character_edits": 2,
+      "characters": 27,
+      "token_edits": 2,
+      "tokens": 6,
+      "base_id": "ascend-test-01065"
+    },
+    {
+      "id": "ascend-test-01070",
+      "category": "ascend/zh/clean",
+      "character_edits": 3,
+      "characters": 28,
+      "token_edits": 3,
+      "tokens": 28,
+      "base_id": "ascend-test-01070"
+    },
+    {
+      "id": "ascend-test-01074",
+      "category": "ascend/zh/clean",
+      "character_edits": 4,
+      "characters": 16,
+      "token_edits": 4,
+      "tokens": 16,
+      "base_id": "ascend-test-01074"
+    },
+    {
+      "id": "ascend-test-01086",
+      "category": "ascend/en/clean",
+      "character_edits": 3,
+      "characters": 30,
+      "token_edits": 1,
+      "tokens": 7,
+      "base_id": "ascend-test-01086"
+    },
+    {
+      "id": "ascend-test-01095",
+      "category": "ascend/en/clean",
+      "character_edits": 0,
+      "characters": 22,
+      "token_edits": 0,
+      "tokens": 7,
+      "base_id": "ascend-test-01095"
+    },
+    {
+      "id": "ascend-test-01123",
+      "category": "ascend/zh/clean",
+      "character_edits": 4,
+      "characters": 12,
+      "token_edits": 4,
+      "tokens": 12,
+      "base_id": "ascend-test-01123"
+    },
+    {
+      "id": "ascend-test-01131",
+      "category": "ascend/mixed/clean",
+      "character_edits": 0,
+      "characters": 26,
+      "token_edits": 0,
+      "tokens": 11,
+      "base_id": "ascend-test-01131"
+    },
+    {
+      "id": "ascend-test-01132",
+      "category": "ascend/mixed/clean",
+      "character_edits": 0,
+      "characters": 27,
+      "token_edits": 0,
+      "tokens": 16,
+      "base_id": "ascend-test-01132"
+    },
+    {
+      "id": "ascend-test-01145",
+      "category": "ascend/mixed/clean",
+      "character_edits": 1,
+      "characters": 9,
+      "token_edits": 1,
+      "tokens": 5,
+      "base_id": "ascend-test-01145"
+    },
+    {
+      "id": "ascend-test-01149",
+      "category": "ascend/mixed/clean",
+      "character_edits": 0,
+      "characters": 32,
+      "token_edits": 0,
+      "tokens": 30,
+      "base_id": "ascend-test-01149"
+    },
+    {
+      "id": "ascend-test-01152",
+      "category": "ascend/zh/clean",
+      "character_edits": 0,
+      "characters": 9,
+      "token_edits": 0,
+      "tokens": 9,
+      "base_id": "ascend-test-01152"
+    },
+    {
+      "id": "ascend-test-01185",
+      "category": "ascend/mixed/clean",
+      "character_edits": 7,
+      "characters": 28,
+      "token_edits": 4,
+      "tokens": 20,
+      "base_id": "ascend-test-01185"
+    },
+    {
+      "id": "ascend-test-01210",
+      "category": "ascend/mixed/clean",
+      "character_edits": 1,
+      "characters": 16,
+      "token_edits": 1,
+      "tokens": 11,
+      "base_id": "ascend-test-01210"
+    },
+    {
+      "id": "ascend-test-01219",
+      "category": "ascend/zh/clean",
+      "character_edits": 1,
+      "characters": 8,
+      "token_edits": 1,
+      "tokens": 8,
+      "base_id": "ascend-test-01219"
+    },
+    {
+      "id": "ascend-test-01221",
+      "category": "ascend/en/clean",
+      "character_edits": 0,
+      "characters": 23,
+      "token_edits": 0,
+      "tokens": 5,
+      "base_id": "ascend-test-01221"
+    },
+    {
+      "id": "ascend-test-01222",
+      "category": "ascend/en/clean",
+      "character_edits": 1,
+      "characters": 59,
+      "token_edits": 1,
+      "tokens": 15,
+      "base_id": "ascend-test-01222"
+    },
+    {
+      "id": "ascend-test-01224",
+      "category": "ascend/en/clean",
+      "character_edits": 2,
+      "characters": 18,
+      "token_edits": 1,
+      "tokens": 6,
+      "base_id": "ascend-test-01224"
+    },
+    {
+      "id": "ascend-test-01229",
+      "category": "ascend/en/clean",
+      "character_edits": 2,
+      "characters": 42,
+      "token_edits": 1,
+      "tokens": 12,
+      "base_id": "ascend-test-01229"
+    },
+    {
+      "id": "ascend-test-01235",
+      "category": "ascend/en/clean",
+      "character_edits": 4,
+      "characters": 16,
+      "token_edits": 2,
+      "tokens": 5,
+      "base_id": "ascend-test-01235"
+    },
+    {
+      "id": "ascend-test-01236",
+      "category": "ascend/en/clean",
+      "character_edits": 13,
+      "characters": 70,
+      "token_edits": 6,
+      "tokens": 18,
+      "base_id": "ascend-test-01236"
+    },
+    {
+      "id": "ascend-test-01247",
+      "category": "ascend/mixed/clean",
+      "character_edits": 0,
+      "characters": 25,
+      "token_edits": 0,
+      "tokens": 14,
+      "base_id": "ascend-test-01247"
+    },
+    {
+      "id": "ascend-test-01277",
+      "category": "ascend/zh/clean",
+      "character_edits": 1,
+      "characters": 18,
+      "token_edits": 1,
+      "tokens": 18,
+      "base_id": "ascend-test-01277"
+    },
+    {
+      "id": "ascend-test-01278",
+      "category": "ascend/mixed/clean",
+      "character_edits": 0,
+      "characters": 40,
+      "token_edits": 0,
+      "tokens": 25,
+      "base_id": "ascend-test-01278"
+    },
+    {
+      "id": "ascend-test-01288",
+      "category": "ascend/zh/clean",
+      "character_edits": 1,
+      "characters": 18,
+      "token_edits": 1,
+      "tokens": 18,
+      "base_id": "ascend-test-01288"
+    },
+    {
+      "id": "ascend-test-01290",
+      "category": "ascend/mixed/clean",
+      "character_edits": 8,
+      "characters": 25,
+      "token_edits": 3,
+      "tokens": 11,
+      "base_id": "ascend-test-01290"
+    },
+    {
+      "id": "ascend-test-01293",
+      "category": "ascend/zh/clean",
+      "character_edits": 5,
+      "characters": 17,
+      "token_edits": 5,
+      "tokens": 17,
+      "base_id": "ascend-test-01293"
+    },
+    {
+      "id": "ascend-test-01299",
+      "category": "ascend/mixed/clean",
+      "character_edits": 2,
+      "characters": 18,
+      "token_edits": 2,
+      "tokens": 12,
+      "base_id": "ascend-test-01299"
+    },
+    {
+      "id": "ascend-test-01312",
+      "category": "ascend/mixed/clean",
+      "character_edits": 7,
+      "characters": 23,
+      "token_edits": 3,
+      "tokens": 19,
+      "base_id": "ascend-test-01312"
+    },
+    {
+      "id": "ascend-test-00077-white-10db",
+      "category": "ascend/en/white-10db",
+      "character_edits": 13,
+      "characters": 34,
+      "token_edits": 4,
+      "tokens": 7,
+      "base_id": "ascend-test-00077"
+    },
+    {
+      "id": "ascend-test-00116-white-10db",
+      "category": "ascend/en/white-10db",
+      "character_edits": 2,
+      "characters": 37,
+      "token_edits": 3,
+      "tokens": 9,
+      "base_id": "ascend-test-00116"
+    },
+    {
+      "id": "ascend-test-00119-white-10db",
+      "category": "ascend/en/white-10db",
+      "character_edits": 15,
+      "characters": 54,
+      "token_edits": 6,
+      "tokens": 18,
+      "base_id": "ascend-test-00119"
+    },
+    {
+      "id": "ascend-test-00199-white-10db",
+      "category": "ascend/mixed/white-10db",
+      "character_edits": 22,
+      "characters": 19,
+      "token_edits": 7,
+      "tokens": 7,
+      "base_id": "ascend-test-00199"
+    },
+    {
+      "id": "ascend-test-00245-white-10db",
+      "category": "ascend/zh/white-10db",
+      "character_edits": 1,
+      "characters": 11,
+      "token_edits": 1,
+      "tokens": 11,
+      "base_id": "ascend-test-00245"
+    },
+    {
+      "id": "ascend-test-00249-white-10db",
+      "category": "ascend/mixed/white-10db",
+      "character_edits": 2,
+      "characters": 22,
+      "token_edits": 2,
+      "tokens": 14,
+      "base_id": "ascend-test-00249"
+    },
+    {
+      "id": "ascend-test-00268-white-10db",
+      "category": "ascend/zh/white-10db",
+      "character_edits": 1,
+      "characters": 8,
+      "token_edits": 1,
+      "tokens": 8,
+      "base_id": "ascend-test-00268"
+    },
+    {
+      "id": "ascend-test-00344-white-10db",
+      "category": "ascend/zh/white-10db",
+      "character_edits": 2,
+      "characters": 7,
+      "token_edits": 2,
+      "tokens": 7,
+      "base_id": "ascend-test-00344"
+    },
+    {
+      "id": "ascend-test-00346-white-10db",
+      "category": "ascend/mixed/white-10db",
+      "character_edits": 8,
+      "characters": 20,
+      "token_edits": 2,
+      "tokens": 14,
+      "base_id": "ascend-test-00346"
+    },
+    {
+      "id": "ascend-test-00404-white-10db",
+      "category": "ascend/mixed/white-10db",
+      "character_edits": 3,
+      "characters": 23,
+      "token_edits": 3,
+      "tokens": 14,
+      "base_id": "ascend-test-00404"
+    },
+    {
+      "id": "ascend-test-00420-white-10db",
+      "category": "ascend/zh/white-10db",
+      "character_edits": 13,
+      "characters": 38,
+      "token_edits": 13,
+      "tokens": 38,
+      "base_id": "ascend-test-00420"
+    },
+    {
+      "id": "ascend-test-00422-white-10db",
+      "category": "ascend/zh/white-10db",
+      "character_edits": 5,
+      "characters": 10,
+      "token_edits": 5,
+      "tokens": 10,
+      "base_id": "ascend-test-00422"
+    },
+    {
+      "id": "ascend-test-00430-white-10db",
+      "category": "ascend/mixed/white-10db",
+      "character_edits": 0,
+      "characters": 16,
+      "token_edits": 0,
+      "tokens": 12,
+      "base_id": "ascend-test-00430"
+    },
+    {
+      "id": "ascend-test-00520-white-10db",
+      "category": "ascend/en/white-10db",
+      "character_edits": 4,
+      "characters": 19,
+      "token_edits": 2,
+      "tokens": 4,
+      "base_id": "ascend-test-00520"
+    },
+    {
+      "id": "ascend-test-00587-white-10db",
+      "category": "ascend/en/white-10db",
+      "character_edits": 3,
+      "characters": 18,
+      "token_edits": 2,
+      "tokens": 9,
+      "base_id": "ascend-test-00587"
+    },
+    {
+      "id": "ascend-test-00662-white-10db",
+      "category": "ascend/zh/white-10db",
+      "character_edits": 2,
+      "characters": 7,
+      "token_edits": 2,
+      "tokens": 7,
+      "base_id": "ascend-test-00662"
+    },
+    {
+      "id": "ascend-test-00708-white-10db",
+      "category": "ascend/en/white-10db",
+      "character_edits": 17,
+      "characters": 36,
+      "token_edits": 4,
+      "tokens": 6,
+      "base_id": "ascend-test-00708"
+    },
+    {
+      "id": "ascend-test-00778-white-10db",
+      "category": "ascend/en/white-10db",
+      "character_edits": 7,
+      "characters": 56,
+      "token_edits": 4,
+      "tokens": 14,
+      "base_id": "ascend-test-00778"
+    },
+    {
+      "id": "ascend-test-00950-white-10db",
+      "category": "ascend/zh/white-10db",
+      "character_edits": 3,
+      "characters": 37,
+      "token_edits": 3,
+      "tokens": 37,
+      "base_id": "ascend-test-00950"
+    },
+    {
+      "id": "ascend-test-01010-white-10db",
+      "category": "ascend/zh/white-10db",
+      "character_edits": 3,
+      "characters": 13,
+      "token_edits": 3,
+      "tokens": 13,
+      "base_id": "ascend-test-01010"
+    },
+    {
+      "id": "ascend-test-01018-white-10db",
+      "category": "ascend/en/white-10db",
+      "character_edits": 12,
+      "characters": 57,
+      "token_edits": 3,
+      "tokens": 13,
+      "base_id": "ascend-test-01018"
+    },
+    {
+      "id": "ascend-test-01065-white-10db",
+      "category": "ascend/en/white-10db",
+      "character_edits": 8,
+      "characters": 27,
+      "token_edits": 3,
+      "tokens": 6,
+      "base_id": "ascend-test-01065"
+    },
+    {
+      "id": "ascend-test-01086-white-10db",
+      "category": "ascend/en/white-10db",
+      "character_edits": 3,
+      "characters": 30,
+      "token_edits": 1,
+      "tokens": 7,
+      "base_id": "ascend-test-01086"
+    },
+    {
+      "id": "ascend-test-01152-white-10db",
+      "category": "ascend/zh/white-10db",
+      "character_edits": 0,
+      "characters": 9,
+      "token_edits": 0,
+      "tokens": 9,
+      "base_id": "ascend-test-01152"
+    },
+    {
+      "id": "ascend-test-01210-white-10db",
+      "category": "ascend/mixed/white-10db",
+      "character_edits": 1,
+      "characters": 16,
+      "token_edits": 1,
+      "tokens": 11,
+      "base_id": "ascend-test-01210"
+    },
+    {
+      "id": "ascend-test-01219-white-10db",
+      "category": "ascend/zh/white-10db",
+      "character_edits": 0,
+      "characters": 8,
+      "token_edits": 0,
+      "tokens": 8,
+      "base_id": "ascend-test-01219"
+    },
+    {
+      "id": "ascend-test-01221-white-10db",
+      "category": "ascend/en/white-10db",
+      "character_edits": 0,
+      "characters": 23,
+      "token_edits": 0,
+      "tokens": 5,
+      "base_id": "ascend-test-01221"
+    },
+    {
+      "id": "ascend-test-01229-white-10db",
+      "category": "ascend/en/white-10db",
+      "character_edits": 2,
+      "characters": 42,
+      "token_edits": 1,
+      "tokens": 12,
+      "base_id": "ascend-test-01229"
+    },
+    {
+      "id": "ascend-test-01278-white-10db",
+      "category": "ascend/mixed/white-10db",
+      "character_edits": 1,
+      "characters": 40,
+      "token_edits": 1,
+      "tokens": 25,
+      "base_id": "ascend-test-01278"
+    },
+    {
+      "id": "ascend-test-01288-white-10db",
+      "category": "ascend/zh/white-10db",
+      "character_edits": 2,
+      "characters": 18,
+      "token_edits": 2,
+      "tokens": 18,
+      "base_id": "ascend-test-01288"
+    }
+  ]
+}

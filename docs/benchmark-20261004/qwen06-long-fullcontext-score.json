@@ -1,0 +1,90 @@
+{
+  "normalization": "NFKC + casefold; CER keeps alphanumeric; MER uses Han chars + English words; no number verbalization equivalence",
+  "timing": "compute_ms/compute_rtf and asr percentiles describe ASR only; rewrite times are separate; unknown timing is null",
+  "summary": {
+    "regression/cmn_hans_cn/long": {
+      "cases": 2,
+      "characters": 325,
+      "character_edits": 5,
+      "tokens": 322,
+      "token_edits": 5,
+      "errors": 0,
+      "rewrite_errors": 0,
+      "auto_commit_blocked": 0,
+      "false_insertions": 0,
+      "audio_seconds": 139.6,
+      "compute_ms": 21501.716093000003,
+      "timed_cases": 2,
+      "exact_cases": 0,
+      "cer": 0.015384615384615385,
+      "mer": 0.015527950310559006,
+      "compute_rtf": 0.15402375424785103,
+      "asr_p50_ms": 10750.858046500001,
+      "asr_p95_ms": 10770.43705735,
+      "rewrite_calls": 0,
+      "rewrite_p50_ms": null,
+      "rewrite_p95_ms": null
+    },
+    "regression/en_us/long": {
+      "cases": 2,
+      "characters": 898,
+      "character_edits": 70,
+      "tokens": 176,
+      "token_edits": 20,
+      "errors": 0,
+      "rewrite_errors": 0,
+      "auto_commit_blocked": 0,
+      "false_insertions": 0,
+      "audio_seconds": 85.0,
+      "compute_ms": 13858.843591,
+      "timed_cases": 2,
+      "exact_cases": 0,
+      "cer": 0.0779510022271715,
+      "mer": 0.11363636363636363,
+      "compute_rtf": 0.16304521871764707,
+      "asr_p50_ms": 6929.4217955,
+      "asr_p95_ms": 7248.11417825,
+      "rewrite_calls": 0,
+      "rewrite_p50_ms": null,
+      "rewrite_p95_ms": null
+    }
+  },
+  "per_case": [
+    {
+      "id": "long-cmn_hans_cn-dev",
+      "category": "regression/cmn_hans_cn/long",
+      "character_edits": 4,
+      "characters": 173,
+      "token_edits": 4,
+      "tokens": 173,
+      "base_id": "fleurs/long-cmn_hans_cn-dev"
+    },
+    {
+      "id": "long-en_us-dev",
+      "category": "regression/en_us/long",
+      "character_edits": 49,
+      "characters": 453,
+      "token_edits": 16,
+      "tokens": 87,
+      "base_id": "fleurs/long-en_us-dev"
+    },
+    {
+      "id": "long-cmn_hans_cn-holdout",
+      "category": "regression/cmn_hans_cn/long",
+      "character_edits": 1,
+      "characters": 152,
+      "token_edits": 1,
+      "tokens": 149,
+      "base_id": "fleurs/long-cmn_hans_cn-holdout"
+    },
+    {
+      "id": "long-en_us-holdout",
+      "category": "regression/en_us/long",
+      "character_edits": 21,
+      "characters": 445,
+      "token_edits": 4,
+      "tokens": 89,
+      "base_id": "fleurs/long-en_us-holdout"
+    }
+  ]
+}

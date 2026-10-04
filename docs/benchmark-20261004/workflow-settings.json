@@ -1,0 +1,13 @@
+{
+  "base_url": "https://api.deepseek.com/v1",
+  "model": "deepseek-chat",
+  "timeout_seconds": 30,
+  "connect_timeout_seconds": 5,
+  "temperature": 0.1,
+  "mode": "context",
+  "prompt_correct": "纠正转录错误并补充标点。保留原意、否定、数字、专有名词，不添加事实。只返回修改后的文字。",
+  "rewrite_source_sha256": "7bbe4c400ff6086552cc16a3f619c213cae3dbf266759315ece82e18f3574437",
+  "context_max_chars": 1024,
+  "concurrency": 4,
+  "retries": 0
+}

@@ -1,0 +1,27 @@
+{
+  "parts": [
+    {
+      "part": 0,
+      "returncode": 1
+    },
+    {
+      "part": 1,
+      "returncode": 1
+    },
+    {
+      "part": 2,
+      "returncode": 1
+    },
+    {
+      "part": 3,
+      "returncode": 1
+    }
+  ],
+  "wall_seconds": 258.3730336370063,
+  "concurrent_requests": 4,
+  "count": 1315,
+  "model": "deepseek-chat",
+  "base_url": "https://api.deepseek.com/v1",
+  "mode": "context",
+  "failure_retries": 0
+}
