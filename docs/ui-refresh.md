@@ -57,3 +57,11 @@
 | 浅色背景 | 深色背景与提示条 |
 | --- | --- |
 | ![面板边角](ui-corners/preview.png) | ![提示条边角](ui-corners/warning-dark.png) |
+
+## 收紧过大的行距
+
+用户反馈两行距离过远后检查了实际渲染。此前正文为 17 px 字号、1.7 倍行高，本机 Noto DemiLight 原始行框为 25 px；放大后约 42.5 px，实际截图相邻行间距约 42 px。[Pango 数字行高机制](https://docs.gtk.org/Pango/func.attr_line_height_new.html)放大的是逻辑行框，而不是只看字形笔画高度。
+
+正文改为固定 26 px 行高；前文和警告分别固定为 18 px、20 px。实测文字行间距约 26 px，字重、颜色和圆角保留。9 项真实录音、按钮、焦点及上屏检查通过，无 GTK 样式警告，更新已安装，模型与用户配置未改。原图文字像素范围和字体测量结果见 [行距验收](ui-line-height/results.json)。
+
+![收紧后的行距](ui-line-height/preview.png)

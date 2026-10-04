@@ -1,0 +1,81 @@
+{
+  "scope": "Real public FLEURS speech and actual GTK widgets in isolated Hyprland",
+  "before": {
+    "body_font_size_px": 17,
+    "natural_font_line_px": 25,
+    "line_height_factor": 1.7,
+    "calculated_line_height_px": 42.5,
+    "observed_text_ink_rows": [
+      [
+        114,
+        129
+      ],
+      [
+        156,
+        171
+      ],
+      [
+        197,
+        213
+      ]
+    ]
+  },
+  "after": {
+    "body_line_height_px": 26,
+    "context_line_height_px": 18,
+    "warning_line_height_px": 20,
+    "observed_text_ink_rows": [
+      [
+        107,
+        122
+      ],
+      [
+        132,
+        148
+      ],
+      [
+        158,
+        173
+      ]
+    ],
+    "body_weight": 350
+  },
+  "desktop": {
+    "checks": [
+      "visible GTK stop button ends recording",
+      "real PipeWire speech produces a final transcript",
+      "preview does not steal editor focus",
+      "visible GTK insert button activates",
+      "UTF-8 transcript is pasted into real GTK Wayland editor",
+      "continuous recording retains 因为远离大陆",
+      "continuous recording retains 哺乳动物",
+      "continuous recording retains 亚马逊河",
+      "continuous recording retains 河段"
+    ],
+    "state": {
+      "backend": "x-asr",
+      "command_mode": false,
+      "context": "",
+      "context_note": "",
+      "error": "",
+      "phase": "ready",
+      "raw": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为科隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+      "scene": "raw",
+      "seconds": 17.845753512,
+      "text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为科隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。"
+    },
+    "editor_text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为科隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。"
+  },
+  "gtk_warnings": 0,
+  "installation": {
+    "binary_sha256": "f94feff17f221d493a67bd754acc5df2e89c8b6f0057bfc0f77dd271c90ecdb1",
+    "build_matches_install": true,
+    "running_binary_matches": true,
+    "config_unchanged": true,
+    "phase": "idle",
+    "backend": "x-asr",
+    "error_present": false,
+    "backup": "~/.config/hyprvoice/install-backup/ui-line-height-20261004-210349"
+  },
+  "mechanism_reference": "https://docs.gtk.org/Pango/func.attr_line_height_new.html"
+}

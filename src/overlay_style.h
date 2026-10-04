@@ -18,15 +18,15 @@ window.hyprvoice {
 .voice-status { font-size: 11px; color: #73747b; }
 .voice-time { font-family: monospace; font-size: 11px; color: #73747b; }
 .voice-spinner { color: #73747b; min-width: 14px; min-height: 14px; }
-.voice-transcript { font-size: 17px; font-weight: 350; line-height: 1.7; color: #45464c; }
+.voice-transcript { font-size: 17px; font-weight: 350; line-height: 26px; color: #45464c; }
 .voice-transcript.placeholder { color: #a0a1a7; }
 .voice-context {
-  font-size: 11px; line-height: 1.5; color: #73747b;
+  font-size: 11px; line-height: 18px; color: #73747b;
   border-left: 2px solid #dcdde1; border-radius: 2px; padding: 0 0 0 10px;
 }
 .voice-hint { font-size: 11px; color: #73747b; }
 .voice-warning {
-  font-size: 12px; line-height: 1.5; color: #805b35;
+  font-size: 12px; line-height: 20px; color: #805b35;
   background: #f2ede6; border: 1px solid #eae3d9; border-radius: 12px; padding: 9px 12px;
 }
 .voice-panel button {
