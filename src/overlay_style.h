@@ -14,11 +14,11 @@ window.hyprvoice {
 }
 .voice-panel label { font-family: "Noto Sans CJK SC", sans-serif; }
 .voice-icon { color: #303136; padding: 5px; }
-.voice-heading { font-size: 14px; font-weight: 600; color: #242529; }
+.voice-heading { font-size: 14px; font-weight: 500; color: #45464c; }
 .voice-status { font-size: 11px; color: #73747b; }
 .voice-time { font-family: monospace; font-size: 11px; color: #73747b; }
 .voice-spinner { color: #73747b; min-width: 14px; min-height: 14px; }
-.voice-transcript { font-size: 17px; line-height: 1.65; color: #25262b; }
+.voice-transcript { font-size: 17px; font-weight: 350; line-height: 1.7; color: #45464c; }
 .voice-transcript.placeholder { color: #a0a1a7; }
 .voice-context {
   font-size: 11px; line-height: 1.5; color: #73747b;
@@ -38,7 +38,7 @@ window.hyprvoice {
 .voice-panel button:hover { background: #ececf0; color: #33343a; }
 .voice-panel button:active { background: #e3e3e8; }
 .voice-panel button.primary {
-  color: #fafafa; background: #292a2e; font-weight: 600;
+  color: #fafafa; background: #36373d; font-weight: 500;
   padding: 8px 16px;
 }
 .voice-panel button.primary:hover { background: #414248; }
