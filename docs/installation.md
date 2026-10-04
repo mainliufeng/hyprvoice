@@ -46,3 +46,5 @@ LLM 密钥独立复制到 `~/.config/hyprvoice/llm.env`，文件权限 600，运
 2026-10-04 界面再次精修并安装，最新 SHA-256 为 `dee84c58b8b6af4a73680b252d2df1789c75e5d73feaa066ca35e3128c1da60c`，构建、安装路径和正在运行的二进制一致；服务待机、空错误，仍为 X-ASR，用户配置未改动。备份位于 `~/.config/hyprvoice/install-backup/ui-refresh-20261004-183718/`。新版截图和实际按钮、长文本滚动验收见 [界面精修记录](ui-refresh.md)。
 
 同日字体进一步柔化，当前已安装并运行的 SHA-256 为 `2fdc720841e1ac2c111fa826406563a92a3928948ccad35e52faf9b4e89bf9f9`，构建、安装及运行二进制一致，仍为 X-ASR，服务待机且无错误。用户配置未改动；备份位于 `~/.config/hyprvoice/install-backup/ui-soft-font-20261004-185220/`。截图见 [字体柔化](ui-refresh.md#字体进一步柔化)。
+
+同日组件边角精修已安装，当前 SHA-256 为 `339418955168656d7e1e32148e2e5748809fcdea95cdd63433935f4a4390ebc4`；构建、安装、运行文件一致，服务待机且无错误，模型与配置未改。备份位于 `~/.config/hyprvoice/install-backup/ui-corners-20261004-190418/`。截图和验收见 [组件边角精修](ui-refresh.md#组件边角精修)。

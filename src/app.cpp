@@ -633,10 +633,10 @@ void App::run() {
       GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
   g_object_unref(css);
   auto outer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-  gtk_widget_set_margin_top(outer, 18);
-  gtk_widget_set_margin_bottom(outer, 18);
-  gtk_widget_set_margin_start(outer, 18);
-  gtk_widget_set_margin_end(outer, 18);
+  gtk_widget_set_margin_top(outer, 24);
+  gtk_widget_set_margin_bottom(outer, 36);
+  gtk_widget_set_margin_start(outer, 28);
+  gtk_widget_set_margin_end(outer, 28);
   gtk_window_set_child(GTK_WINDOW(window_), outer);
   auto panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
   gtk_widget_add_css_class(panel, "voice-panel");

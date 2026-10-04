@@ -1,0 +1,82 @@
+{
+  "scope": "Real public human speech, actual GTK controls in isolated Hyprland; visual review on light and dark GTK backgrounds",
+  "corners": {
+    "panel_radius_px": 24,
+    "button_and_warning_radius_px": 12,
+    "panel_border": "1px #e5e5eb",
+    "close_and_scrollbar": "fully rounded",
+    "outer_margin_px": {
+      "top": 24,
+      "bottom": 36,
+      "left": 28,
+      "right": 28
+    }
+  },
+  "light": {
+    "checks": [
+      "visible GTK stop button ends recording",
+      "real PipeWire speech produces a final transcript",
+      "preview does not steal editor focus",
+      "visible GTK insert button activates",
+      "UTF-8 transcript is pasted into real GTK Wayland editor",
+      "continuous recording retains 因为远离大陆",
+      "continuous recording retains 哺乳动物",
+      "continuous recording retains 亚马逊河",
+      "continuous recording retains 河段"
+    ],
+    "state": {
+      "backend": "x-asr",
+      "command_mode": false,
+      "context": "",
+      "context_note": "",
+      "error": "",
+      "phase": "ready",
+      "raw": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+      "scene": "raw",
+      "seconds": 17.785128978,
+      "text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。"
+    },
+    "editor_text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。"
+  },
+  "dark_warning": {
+    "checks": [
+      "visible GTK stop button ends recording",
+      "real PipeWire speech produces a final transcript",
+      "preview does not steal editor focus",
+      "negative VAD retains visible speech and confirmation warning",
+      "uncertain speech never auto-pastes",
+      "visible GTK insert button activates",
+      "UTF-8 transcript is pasted into real GTK Wayland editor",
+      "continuous recording retains 因为远离大陆",
+      "continuous recording retains 哺乳动物",
+      "continuous recording retains 亚马逊河",
+      "continuous recording retains 河段"
+    ],
+    "state": {
+      "backend": "x-asr",
+      "command_mode": false,
+      "context": "",
+      "context_note": "",
+      "error": "语音检测未确认讲话，已保留识别文字；请确认后插入或取消",
+      "phase": "ready",
+      "raw": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+      "scene": "raw",
+      "seconds": 17.726343717,
+      "text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。"
+    },
+    "editor_text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。"
+  },
+  "gtk_warnings": 0,
+  "installation": {
+    "binary_sha256": "339418955168656d7e1e32148e2e5748809fcdea95cdd63433935f4a4390ebc4",
+    "build_matches_install": true,
+    "running_binary_matches": true,
+    "config_unchanged": true,
+    "phase": "idle",
+    "backend": "x-asr",
+    "error_present": false,
+    "backup": "~/.config/hyprvoice/install-backup/ui-corners-20261004-190418"
+  },
+  "warning_test_note": "Constant-zero VAD is an explicitly isolated test double. The recognizer and UI are real. No test classifier installed.",
+  "checks": 20
+}
