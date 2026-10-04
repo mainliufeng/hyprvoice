@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-04",
+  "unit_test_suites": [
+    "core",
+    "benchmark_metrics",
+    "fun_worker_contract",
+    "rewrite_http_contract"
+  ],
+  "unit_suites_passed": 4,
+  "worker_contract_cases": 4,
+  "native_replay_cases": 277,
+  "native_replay_errors": 0,
+  "unchanged_texts_vs_pinned_benchmark": 277,
+  "desktop_checks": 32,
+  "context_checks": 10,
+  "pinyin_checks": 1,
+  "visual_review": [
+    "recording.png",
+    "preview.png",
+    "context preview.png"
+  ],
+  "isolated_environment": "real Hyprland 0.56.2, Sway headless parent, private patched Aquamarine 0.15.1 from prior acceptance, independent runtime/D-Bus/AT-SPI bus, real PipeWire null-sink replay",
+  "daily_backend": "x-asr",
+  "daily_config_unchanged": true
+}

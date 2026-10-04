@@ -12,7 +12,8 @@ int main(int argc, char **argv) {
           << "hyprvoice init | serve | doctor | transcribe WAV | replay "
              "MANIFEST\n"
           << "hyprvoice start | stop | toggle | press | release | command | "
-             "cancel | commit | raw | status | scene NAME | quit\n"
+             "cancel | commit | raw | status | scene NAME | backend fun|x-asr "
+             "| quit\n"
           << "HYPRVOICE_CONFIG overrides ~/.config/hyprvoice/config.json\n";
       return 0;
     }
@@ -44,33 +45,51 @@ int main(int argc, char **argv) {
     if (cmd == "doctor") {
       Config c(ConfigPath());
       Json report = {{"config", ConfigPath().string()}};
+      report["backend"] = c.data.at("asr").at("backend");
       bool ok = true;
-      for (auto key : {"streaming_model", "offline_model"}) {
-        auto directory = std::filesystem::path(c.path(key));
-        auto names =
-            std::string(key) == "streaming_model"
-                ? std::vector<std::string>{"encoder.int8.onnx", "decoder.onnx",
-                                           "joiner.int8.onnx", "tokens.txt",
-                                           "bpe.vocab"}
-                : std::vector<std::string>{"encoder-epoch-99-avg-1.int8.onnx",
-                                           "decoder-epoch-99-avg-1.onnx",
-                                           "joiner-epoch-99-avg-1.int8.onnx",
-                                           "tokens.txt", "bpe.vocab"};
+      if (report["backend"] == "fun") {
+        auto &fun = c.data.at("fun");
+        auto worker = ExpandPath(fun.at("worker"));
+        bool executable = access(worker.c_str(), X_OK) == 0;
+        report["fun_worker"] = {{"path", worker}, {"executable", executable}};
+        ok &= executable;
         Json missing = Json::array();
-        for (auto &name : names)
-          if (!std::filesystem::is_regular_file(directory / name))
+        auto dir = std::filesystem::path(ExpandPath(fun.at("model_dir")));
+        for (auto name : {"funasr-encoder-f16.gguf", "qwen3-0.6b-q8_0.gguf",
+                          "fsmn-vad.gguf"})
+          if (!std::filesystem::is_regular_file(dir / name))
             missing.push_back(name);
-        report[key] = {{"path", directory.string()},
-                       {"missing_files", missing}};
+        report["fun_models"] = {{"path", dir.string()},
+                                {"missing_files", missing}};
         ok &= missing.empty();
-      }
-      for (auto key : {"vad_model", "hotwords"}) {
-        auto path = c.path(key);
-        bool exists = std::string(key) == "hotwords" && path.empty()
-                          ? true
-                          : std::filesystem::is_regular_file(path);
-        report[key] = {{"path", path}, {"exists", exists}};
-        ok &= exists;
+      } else {
+        for (auto key : {"streaming_model", "offline_model"}) {
+          auto directory = std::filesystem::path(c.path(key));
+          auto names =
+              std::string(key) == "streaming_model"
+                  ? std::vector<std::string>{"encoder.int8.onnx",
+                                             "decoder.onnx", "joiner.int8.onnx",
+                                             "tokens.txt", "bpe.vocab"}
+                  : std::vector<std::string>{"encoder-epoch-99-avg-1.int8.onnx",
+                                             "decoder-epoch-99-avg-1.onnx",
+                                             "joiner-epoch-99-avg-1.int8.onnx",
+                                             "tokens.txt", "bpe.vocab"};
+          Json missing = Json::array();
+          for (auto &name : names)
+            if (!std::filesystem::is_regular_file(directory / name))
+              missing.push_back(name);
+          report[key] = {{"path", directory.string()},
+                         {"missing_files", missing}};
+          ok &= missing.empty();
+        }
+        for (auto key : {"vad_model", "hotwords"}) {
+          auto path = c.path(key);
+          bool exists = std::string(key) == "hotwords" && path.empty()
+                            ? true
+                            : std::filesystem::is_regular_file(path);
+          report[key] = {{"path", path}, {"exists", exists}};
+          ok &= exists;
+        }
       }
       for (auto program : {"hyprctl", "wl-copy", "wl-paste"}) {
         auto found = g_find_program_in_path(program);

@@ -1,5 +1,6 @@
 #include "config.h"
 #include <cstdlib>
+#include <fcntl.h>
 #include <fstream>
 #include <stdexcept>
 #include <unistd.h>
@@ -42,7 +43,13 @@ std::string ReadFile(const std::filesystem::path &path, size_t limit) {
   return result;
 }
 Json DefaultConfig() {
-  return {{"streaming_model",
+  return {{"asr", {{"backend", "x-asr"}}},
+          {"fun",
+           {{"worker", "~/.local/libexec/hyprvoice/fun-worker"},
+            {"model_dir", "~/.local/share/hyprvoice/models/fun-asr-nano"},
+            {"threads", 8},
+            {"timeout_seconds", 120}}},
+          {"streaming_model",
            "~/.local/share/hyprvoice/models/"
            "x-asr-960ms-streaming-zipformer-transducer-zh-en-punct-int8"},
           {"offline_model", "~/.local/share/hyprvoice/models/"
@@ -78,6 +85,15 @@ Config::Config(const std::filesystem::path &p) : data(DefaultConfig()) {
     throw std::runtime_error("Config missing: " + p.string() +
                              "; run hyprvoice init");
   data.merge_patch(Json::parse(ReadFile(p)));
+  auto backend = data.at("asr").value("backend", std::string());
+  if (backend != "x-asr" && backend != "fun")
+    throw std::runtime_error("asr.backend must be x-asr or fun");
+  int threads = data.at("fun").value("threads", 8);
+  if (threads < 1 || threads > 64)
+    throw std::runtime_error("fun.threads must be 1..64");
+  int timeout = data.at("fun").value("timeout_seconds", 120);
+  if (timeout < 5 || timeout > 600)
+    throw std::runtime_error("fun.timeout_seconds must be 5..600");
   if (data.value("gain", 1.0) <= 0 || data.value("gain", 1.0) > 8)
     throw std::runtime_error("gain must be in (0,8]");
   int limit = data.value("max_recording_seconds", 180);
@@ -92,5 +108,33 @@ Config::Config(const std::filesystem::path &p) : data(DefaultConfig()) {
 }
 std::string Config::path(const char *key) const {
   return ExpandPath(data.at(key).get<std::string>());
+}
+void SaveBackend(const std::string &backend) {
+  auto path = ConfigPath();
+  auto data = Json::parse(ReadFile(path));
+  data["asr"]["backend"] = backend;
+  auto content = data.dump(2) + '\n';
+  auto temporary = path.string() + ".XXXXXX";
+  int fd = mkstemp(temporary.data());
+  if (fd < 0)
+    throw std::runtime_error("Cannot save recognition backend");
+  try {
+    size_t pos = 0;
+    while (pos < content.size()) {
+      auto n = write(fd, content.data() + pos, content.size() - pos);
+      if (n < 0 && errno == EINTR)
+        continue;
+      if (n <= 0)
+        throw std::runtime_error("Cannot save recognition backend");
+      pos += n;
+    }
+    if (fsync(fd) < 0 || rename(temporary.c_str(), path.c_str()) < 0)
+      throw std::runtime_error("Cannot save recognition backend");
+    close(fd);
+  } catch (...) {
+    close(fd);
+    unlink(temporary.c_str());
+    throw;
+  }
 }
 } // namespace hv

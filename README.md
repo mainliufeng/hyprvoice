@@ -105,3 +105,11 @@ hyprvoice replay /绝对路径/manifest.jsonl > results.jsonl
 具体实际结果和未验证范围见 [验收记录](docs/verification.md)。
 
 本机与 Qwen3-ASR 0.6B/1.7B、Fun-ASR-Nano 的真实对比，以及 ASR＋DeepSeek 工作流的分开评分见 [2026-10-04 笔记本测评](docs/benchmark-20261004.md)。采样、前文条件与复现方式见 [benchmark 协议](docs/benchmark-protocol.md)。
+
+## 可选 Fun-ASR-Nano 后端
+
+`./scripts/install.sh --with-fun` 额外编译 CPU worker 并安装经过 SHA256 验证的模型。普通安装不下载 Fun；首次 Fun 安装约需 1.3 GB 模型空间。默认仍为 X-ASR。
+
+服务运行时执行 `hyprvoice backend fun`，等 `hyprvoice status` 显示 `phase: idle`、`backend: fun` 后即可使用原来的 F8/F9。切回执行 `hyprvoice backend x-asr`。模型加载成功后保存选择，下次启动仍使用所选后端；失败保留之前的后端。录音或存在待确认结果时拒绝切换。
+
+Fun 使用独立 FSMN VAD，结束录音后识别完整语音段；录音时显示时长和音量，**不提供逐字预览**。最终预览、输入框前文、DeepSeek、取消和上屏继续走同一链路。后端失败时显示错误并保留输入框内容，不自动换模型或插入文字。具体安装、参数和真实验收见 [Fun 后端说明](docs/fun-backend.md)。

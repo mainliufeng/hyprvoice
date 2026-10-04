@@ -27,5 +27,14 @@
     "com.mitchellh.ghostty",
     "foot"
   ],
-  "vad_model": "~/.local/share/hyprvoice/silero_vad.onnx"
+  "vad_model": "~/.local/share/hyprvoice/silero_vad.onnx",
+  "asr": {
+    "backend": "x-asr"
+  },
+  "fun": {
+    "worker": "~/.local/libexec/hyprvoice/fun-worker",
+    "model_dir": "~/.local/share/hyprvoice/models/fun-asr-nano",
+    "threads": 8,
+    "timeout_seconds": 120
+  }
 }

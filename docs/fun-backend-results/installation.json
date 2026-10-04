@@ -1,0 +1,7 @@
+{
+  "daily_phase": "idle",
+  "daily_backend": "x-asr",
+  "config_unchanged": true,
+  "installed_binary_sha256": "d4459091b352fbb1d3946a198143d81ed1af89cdd7b9cc54dea3c089b8bcf792",
+  "installed_worker_sha256": "33686df2b530833ebfcb5ea49eeae8f6cc09c79412d759232a35a0856799f5a9"
+}

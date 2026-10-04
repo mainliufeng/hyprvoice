@@ -8,6 +8,7 @@ std::string ExpandPath(std::string path);
 std::filesystem::path ConfigPath();
 std::filesystem::path RuntimePath();
 Json DefaultConfig();
+void SaveBackend(const std::string &backend);
 struct Config {
   Json data;
   explicit Config(const std::filesystem::path &path);

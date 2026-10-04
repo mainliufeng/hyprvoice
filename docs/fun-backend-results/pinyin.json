@@ -1,0 +1,5 @@
+{
+  "checks": [
+    "Fcitx Pinyin commits Chinese while Hyprvoice is running"
+  ]
+}

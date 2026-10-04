@@ -68,6 +68,7 @@ Json SendCommand(const std::string &command, const std::string &arg) {
 App::App(Config c) : config_(std::move(c)), desktop_(config_) {
   scene_ = config_.data.value("scene", std::string("raw"));
   state_ = {{"phase", "loading"},
+            {"backend", config_.data.at("asr").at("backend")},
             {"scene", scene_},
             {"text", "正在加载本地语音模型…"},
             {"raw", ""},
@@ -197,10 +198,13 @@ void App::start(bool cmd) {
     try {
       // Capture before the bounded accessibility query so a slow application
       // cannot discard the beginning of a held-key utterance.
-      asr_->begin();
       audio_.start(config_.data.value("audio_source", std::string()));
       auto start = std::chrono::steady_clock::now();
-      update({{"phase", "recording"}, {"text", "请开始说话…"}});
+      asr_->begin(&cancel_);
+      update({{"phase", "recording"},
+              {"text", asr_->streaming()
+                           ? "请开始说话…"
+                           : "请开始说话，Fun 将在录音结束后识别…"}});
       std::string history;
       bool protected_field = false;
       if (contextual) {
@@ -258,8 +262,10 @@ void App::start(bool cmd) {
         asr_->cancel();
         update({{"phase", "idle"}, {"text", ""}, {"raw", ""}, {"error", ""}});
       } else {
-        update({{"phase", "finalizing"}, {"text", "正在精修…"}});
-        auto result = asr_->finish();
+        update(
+            {{"phase", "finalizing"},
+             {"text", asr_->streaming() ? "正在精修…" : "Fun 正在识别录音…"}});
+        auto result = asr_->finish(&cancel_);
         if (cancel_)
           update({{"phase", "idle"}, {"text", ""}, {"raw", ""}});
         else if (result.text.empty())
@@ -359,7 +365,38 @@ Json App::command(const std::string &cmd, const std::string &arg) {
       commit(false);
     else if (cmd == "raw")
       commit(true);
-    else if (cmd == "scene") {
+    else if (cmd == "backend") {
+      if (arg != "fun" && arg != "x-asr")
+        throw std::runtime_error("Backend must be fun or x-asr");
+      auto phase = snapshot().at("phase").get<std::string>();
+      if (busy_ || phase == "ready")
+        throw std::runtime_error(
+            "请先结束、提交或取消当前录音，再切换识别后端");
+      if (config_.data.at("asr").at("backend") != arg) {
+        auto next = config_;
+        next.data["asr"]["backend"] = arg;
+        if (worker_.joinable())
+          worker_.join();
+        busy_ = true;
+        update({{"phase", "loading"},
+                {"text", "正在切换本地识别模型…"},
+                {"raw", ""},
+                {"error", ""},
+                {"seconds", 0}});
+        worker_ = std::thread([this, next, arg] {
+          try {
+            auto recognizer = std::make_unique<Asr>(next);
+            SaveBackend(arg); // Persist only after the real model is usable.
+            asr_ = std::move(recognizer);
+            config_.data["asr"]["backend"] = arg;
+            update({{"phase", "idle"}, {"backend", arg}, {"text", ""}});
+          } catch (const std::exception &e) {
+            update({{"phase", "error"}, {"error", e.what()}, {"text", ""}});
+          }
+          busy_ = false;
+        });
+      }
+    } else if (cmd == "scene") {
       if (arg != "raw" && !config_.data.at("prompts").contains(arg))
         throw std::runtime_error("Unknown scene");
       if (busy_)
@@ -437,7 +474,8 @@ void App::ui() {
       {"translate", "翻译"}};
   const auto scene = state.at("scene").get<std::string>();
   const auto mode =
-      command_mode ? std::string("修改选中文字") : scenes.at(scene);
+      (command_mode ? std::string("修改选中文字") : scenes.at(scene)) +
+      (state.at("backend") == "fun" ? " · Fun" : " · X-ASR");
   gtk_label_set_text(GTK_LABEL(title_), names.at(phase).c_str());
   gtk_label_set_text(GTK_LABEL(mode_), mode.c_str());
   int seconds = static_cast<int>(state.at("seconds").get<double>());

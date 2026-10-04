@@ -18,6 +18,7 @@ parser.add_argument("--fcitx", action="store_true")
 parser.add_argument("--visual-only", action="store_true")
 parser.add_argument("--context-only", action="store_true")
 parser.add_argument("--coexist-only", action="store_true")
+parser.add_argument("--backend-switch", action="store_true", help="Exercise real Fun selection, cancellation, persistence and X-ASR rollback")
 args = parser.parse_args()
 if args.coexist_only and not args.fcitx:
     parser.error("--coexist-only requires --fcitx")
@@ -36,6 +37,8 @@ if args.llm_env:
             key, value = line.split("=", 1)
             env[key.strip()] = " ".join(shlex.split(value))
 config = json.loads(args.config.read_text())
+if args.backend_switch:
+    config["asr"] = {"backend": "x-asr"}
 node = f"hyprvoice_qa_{os.getpid()}"
 config["audio_source"] = node + "_source"
 config["auto_commit"] = args.context_only and not args.llm_env
@@ -120,6 +123,9 @@ def editor(initial="", backend="wayland"):
 def record(wav, command="start"):
     call(command)
     phase("recording")
+    if args.backend_switch:
+        switch = subprocess.run([str(binary), "backend", "x-asr"], env=env, capture_output=True)
+        check("backend switch is rejected while recording", switch.returncode != 0)
     if command == "start" and not (out / "recording.png").exists():
         with subprocess.Popen(["paplay", f"--device={node}_sink", str(wav.resolve())], env=env) as player:
             time.sleep(4)
@@ -159,6 +165,12 @@ try:
         time.sleep(2)
     daemon = spawn(str(binary), "serve")
     phase("idle")
+    if args.backend_switch:
+        run(str(binary), "backend", "fun")
+        switched = phase("idle")
+        check("real Fun model loads through live backend command", switched["backend"] == "fun")
+        check("successful backend selection is persisted", json.loads(config_path.read_text())["asr"]["backend"] == "fun")
+        config["asr"] = {"backend": "fun"}
     prefix = "我们正在开发 Hyprvoice，使用 Hyprland。" if args.context_only else ""
     process, path = editor("拼音测试" if args.fcitx else prefix)
     if args.context_only:
@@ -178,6 +190,9 @@ try:
         (out / "result.json").write_text(json.dumps({"checks": checks}, ensure_ascii=False, indent=2))
         raise SystemExit(0)
     state = record(args.speech)
+    if args.backend_switch:
+        switch = subprocess.run([str(binary), "backend", "x-asr"], env=env, capture_output=True)
+        check("backend switch preserves pending preview", switch.returncode != 0 and call("status")["state"]["text"] == state["text"])
     check("real PipeWire speech produces a final transcript", state["phase"] == "ready" and bool(state["text"]))
     check("preview does not steal editor focus", json.loads(run("hyprctl", "activewindow", "-j"))["pid"] == process.pid)
     run("grim", str(out / "preview.png"))
@@ -194,6 +209,17 @@ try:
     wait(lambda: path.read_text() == prefix + state["text"])
     check("UTF-8 transcript is pasted into real GTK Wayland editor", True)
     original = path.read_text()
+    if args.backend_switch:
+        call("start")
+        phase("recording")
+        run("paplay", f"--device={node}_sink", str(args.speech.resolve()))
+        time.sleep(0.25)
+        call("stop")
+        phase("finalizing")
+        started = time.monotonic()
+        call("cancel")
+        phase("idle")
+        check("cancel during real Fun decoding stops promptly without paste", time.monotonic() - started < 2 and path.read_text() == original)
     if args.context_only:
         check("commit clears context from idle state", call("status")["state"]["context"] == "")
         call("start")
@@ -211,6 +237,9 @@ try:
             run("hyprctl", "dispatch", "focuswindow", f"pid:{process.pid}")
             auto = record(args.speech)
             wait(lambda: path.read_text() != original)
+            # The worker can expose ready just before the GTK timer pastes.
+            # Assert the observed post-paste state rather than that snapshot.
+            auto = phase("idle")
             check("contextual auto-commit appends only new dictation once",
                   auto["phase"] == "idle" and not auto["error"]
                   and path.read_text().startswith(original)
@@ -320,6 +349,12 @@ try:
     phase("idle")
     wait(lambda: path.read_text() != before_hold)
     check("hold-to-talk finishes and inserts on release", True)
+    if args.backend_switch:
+        run(str(binary), "backend", "x-asr")
+        check("switching back loads the original recognizer", phase("idle")["backend"] == "x-asr")
+        check("rollback selection persists without changing DeepSeek configuration",
+              json.loads(config_path.read_text())["asr"]["backend"] == "x-asr"
+              and json.loads(config_path.read_text())["llm"] == config["llm"])
     (out / "result.json").write_text(json.dumps({"checks": checks, "transcript": state["text"]}, ensure_ascii=False, indent=2))
 finally:
     if children:

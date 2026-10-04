@@ -1,4 +1,5 @@
 #include "asr.h"
+#include "fun_backend.h"
 #include "transcript_text.h"
 #include <algorithm>
 #include <cmath>
@@ -16,6 +17,10 @@ static std::string Asset(const std::string &dir, const std::string &name) {
   return p.string();
 }
 Asr::Asr(const Config &c) {
+  if (c.data.at("asr").at("backend") == "fun") {
+    fun_ = std::make_unique<FunBackend>(c);
+    return;
+  }
   std::string hotwords;
   if (!c.path("hotwords").empty()) {
     hotwords = ReadFile(c.path("hotwords"));
@@ -116,8 +121,13 @@ Asr::~Asr() {
   if (offline_)
     SherpaOnnxDestroyOfflineRecognizer(offline_);
 }
-void Asr::begin() {
+void Asr::begin(const std::atomic<bool> *cancelled) {
   cancel();
+  if (fun_) {
+    fun_->prepare(cancelled);
+    recording_ = true;
+    return;
+  }
   stream_ = SherpaOnnxCreateOnlineStream(online_);
   if (!stream_)
     throw std::runtime_error("Cannot create recognition stream");
@@ -130,9 +140,11 @@ std::string Asr::current() {
   return text;
 }
 std::string Asr::push(std::span<const float> samples) {
-  if (!stream_)
+  if (!stream_ && !recording_)
     throw std::runtime_error("No recognition session");
   samples_.insert(samples_.end(), samples.begin(), samples.end());
+  if (fun_)
+    return {};
   if (!samples.empty())
     SherpaOnnxOnlineStreamAcceptWaveform(stream_, 16000, samples.data(),
                                          samples.size());
@@ -153,8 +165,20 @@ std::string Asr::decodeOffline(const std::vector<float> &samples) {
   SherpaOnnxDestroyOfflineStream(s);
   return text;
 }
-Transcript Asr::finish() {
+Transcript Asr::finish(const std::atomic<bool> *cancelled) {
   Transcript result;
+  if (fun_) {
+    if (!recording_)
+      return result;
+    try {
+      result = fun_->decode(samples_, cancelled);
+    } catch (...) {
+      cancel();
+      throw;
+    }
+    cancel();
+    return result;
+  }
   if (!stream_)
     return result;
   auto intervals = speech_->locate(samples_);
@@ -194,6 +218,7 @@ void Asr::cancel() {
   if (stream_)
     SherpaOnnxDestroyOnlineStream(stream_);
   stream_ = nullptr;
+  recording_ = false;
   samples_.clear();
 }
 std::vector<float> ReadWave(const std::string &p) {
