@@ -8,7 +8,7 @@
 namespace hv {
 class FunBackend;
 struct Transcript {
-  std::string streaming, text;
+  std::string streaming, text, warning;
   bool speech = false;
 };
 class Asr {

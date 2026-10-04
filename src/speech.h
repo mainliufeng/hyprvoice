@@ -23,8 +23,8 @@ private:
   };
   std::unique_ptr<const SherpaOnnxVoiceActivityDetector, Destroy> handle_;
 };
-// Validate and expand detector positions. Recognition never removes interior
-// audio.
+// Validate and expand detector positions. Recognition keeps every sample,
+// including quiet speech outside the detector's first and last regions.
 std::vector<AudioRange> ExpandSpeech(const std::vector<AudioRange> &speech,
                                      size_t recording_size, size_t padding);
 std::vector<std::vector<float>>

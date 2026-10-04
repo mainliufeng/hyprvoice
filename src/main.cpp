@@ -123,6 +123,8 @@ int main(int argc, char **argv) {
         return Json{{"text", result.text},
                     {"streaming", result.streaming},
                     {"speech", result.speech},
+                    {"warning", result.warning},
+                    {"auto_commit_blocked", !result.warning.empty()},
                     {"finish_ms", (g_get_monotonic_time() - end) / 1000.0},
                     {"total_ms", (g_get_monotonic_time() - begin) / 1000.0}};
       };

@@ -40,8 +40,8 @@ int main() {
         hv::RecognitionJobs(std::span(pcm).first(50), {{2, 10}, {20, 40}}, 64);
     check(envelope.size() == 1 &&
               envelope[0] ==
-                  std::vector<float>(pcm.begin() + 2, pcm.begin() + 40),
-          "quiet interior speech was removed from a short recording");
+                  std::vector<float>(pcm.begin(), pcm.begin() + 50),
+          "quiet prefix or suffix was removed from a short recording");
     bool invalid = false;
     try {
       hv::ExpandSpeech({{0, 51}}, 50, 0);
@@ -68,6 +68,16 @@ int main() {
       invalid = true;
     }
     check(invalid, "invalid recognition UTF-8 accepted");
+    check(!hv::PreservesTranscriptLength(
+              "因为远离大陆哺乳动物无法长途跋涉而来使得巨龟成为科隆群岛主要的食草动物",
+              "长途跋涉而来使得巨龟成为科隆群岛主要的食草动物"),
+          "refinement silently dropped a recognized clause");
+    check(hv::PreservesTranscriptLength(
+              "因为远离大陆，哺乳动物无法长途跋涉而来。",
+              "因为远离大陆哺乳动物无法长途跋涉而来"),
+          "punctuation changes were treated as missing speech");
+    check(hv::PreservesTranscriptLength("一百二十三", "123"),
+          "short number normalization was rejected");
     auto r = hv::Run({"cat"}, "中文\n$(not-a-command) `literal`");
     check(r.code == 0 && r.out == "中文\n$(not-a-command) `literal`",
           "process corrupted literal text");

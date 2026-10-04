@@ -6,7 +6,9 @@ import os
 import shlex
 import subprocess
 import time
+import wave
 from pathlib import Path
+from score import distance, normalized
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("config", type=Path)
@@ -19,7 +21,20 @@ parser.add_argument("--visual-only", action="store_true")
 parser.add_argument("--context-only", action="store_true")
 parser.add_argument("--coexist-only", action="store_true")
 parser.add_argument("--backend-switch", action="store_true", help="Exercise real Fun selection, cancellation, persistence and X-ASR rollback")
+parser.add_argument("--binary", type=Path, help="Exercise a particular installed or baseline binary")
+parser.add_argument("--continuity-only", action="store_true", help="Verify quiet prefix and suffix survive real capture and paste")
+parser.add_argument("--hardware-source", help="Explicit real microphone; requires --hardware-sink and --continuity-only")
+parser.add_argument("--hardware-sink", help="Explicit speaker for an authorized acoustic playback test")
+parser.add_argument("--hardware-volume", type=int, default=65536, help="This playback stream's volume only; does not change device volume")
+parser.add_argument("--vad-reject-only", action="store_true", help="Use an explicitly generated test-only VAD rejection config")
 args = parser.parse_args()
+hardware = bool(args.hardware_source or args.hardware_sink)
+if hardware and not (args.hardware_source and args.hardware_sink and args.continuity_only):
+    parser.error("hardware playback requires both devices and --continuity-only")
+if not 1 <= args.hardware_volume <= 131072:
+    parser.error("hardware volume must be 1..131072")
+if args.vad_reject_only and not args.continuity_only:
+    parser.error("VAD rejection test requires --continuity-only")
 if args.coexist_only and not args.fcitx:
     parser.error("--coexist-only requires --fcitx")
 root = Path(__file__).resolve().parents[1]
@@ -40,8 +55,8 @@ config = json.loads(args.config.read_text())
 if args.backend_switch:
     config["asr"] = {"backend": "x-asr"}
 node = f"hyprvoice_qa_{os.getpid()}"
-config["audio_source"] = node + "_source"
-config["auto_commit"] = args.context_only and not args.llm_env
+config["audio_source"] = args.hardware_source if hardware else node + "_source"
+config["auto_commit"] = hardware or args.vad_reject_only or (args.context_only and not args.llm_env)
 config["context"] = {"enabled": args.context_only, "max_chars": 1024}
 config["terminal_classes"].append("hyprvoice-qa-terminal")
 if args.llm_env and env.get("DEEPSEEK_BASE_URL"):
@@ -57,7 +72,7 @@ env["XDG_DATA_HOME"] = str(out / "user-data")
 modules = []
 children = []
 checks = []
-binary = root / "build/hyprvoice"
+binary = args.binary.resolve() if args.binary else root / "build/hyprvoice"
 keyboard = None
 
 
@@ -121,25 +136,32 @@ def editor(initial="", backend="wayland"):
 
 
 def record(wav, command="start"):
-    call(command)
+    with wave.open(str(wav)) as audio:
+        playback_timeout = max(40, audio.getnframes() / audio.getframerate() + 15)
+    call("press" if hardware else command)
     phase("recording")
     if args.backend_switch:
         switch = subprocess.run([str(binary), "backend", "x-asr"], env=env, capture_output=True)
         check("backend switch is rejected while recording", switch.returncode != 0)
+    playback = ["paplay", "--device=" + (args.hardware_sink if hardware else node + "_sink")]
+    if hardware:
+        playback.append(f"--volume={args.hardware_volume}")
+    playback.append(str(wav.resolve()))
     if command == "start" and not (out / "recording.png").exists():
-        with subprocess.Popen(["paplay", f"--device={node}_sink", str(wav.resolve())], env=env) as player:
+        with subprocess.Popen(playback, env=env) as player:
             time.sleep(4)
             run("grim", str(out / "recording.png"))
-            if player.wait(timeout=40):
+            if player.wait(timeout=playback_timeout):
                 raise RuntimeError("Public speech playback failed")
     else:
-        run("paplay", f"--device={node}_sink", str(wav.resolve()))
+        subprocess.run(playback,
+                       env=env, check=True, timeout=playback_timeout)
     time.sleep(0.25)
-    call("stop")
+    call("release" if hardware else "stop")
     def completed():
         state = call("status")["state"]
         return state if state["phase"] in ("ready", "idle", "error") else None
-    return wait(completed, 40)
+    return wait(completed, 180 if args.continuity_only else 40)
 
 
 def check(name, condition):
@@ -155,8 +177,9 @@ try:
     children.append(keyboard)
     if keyboard.stdout.readline().strip() != "READY":
         raise RuntimeError("Test keyboard initialization failed")
-    modules.append(run("pactl", "load-module", "module-null-sink", f"sink_name={node}_sink", "rate=16000", "channels=1").strip())
-    modules.append(run("pactl", "load-module", "module-remap-source", f"master={node}_sink.monitor", f"source_name={node}_source").strip())
+    if not hardware:
+        modules.append(run("pactl", "load-module", "module-null-sink", f"sink_name={node}_sink", "rate=16000", "channels=1").strip())
+        modules.append(run("pactl", "load-module", "module-remap-source", f"master={node}_sink.monitor", f"source_name={node}_source").strip())
     if args.fcitx:
         profile = Path(env["XDG_CONFIG_HOME"]) / "fcitx5/profile"
         profile.parent.mkdir(parents=True, exist_ok=True)
@@ -190,6 +213,36 @@ try:
         (out / "result.json").write_text(json.dumps({"checks": checks}, ensure_ascii=False, indent=2))
         raise SystemExit(0)
     state = record(args.speech)
+    if hardware:
+        (out / "capture-state.json").write_text(json.dumps(
+            {"phase": state["phase"], "error": state["error"],
+             "raw_chars": len(state["raw"]), "stream_volume": args.hardware_volume},
+            ensure_ascii=False, indent=2))
+        check("real microphone retains recognized speech after key release", bool(state["raw"]))
+        check("real microphone speech passes VAD without confirmation", not state["error"])
+        wait(lambda: bool(path.read_text()), 20)
+        state = phase("idle")
+        check("held-key release automatically pastes into isolated editor", path.read_text() == prefix + state["raw"])
+        # Locate the beginning, interior and end of both utterances. Exact
+        # spelling accuracy is measured separately; a synonym/misrecognition
+        # such as 河道 for 河段 is not evidence of a lost recording section.
+        for marker in ("因为远离大陆", "哺乳动物", "亚马逊河", "宽度可达"):
+            check("hardware acoustic recording retains " + marker, marker in path.read_text())
+        cases = [json.loads(line) for line in
+                 (args.speech.parent / "manifest.jsonl").read_text().splitlines()]
+        reference = next(c["reference"] for c in cases
+                         if Path(c["audio"]).resolve() == args.speech.resolve())
+        expected, actual = normalized(reference), normalized(path.read_text())
+        run("grim", str(out / "committed.png"))
+        (out / "result.json").write_text(json.dumps(
+            {"checks": checks, "state": state, "editor_text": path.read_text(),
+             "hardware": True, "stream_volume": args.hardware_volume,
+             "accuracy": {"reference": reference,
+                          "characters": len(expected),
+                          "character_edits": distance(expected, actual),
+                          "cer": distance(expected, actual) / len(expected)}},
+            ensure_ascii=False, indent=2))
+        raise SystemExit(0)
     if args.backend_switch:
         switch = subprocess.run([str(binary), "backend", "x-asr"], env=env, capture_output=True)
         check("backend switch preserves pending preview", switch.returncode != 0 and call("status")["state"]["text"] == state["text"])
@@ -198,17 +251,33 @@ try:
     run("grim", str(out / "preview.png"))
     if args.context_only:
         check("production recording reads actual editor prefix", state["context"] == prefix)
-        check("speech beginning survives context lookup", state["raw"].startswith("报告"))
+        check("speech beginning survives context lookup",
+              "因为远离大陆" in state["raw"] if args.continuity_only
+              else state["raw"].startswith("报告"))
         if args.llm_env:
             check("actual editor context and transcript reach real model",
                   not state["error"] and bool(state["text"]) and path.read_text() == prefix)
         else:
             check("unconfigured context model requires confirmation instead of auto-paste",
                   bool(state["error"]) and path.read_text() == prefix)
+    if args.vad_reject_only:
+        time.sleep(1)
+        check("negative VAD retains visible speech and confirmation warning",
+              bool(state["raw"]) and "语音检测未确认讲话" in state["error"])
+        check("uncertain speech never auto-pastes", path.read_text() == prefix)
+        run("grim", str(out / "warning.png"))
     call("raw" if args.context_only and not args.llm_env else "commit")
     wait(lambda: path.read_text() == prefix + state["text"])
     check("UTF-8 transcript is pasted into real GTK Wayland editor", True)
     original = path.read_text()
+    if args.continuity_only:
+        # Both public sentences must survive, including the weak leading one.
+        for marker in ("因为远离大陆", "哺乳动物", "亚马逊河", "河段"):
+            check("continuous recording retains " + marker, marker in original)
+        (out / "result.json").write_text(json.dumps(
+            {"checks": checks, "state": state, "editor_text": original},
+            ensure_ascii=False, indent=2))
+        raise SystemExit(0)
     if args.backend_switch:
         call("start")
         phase("recording")

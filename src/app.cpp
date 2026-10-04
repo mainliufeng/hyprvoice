@@ -223,6 +223,11 @@ void App::start(bool cmd) {
       if (cancel_)
         throw std::runtime_error("已取消");
       size_t count = 0;
+      auto diagnostic_at = start;
+      size_t diagnostic_samples = 0;
+      double diagnostic_energy = 0;
+      float diagnostic_peak = 0;
+      size_t preview_chars = 0;
       size_t maximum = config_.data.value("max_recording_seconds", 180) * 16000;
       auto consume = [&](std::vector<float> pcm) {
         if (pcm.empty())
@@ -233,9 +238,13 @@ void App::start(bool cmd) {
         for (auto &s : pcm) {
           s = std::clamp(static_cast<float>(s * gain), -1.0f, 1.0f);
           peak = std::max(peak, std::abs(s));
+          diagnostic_energy += static_cast<double>(s) * s;
         }
         level_ = peak;
+        diagnostic_samples += pcm.size();
+        diagnostic_peak = std::max(diagnostic_peak, peak);
         auto text = asr_->push(pcm);
+        preview_chars = g_utf8_strlen(text.c_str(), -1);
         if (!text.empty())
           update({{"text", text}});
       };
@@ -248,6 +257,20 @@ void App::start(bool cmd) {
                            std::chrono::steady_clock::now() - start)
                            .count();
         update({{"seconds", elapsed}});
+        auto now = std::chrono::steady_clock::now();
+        if (now - diagnostic_at >= std::chrono::seconds(2)) {
+          std::cerr << "Capture diagnostic: elapsed_s=" << elapsed
+                    << " captured_s=" << count / 16000.0
+                    << " rms=" << (diagnostic_samples
+                                      ? std::sqrt(diagnostic_energy / diagnostic_samples)
+                                      : 0)
+                    << " peak=" << diagnostic_peak
+                    << " preview_chars=" << preview_chars << '\n';
+          diagnostic_at = now;
+          diagnostic_samples = 0;
+          diagnostic_energy = 0;
+          diagnostic_peak = 0;
+        }
         if (count >= maximum ||
             elapsed >= config_.data.value("max_recording_seconds", 180)) {
           stop_ = true;
@@ -258,6 +281,8 @@ void App::start(bool cmd) {
       }
       audio_.stop();
       consume(audio_.take());
+      std::cerr << "Capture diagnostic: stopped captured_s=" << count / 16000.0
+                << " preview_chars=" << preview_chars << '\n';
       if (cancel_) {
         asr_->cancel();
         update({{"phase", "idle"}, {"text", ""}, {"raw", ""}, {"error", ""}});
@@ -272,7 +297,7 @@ void App::start(bool cmd) {
           update(
               {{"phase", "idle"}, {"text", "未检测到可识别语音"}, {"raw", ""}});
         else {
-          std::string output = result.text, error;
+          std::string output = result.text, error = result.warning;
           update({{"raw", result.text}, {"text", result.text}});
           if (!protected_field && (cmd || scene != "raw" || !history.empty())) {
             update({{"phase", "rewriting"}});

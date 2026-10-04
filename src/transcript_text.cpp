@@ -2,6 +2,21 @@
 #include <glib.h>
 #include <stdexcept>
 namespace hv {
+static size_t WordCharacters(const std::string &text) {
+  if (!g_utf8_validate(text.data(), text.size(), nullptr))
+    throw std::runtime_error("Recognition returned invalid UTF-8 text");
+  size_t count = 0;
+  for (const char *p = text.c_str(); *p; p = g_utf8_next_char(p))
+    count += g_unichar_isalnum(g_utf8_get_char(p)) != 0;
+  return count;
+}
+bool PreservesTranscriptLength(const std::string &streaming,
+                               const std::string &refined) {
+  auto before = WordCharacters(streaming), after = WordCharacters(refined);
+  // Small utterances naturally vary in spelling/number formatting. For longer
+  // dictation, retain the streaming result if refinement drops over 15%.
+  return before < 20 || after * 100 >= before * 85;
+}
 std::string AssembleTranscript(const std::vector<std::string> &utterances) {
   std::string output;
   for (const auto &utterance : utterances) {

@@ -1,0 +1,5835 @@
+{
+  "cases": 277,
+  "method": "Same public 277-case manifest, installed X-ASR model files and hotwords, ASR only; CER is not a sentence completeness guarantee",
+  "baseline": {
+    "normalization": "NFKC + casefold; CER keeps alphanumeric; MER uses Han chars + English words; no number verbalization equivalence",
+    "timing": "compute_ms/compute_rtf and asr percentiles describe ASR only; rewrite times are separate; unknown timing is null",
+    "summary": {
+      "ascend/en/clean": {
+        "cases": 40,
+        "characters": 1447,
+        "character_edits": 218,
+        "tokens": 368,
+        "token_edits": 89,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 152.771625,
+        "compute_ms": 14379.111000000003,
+        "timed_cases": 40,
+        "exact_cases": 12,
+        "cer": 0.15065653075328264,
+        "mer": 0.2418478260869565,
+        "compute_rtf": 0.09412160798839446,
+        "asr_p50_ms": 302.5115,
+        "asr_p95_ms": 726.0669499999999,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "ascend/zh/clean": {
+        "cases": 40,
+        "characters": 558,
+        "character_edits": 47,
+        "tokens": 556,
+        "token_edits": 36,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 142.9906875,
+        "compute_ms": 13527.015999999998,
+        "timed_cases": 40,
+        "exact_cases": 21,
+        "cer": 0.08422939068100359,
+        "mer": 0.06474820143884892,
+        "compute_rtf": 0.09460067810360026,
+        "asr_p50_ms": 301.922,
+        "asr_p95_ms": 636.1543499999999,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "ascend/mixed/clean": {
+        "cases": 40,
+        "characters": 1134,
+        "character_edits": 123,
+        "tokens": 680,
+        "token_edits": 62,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 192.82025000000002,
+        "compute_ms": 17906.845000000005,
+        "timed_cases": 40,
+        "exact_cases": 16,
+        "cer": 0.10846560846560846,
+        "mer": 0.09117647058823529,
+        "compute_rtf": 0.09286807272576403,
+        "asr_p50_ms": 395.307,
+        "asr_p95_ms": 857.8626499999999,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "ascend/en/white-10db": {
+        "cases": 12,
+        "characters": 433,
+        "character_edits": 71,
+        "tokens": 110,
+        "token_edits": 29,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 48.6301875,
+        "compute_ms": 4423.799999999999,
+        "timed_cases": 12,
+        "exact_cases": 1,
+        "cer": 0.16397228637413394,
+        "mer": 0.2636363636363636,
+        "compute_rtf": 0.09096818719853793,
+        "asr_p50_ms": 303.5885,
+        "asr_p95_ms": 638.1818499999998,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "ascend/mixed/white-10db": {
+        "cases": 7,
+        "characters": 156,
+        "character_edits": 54,
+        "tokens": 97,
+        "token_edits": 29,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 26.34,
+        "compute_ms": 2467.696,
+        "timed_cases": 7,
+        "exact_cases": 2,
+        "cer": 0.34615384615384615,
+        "mer": 0.29896907216494845,
+        "compute_rtf": 0.09368625664388763,
+        "asr_p50_ms": 303.711,
+        "asr_p95_ms": 455.68399999999997,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "ascend/zh/white-10db": {
+        "cases": 11,
+        "characters": 166,
+        "character_edits": 23,
+        "tokens": 166,
+        "token_edits": 23,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 44.210562499999995,
+        "compute_ms": 4088.463,
+        "timed_cases": 11,
+        "exact_cases": 4,
+        "cer": 0.13855421686746988,
+        "mer": 0.13855421686746988,
+        "compute_rtf": 0.0924770635976414,
+        "asr_p50_ms": 285.188,
+        "asr_p95_ms": 811.7905000000001,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/cmn_hans_cn/clean": {
+        "cases": 20,
+        "characters": 676,
+        "character_edits": 52,
+        "tokens": 649,
+        "token_edits": 40,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 248.22000000000003,
+        "compute_ms": 18641.220999999998,
+        "timed_cases": 20,
+        "exact_cases": 10,
+        "cer": 0.07692307692307693,
+        "mer": 0.061633281972265024,
+        "compute_rtf": 0.07509959310289258,
+        "asr_p50_ms": 926.197,
+        "asr_p95_ms": 1398.2922000000003,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/cmn_hans_cn/white-20db": {
+        "cases": 20,
+        "characters": 676,
+        "character_edits": 52,
+        "tokens": 649,
+        "token_edits": 40,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 248.22000000000003,
+        "compute_ms": 18797.181999999997,
+        "timed_cases": 20,
+        "exact_cases": 11,
+        "cer": 0.07692307692307693,
+        "mer": 0.061633281972265024,
+        "compute_rtf": 0.0757279107243574,
+        "asr_p50_ms": 923.1800000000001,
+        "asr_p95_ms": 1414.0445000000002,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/cmn_hans_cn/white-10db": {
+        "cases": 20,
+        "characters": 676,
+        "character_edits": 57,
+        "tokens": 649,
+        "token_edits": 45,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 248.22000000000003,
+        "compute_ms": 18707.392999999996,
+        "timed_cases": 20,
+        "exact_cases": 10,
+        "cer": 0.08431952662721894,
+        "mer": 0.06933744221879815,
+        "compute_rtf": 0.0753661791958746,
+        "asr_p50_ms": 941.485,
+        "asr_p95_ms": 1401.1077000000002,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/en_us/clean": {
+        "cases": 10,
+        "characters": 898,
+        "character_edits": 55,
+        "tokens": 176,
+        "token_edits": 20,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 79.99999999999999,
+        "compute_ms": 6875.436000000001,
+        "timed_cases": 10,
+        "exact_cases": 5,
+        "cer": 0.061247216035634745,
+        "mer": 0.11363636363636363,
+        "compute_rtf": 0.08594295000000002,
+        "asr_p50_ms": 654.428,
+        "asr_p95_ms": 1180.0383999999995,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/en_us/white-20db": {
+        "cases": 10,
+        "characters": 898,
+        "character_edits": 94,
+        "tokens": 176,
+        "token_edits": 27,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 79.99999999999999,
+        "compute_ms": 6808.4220000000005,
+        "timed_cases": 10,
+        "exact_cases": 5,
+        "cer": 0.10467706013363029,
+        "mer": 0.1534090909090909,
+        "compute_rtf": 0.08510527500000002,
+        "asr_p50_ms": 635.4385,
+        "asr_p95_ms": 1177.4756999999995,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/en_us/white-10db": {
+        "cases": 10,
+        "characters": 898,
+        "character_edits": 117,
+        "tokens": 176,
+        "token_edits": 35,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 79.99999999999999,
+        "compute_ms": 6865.384,
+        "timed_cases": 10,
+        "exact_cases": 2,
+        "cer": 0.13028953229398663,
+        "mer": 0.19886363636363635,
+        "compute_rtf": 0.08581730000000001,
+        "asr_p50_ms": 654.409,
+        "asr_p95_ms": 1166.8020499999993,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/cmn_hans_cn/long": {
+        "cases": 2,
+        "characters": 325,
+        "character_edits": 5,
+        "tokens": 322,
+        "token_edits": 5,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 139.6,
+        "compute_ms": 12471.457999999999,
+        "timed_cases": 2,
+        "exact_cases": 0,
+        "cer": 0.015384615384615385,
+        "mer": 0.015527950310559006,
+        "compute_rtf": 0.0893370916905444,
+        "asr_p50_ms": 6235.728999999999,
+        "asr_p95_ms": 6543.5713,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/en_us/long": {
+        "cases": 2,
+        "characters": 898,
+        "character_edits": 84,
+        "tokens": 176,
+        "token_edits": 27,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 85.0,
+        "compute_ms": 7707.639,
+        "timed_cases": 2,
+        "exact_cases": 0,
+        "cer": 0.0935412026726058,
+        "mer": 0.1534090909090909,
+        "compute_rtf": 0.09067810588235295,
+        "asr_p50_ms": 3853.8195,
+        "asr_p95_ms": 3872.0431500000004,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/no-speech": {
+        "cases": 2,
+        "characters": 0,
+        "character_edits": 0,
+        "tokens": 0,
+        "token_edits": 0,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 10.0,
+        "compute_ms": 516.024,
+        "timed_cases": 2,
+        "exact_cases": 2,
+        "cer": null,
+        "mer": null,
+        "compute_rtf": 0.05160240000000001,
+        "asr_p50_ms": 258.012,
+        "asr_p95_ms": 258.9507,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/cmn_hans_cn/train-10db": {
+        "cases": 20,
+        "characters": 676,
+        "character_edits": 50,
+        "tokens": 649,
+        "token_edits": 38,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 248.22000000000003,
+        "compute_ms": 19171.005999999998,
+        "timed_cases": 20,
+        "exact_cases": 11,
+        "cer": 0.07396449704142012,
+        "mer": 0.05855161787365177,
+        "compute_rtf": 0.07723392957859962,
+        "asr_p50_ms": 954.1320000000001,
+        "asr_p95_ms": 1446.1917000000003,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/en_us/train-10db": {
+        "cases": 10,
+        "characters": 898,
+        "character_edits": 134,
+        "tokens": 176,
+        "token_edits": 45,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 79.99999999999999,
+        "compute_ms": 6775.618000000001,
+        "timed_cases": 10,
+        "exact_cases": 3,
+        "cer": 0.1492204899777283,
+        "mer": 0.2556818181818182,
+        "compute_rtf": 0.08469522500000003,
+        "asr_p50_ms": 631.816,
+        "asr_p95_ms": 1170.1993999999993,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/no-speech/train": {
+        "cases": 1,
+        "characters": 0,
+        "character_edits": 0,
+        "tokens": 0,
+        "token_edits": 0,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 2.48,
+        "compute_ms": 100.194,
+        "timed_cases": 1,
+        "exact_cases": 1,
+        "cer": null,
+        "mer": null,
+        "compute_rtf": 0.040400806451612904,
+        "asr_p50_ms": 100.194,
+        "asr_p95_ms": 100.194,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      }
+    },
+    "per_case": [
+      {
+        "id": "ascend-test-00012",
+        "category": "ascend/en/clean",
+        "character_edits": 21,
+        "characters": 25,
+        "token_edits": 10,
+        "tokens": 10,
+        "base_id": "ascend-test-00012"
+      },
+      {
+        "id": "ascend-test-00045",
+        "category": "ascend/en/clean",
+        "character_edits": 9,
+        "characters": 43,
+        "token_edits": 2,
+        "tokens": 8,
+        "base_id": "ascend-test-00045"
+      },
+      {
+        "id": "ascend-test-00046",
+        "category": "ascend/en/clean",
+        "character_edits": 1,
+        "characters": 19,
+        "token_edits": 1,
+        "tokens": 5,
+        "base_id": "ascend-test-00046"
+      },
+      {
+        "id": "ascend-test-00077",
+        "category": "ascend/en/clean",
+        "character_edits": 3,
+        "characters": 34,
+        "token_edits": 1,
+        "tokens": 7,
+        "base_id": "ascend-test-00077"
+      },
+      {
+        "id": "ascend-test-00099",
+        "category": "ascend/zh/clean",
+        "character_edits": 2,
+        "characters": 15,
+        "token_edits": 2,
+        "tokens": 15,
+        "base_id": "ascend-test-00099"
+      },
+      {
+        "id": "ascend-test-00110",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 53,
+        "token_edits": 0,
+        "tokens": 13,
+        "base_id": "ascend-test-00110"
+      },
+      {
+        "id": "ascend-test-00116",
+        "category": "ascend/en/clean",
+        "character_edits": 2,
+        "characters": 37,
+        "token_edits": 3,
+        "tokens": 9,
+        "base_id": "ascend-test-00116"
+      },
+      {
+        "id": "ascend-test-00119",
+        "category": "ascend/en/clean",
+        "character_edits": 19,
+        "characters": 54,
+        "token_edits": 7,
+        "tokens": 18,
+        "base_id": "ascend-test-00119"
+      },
+      {
+        "id": "ascend-test-00127",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 9,
+        "token_edits": 0,
+        "tokens": 9,
+        "base_id": "ascend-test-00127"
+      },
+      {
+        "id": "ascend-test-00136",
+        "category": "ascend/en/clean",
+        "character_edits": 45,
+        "characters": 109,
+        "token_edits": 12,
+        "tokens": 27,
+        "base_id": "ascend-test-00136"
+      },
+      {
+        "id": "ascend-test-00153",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 10,
+        "token_edits": 1,
+        "tokens": 10,
+        "base_id": "ascend-test-00153"
+      },
+      {
+        "id": "ascend-test-00165",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 14,
+        "token_edits": 0,
+        "tokens": 4,
+        "base_id": "ascend-test-00165"
+      },
+      {
+        "id": "ascend-test-00190",
+        "category": "ascend/mixed/clean",
+        "character_edits": 1,
+        "characters": 21,
+        "token_edits": 1,
+        "tokens": 9,
+        "base_id": "ascend-test-00190"
+      },
+      {
+        "id": "ascend-test-00199",
+        "category": "ascend/mixed/clean",
+        "character_edits": 15,
+        "characters": 19,
+        "token_edits": 7,
+        "tokens": 7,
+        "base_id": "ascend-test-00199"
+      },
+      {
+        "id": "ascend-test-00203",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 15,
+        "token_edits": 1,
+        "tokens": 15,
+        "base_id": "ascend-test-00203"
+      },
+      {
+        "id": "ascend-test-00215",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 17,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00215"
+      },
+      {
+        "id": "ascend-test-00245",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 11,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "ascend-test-00245"
+      },
+      {
+        "id": "ascend-test-00249",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 22,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00249"
+      },
+      {
+        "id": "ascend-test-00268",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 8,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "ascend-test-00268"
+      },
+      {
+        "id": "ascend-test-00280",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 12,
+        "token_edits": 1,
+        "tokens": 12,
+        "base_id": "ascend-test-00280"
+      },
+      {
+        "id": "ascend-test-00302",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 9,
+        "token_edits": 0,
+        "tokens": 9,
+        "base_id": "ascend-test-00302"
+      },
+      {
+        "id": "ascend-test-00303",
+        "category": "ascend/zh/clean",
+        "character_edits": 12,
+        "characters": 12,
+        "token_edits": 3,
+        "tokens": 10,
+        "base_id": "ascend-test-00303"
+      },
+      {
+        "id": "ascend-test-00316",
+        "category": "ascend/zh/clean",
+        "character_edits": 2,
+        "characters": 7,
+        "token_edits": 2,
+        "tokens": 7,
+        "base_id": "ascend-test-00316"
+      },
+      {
+        "id": "ascend-test-00330",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 7,
+        "token_edits": 0,
+        "tokens": 7,
+        "base_id": "ascend-test-00330"
+      },
+      {
+        "id": "ascend-test-00333",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 7,
+        "token_edits": 1,
+        "tokens": 7,
+        "base_id": "ascend-test-00333"
+      },
+      {
+        "id": "ascend-test-00335",
+        "category": "ascend/mixed/clean",
+        "character_edits": 1,
+        "characters": 21,
+        "token_edits": 1,
+        "tokens": 15,
+        "base_id": "ascend-test-00335"
+      },
+      {
+        "id": "ascend-test-00336",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 7,
+        "token_edits": 0,
+        "tokens": 7,
+        "base_id": "ascend-test-00336"
+      },
+      {
+        "id": "ascend-test-00344",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 7,
+        "token_edits": 0,
+        "tokens": 7,
+        "base_id": "ascend-test-00344"
+      },
+      {
+        "id": "ascend-test-00346",
+        "category": "ascend/mixed/clean",
+        "character_edits": 8,
+        "characters": 20,
+        "token_edits": 2,
+        "tokens": 14,
+        "base_id": "ascend-test-00346"
+      },
+      {
+        "id": "ascend-test-00358",
+        "category": "ascend/mixed/clean",
+        "character_edits": 1,
+        "characters": 17,
+        "token_edits": 1,
+        "tokens": 10,
+        "base_id": "ascend-test-00358"
+      },
+      {
+        "id": "ascend-test-00379",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 18,
+        "token_edits": 1,
+        "tokens": 18,
+        "base_id": "ascend-test-00379"
+      },
+      {
+        "id": "ascend-test-00387",
+        "category": "ascend/zh/clean",
+        "character_edits": 2,
+        "characters": 13,
+        "token_edits": 2,
+        "tokens": 13,
+        "base_id": "ascend-test-00387"
+      },
+      {
+        "id": "ascend-test-00404",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00404"
+      },
+      {
+        "id": "ascend-test-00408",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 6,
+        "token_edits": 0,
+        "tokens": 6,
+        "base_id": "ascend-test-00408"
+      },
+      {
+        "id": "ascend-test-00420",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 38,
+        "token_edits": 0,
+        "tokens": 38,
+        "base_id": "ascend-test-00420"
+      },
+      {
+        "id": "ascend-test-00422",
+        "category": "ascend/zh/clean",
+        "character_edits": 2,
+        "characters": 10,
+        "token_edits": 2,
+        "tokens": 10,
+        "base_id": "ascend-test-00422"
+      },
+      {
+        "id": "ascend-test-00425",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 36,
+        "token_edits": 0,
+        "tokens": 20,
+        "base_id": "ascend-test-00425"
+      },
+      {
+        "id": "ascend-test-00430",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 16,
+        "token_edits": 0,
+        "tokens": 12,
+        "base_id": "ascend-test-00430"
+      },
+      {
+        "id": "ascend-test-00437",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 25,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00437"
+      },
+      {
+        "id": "ascend-test-00464",
+        "category": "ascend/en/clean",
+        "character_edits": 8,
+        "characters": 30,
+        "token_edits": 4,
+        "tokens": 11,
+        "base_id": "ascend-test-00464"
+      },
+      {
+        "id": "ascend-test-00466",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 35,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "ascend-test-00466"
+      },
+      {
+        "id": "ascend-test-00467",
+        "category": "ascend/en/clean",
+        "character_edits": 6,
+        "characters": 38,
+        "token_edits": 2,
+        "tokens": 11,
+        "base_id": "ascend-test-00467"
+      },
+      {
+        "id": "ascend-test-00487",
+        "category": "ascend/zh/clean",
+        "character_edits": 4,
+        "characters": 14,
+        "token_edits": 4,
+        "tokens": 14,
+        "base_id": "ascend-test-00487"
+      },
+      {
+        "id": "ascend-test-00508",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 21,
+        "token_edits": 0,
+        "tokens": 5,
+        "base_id": "ascend-test-00508"
+      },
+      {
+        "id": "ascend-test-00509",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 26,
+        "token_edits": 0,
+        "tokens": 7,
+        "base_id": "ascend-test-00509"
+      },
+      {
+        "id": "ascend-test-00514",
+        "category": "ascend/en/clean",
+        "character_edits": 15,
+        "characters": 30,
+        "token_edits": 5,
+        "tokens": 9,
+        "base_id": "ascend-test-00514"
+      },
+      {
+        "id": "ascend-test-00520",
+        "category": "ascend/en/clean",
+        "character_edits": 7,
+        "characters": 19,
+        "token_edits": 3,
+        "tokens": 4,
+        "base_id": "ascend-test-00520"
+      },
+      {
+        "id": "ascend-test-00586",
+        "category": "ascend/en/clean",
+        "character_edits": 3,
+        "characters": 20,
+        "token_edits": 2,
+        "tokens": 6,
+        "base_id": "ascend-test-00586"
+      },
+      {
+        "id": "ascend-test-00587",
+        "category": "ascend/en/clean",
+        "character_edits": 3,
+        "characters": 18,
+        "token_edits": 2,
+        "tokens": 9,
+        "base_id": "ascend-test-00587"
+      },
+      {
+        "id": "ascend-test-00589",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 28,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "ascend-test-00589"
+      },
+      {
+        "id": "ascend-test-00634",
+        "category": "ascend/mixed/clean",
+        "character_edits": 14,
+        "characters": 43,
+        "token_edits": 2,
+        "tokens": 18,
+        "base_id": "ascend-test-00634"
+      },
+      {
+        "id": "ascend-test-00648",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 9,
+        "token_edits": 0,
+        "tokens": 9,
+        "base_id": "ascend-test-00648"
+      },
+      {
+        "id": "ascend-test-00655",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 29,
+        "token_edits": 0,
+        "tokens": 6,
+        "base_id": "ascend-test-00655"
+      },
+      {
+        "id": "ascend-test-00662",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 7,
+        "token_edits": 0,
+        "tokens": 7,
+        "base_id": "ascend-test-00662"
+      },
+      {
+        "id": "ascend-test-00675",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 42,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00675"
+      },
+      {
+        "id": "ascend-test-00680",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 10,
+        "token_edits": 0,
+        "tokens": 10,
+        "base_id": "ascend-test-00680"
+      },
+      {
+        "id": "ascend-test-00682",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 21,
+        "token_edits": 0,
+        "tokens": 16,
+        "base_id": "ascend-test-00682"
+      },
+      {
+        "id": "ascend-test-00685",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 14,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00685"
+      },
+      {
+        "id": "ascend-test-00688",
+        "category": "ascend/zh/clean",
+        "character_edits": 4,
+        "characters": 12,
+        "token_edits": 2,
+        "tokens": 12,
+        "base_id": "ascend-test-00688"
+      },
+      {
+        "id": "ascend-test-00691",
+        "category": "ascend/mixed/clean",
+        "character_edits": 3,
+        "characters": 18,
+        "token_edits": 1,
+        "tokens": 13,
+        "base_id": "ascend-test-00691"
+      },
+      {
+        "id": "ascend-test-00701",
+        "category": "ascend/mixed/clean",
+        "character_edits": 13,
+        "characters": 54,
+        "token_edits": 6,
+        "tokens": 13,
+        "base_id": "ascend-test-00701"
+      },
+      {
+        "id": "ascend-test-00703",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 31,
+        "token_edits": 0,
+        "tokens": 6,
+        "base_id": "ascend-test-00703"
+      },
+      {
+        "id": "ascend-test-00708",
+        "category": "ascend/en/clean",
+        "character_edits": 3,
+        "characters": 36,
+        "token_edits": 1,
+        "tokens": 6,
+        "base_id": "ascend-test-00708"
+      },
+      {
+        "id": "ascend-test-00714",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 16,
+        "token_edits": 0,
+        "tokens": 16,
+        "base_id": "ascend-test-00714"
+      },
+      {
+        "id": "ascend-test-00716",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 17,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00716"
+      },
+      {
+        "id": "ascend-test-00723",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 25,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "ascend-test-00723"
+      },
+      {
+        "id": "ascend-test-00726",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 12,
+        "token_edits": 0,
+        "tokens": 12,
+        "base_id": "ascend-test-00726"
+      },
+      {
+        "id": "ascend-test-00748",
+        "category": "ascend/mixed/clean",
+        "character_edits": 1,
+        "characters": 22,
+        "token_edits": 1,
+        "tokens": 17,
+        "base_id": "ascend-test-00748"
+      },
+      {
+        "id": "ascend-test-00750",
+        "category": "ascend/mixed/clean",
+        "character_edits": 1,
+        "characters": 32,
+        "token_edits": 1,
+        "tokens": 25,
+        "base_id": "ascend-test-00750"
+      },
+      {
+        "id": "ascend-test-00777",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 46,
+        "token_edits": 0,
+        "tokens": 9,
+        "base_id": "ascend-test-00777"
+      },
+      {
+        "id": "ascend-test-00778",
+        "category": "ascend/en/clean",
+        "character_edits": 4,
+        "characters": 56,
+        "token_edits": 2,
+        "tokens": 14,
+        "base_id": "ascend-test-00778"
+      },
+      {
+        "id": "ascend-test-00788",
+        "category": "ascend/en/clean",
+        "character_edits": 8,
+        "characters": 34,
+        "token_edits": 2,
+        "tokens": 9,
+        "base_id": "ascend-test-00788"
+      },
+      {
+        "id": "ascend-test-00792",
+        "category": "ascend/en/clean",
+        "character_edits": 2,
+        "characters": 28,
+        "token_edits": 1,
+        "tokens": 7,
+        "base_id": "ascend-test-00792"
+      },
+      {
+        "id": "ascend-test-00809",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 28,
+        "token_edits": 0,
+        "tokens": 28,
+        "base_id": "ascend-test-00809"
+      },
+      {
+        "id": "ascend-test-00813",
+        "category": "ascend/en/clean",
+        "character_edits": 5,
+        "characters": 43,
+        "token_edits": 2,
+        "tokens": 9,
+        "base_id": "ascend-test-00813"
+      },
+      {
+        "id": "ascend-test-00854",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 55,
+        "token_edits": 4,
+        "tokens": 12,
+        "base_id": "ascend-test-00854"
+      },
+      {
+        "id": "ascend-test-00858",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 16,
+        "token_edits": 0,
+        "tokens": 16,
+        "base_id": "ascend-test-00858"
+      },
+      {
+        "id": "ascend-test-00878",
+        "category": "ascend/en/clean",
+        "character_edits": 10,
+        "characters": 39,
+        "token_edits": 3,
+        "tokens": 9,
+        "base_id": "ascend-test-00878"
+      },
+      {
+        "id": "ascend-test-00880",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 33,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "ascend-test-00880"
+      },
+      {
+        "id": "ascend-test-00888",
+        "category": "ascend/mixed/clean",
+        "character_edits": 7,
+        "characters": 32,
+        "token_edits": 7,
+        "tokens": 27,
+        "base_id": "ascend-test-00888"
+      },
+      {
+        "id": "ascend-test-00937",
+        "category": "ascend/mixed/clean",
+        "character_edits": 4,
+        "characters": 23,
+        "token_edits": 4,
+        "tokens": 16,
+        "base_id": "ascend-test-00937"
+      },
+      {
+        "id": "ascend-test-00950",
+        "category": "ascend/zh/clean",
+        "character_edits": 2,
+        "characters": 37,
+        "token_edits": 2,
+        "tokens": 37,
+        "base_id": "ascend-test-00950"
+      },
+      {
+        "id": "ascend-test-00962",
+        "category": "ascend/mixed/clean",
+        "character_edits": 9,
+        "characters": 28,
+        "token_edits": 4,
+        "tokens": 16,
+        "base_id": "ascend-test-00962"
+      },
+      {
+        "id": "ascend-test-00968",
+        "category": "ascend/mixed/clean",
+        "character_edits": 8,
+        "characters": 64,
+        "token_edits": 5,
+        "tokens": 31,
+        "base_id": "ascend-test-00968"
+      },
+      {
+        "id": "ascend-test-01005",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 35,
+        "token_edits": 0,
+        "tokens": 25,
+        "base_id": "ascend-test-01005"
+      },
+      {
+        "id": "ascend-test-01010",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 13,
+        "token_edits": 1,
+        "tokens": 13,
+        "base_id": "ascend-test-01010"
+      },
+      {
+        "id": "ascend-test-01016",
+        "category": "ascend/mixed/clean",
+        "character_edits": 2,
+        "characters": 60,
+        "token_edits": 2,
+        "tokens": 51,
+        "base_id": "ascend-test-01016"
+      },
+      {
+        "id": "ascend-test-01018",
+        "category": "ascend/en/clean",
+        "character_edits": 9,
+        "characters": 57,
+        "token_edits": 2,
+        "tokens": 13,
+        "base_id": "ascend-test-01018"
+      },
+      {
+        "id": "ascend-test-01019",
+        "category": "ascend/mixed/clean",
+        "character_edits": 3,
+        "characters": 59,
+        "token_edits": 1,
+        "tokens": 21,
+        "base_id": "ascend-test-01019"
+      },
+      {
+        "id": "ascend-test-01039",
+        "category": "ascend/mixed/clean",
+        "character_edits": 2,
+        "characters": 38,
+        "token_edits": 2,
+        "tokens": 27,
+        "base_id": "ascend-test-01039"
+      },
+      {
+        "id": "ascend-test-01040",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 23,
+        "base_id": "ascend-test-01040"
+      },
+      {
+        "id": "ascend-test-01064",
+        "category": "ascend/mixed/clean",
+        "character_edits": 4,
+        "characters": 15,
+        "token_edits": 2,
+        "tokens": 4,
+        "base_id": "ascend-test-01064"
+      },
+      {
+        "id": "ascend-test-01065",
+        "category": "ascend/en/clean",
+        "character_edits": 2,
+        "characters": 27,
+        "token_edits": 1,
+        "tokens": 6,
+        "base_id": "ascend-test-01065"
+      },
+      {
+        "id": "ascend-test-01070",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 28,
+        "token_edits": 1,
+        "tokens": 28,
+        "base_id": "ascend-test-01070"
+      },
+      {
+        "id": "ascend-test-01074",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 16,
+        "token_edits": 0,
+        "tokens": 16,
+        "base_id": "ascend-test-01074"
+      },
+      {
+        "id": "ascend-test-01086",
+        "category": "ascend/en/clean",
+        "character_edits": 3,
+        "characters": 30,
+        "token_edits": 1,
+        "tokens": 7,
+        "base_id": "ascend-test-01086"
+      },
+      {
+        "id": "ascend-test-01095",
+        "category": "ascend/en/clean",
+        "character_edits": 3,
+        "characters": 22,
+        "token_edits": 1,
+        "tokens": 7,
+        "base_id": "ascend-test-01095"
+      },
+      {
+        "id": "ascend-test-01123",
+        "category": "ascend/zh/clean",
+        "character_edits": 3,
+        "characters": 12,
+        "token_edits": 3,
+        "tokens": 12,
+        "base_id": "ascend-test-01123"
+      },
+      {
+        "id": "ascend-test-01131",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 26,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "ascend-test-01131"
+      },
+      {
+        "id": "ascend-test-01132",
+        "category": "ascend/mixed/clean",
+        "character_edits": 6,
+        "characters": 27,
+        "token_edits": 1,
+        "tokens": 16,
+        "base_id": "ascend-test-01132"
+      },
+      {
+        "id": "ascend-test-01145",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 9,
+        "token_edits": 0,
+        "tokens": 5,
+        "base_id": "ascend-test-01145"
+      },
+      {
+        "id": "ascend-test-01149",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 32,
+        "token_edits": 3,
+        "tokens": 30,
+        "base_id": "ascend-test-01149"
+      },
+      {
+        "id": "ascend-test-01152",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 9,
+        "token_edits": 0,
+        "tokens": 9,
+        "base_id": "ascend-test-01152"
+      },
+      {
+        "id": "ascend-test-01185",
+        "category": "ascend/mixed/clean",
+        "character_edits": 9,
+        "characters": 28,
+        "token_edits": 2,
+        "tokens": 20,
+        "base_id": "ascend-test-01185"
+      },
+      {
+        "id": "ascend-test-01210",
+        "category": "ascend/mixed/clean",
+        "character_edits": 3,
+        "characters": 16,
+        "token_edits": 2,
+        "tokens": 11,
+        "base_id": "ascend-test-01210"
+      },
+      {
+        "id": "ascend-test-01219",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 8,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "ascend-test-01219"
+      },
+      {
+        "id": "ascend-test-01221",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 5,
+        "base_id": "ascend-test-01221"
+      },
+      {
+        "id": "ascend-test-01222",
+        "category": "ascend/en/clean",
+        "character_edits": 3,
+        "characters": 59,
+        "token_edits": 2,
+        "tokens": 15,
+        "base_id": "ascend-test-01222"
+      },
+      {
+        "id": "ascend-test-01224",
+        "category": "ascend/en/clean",
+        "character_edits": 2,
+        "characters": 18,
+        "token_edits": 1,
+        "tokens": 6,
+        "base_id": "ascend-test-01224"
+      },
+      {
+        "id": "ascend-test-01229",
+        "category": "ascend/en/clean",
+        "character_edits": 5,
+        "characters": 42,
+        "token_edits": 3,
+        "tokens": 12,
+        "base_id": "ascend-test-01229"
+      },
+      {
+        "id": "ascend-test-01235",
+        "category": "ascend/en/clean",
+        "character_edits": 4,
+        "characters": 16,
+        "token_edits": 2,
+        "tokens": 5,
+        "base_id": "ascend-test-01235"
+      },
+      {
+        "id": "ascend-test-01236",
+        "category": "ascend/en/clean",
+        "character_edits": 13,
+        "characters": 70,
+        "token_edits": 7,
+        "tokens": 18,
+        "base_id": "ascend-test-01236"
+      },
+      {
+        "id": "ascend-test-01247",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 25,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-01247"
+      },
+      {
+        "id": "ascend-test-01277",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 18,
+        "token_edits": 1,
+        "tokens": 18,
+        "base_id": "ascend-test-01277"
+      },
+      {
+        "id": "ascend-test-01278",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 40,
+        "token_edits": 0,
+        "tokens": 25,
+        "base_id": "ascend-test-01278"
+      },
+      {
+        "id": "ascend-test-01288",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 18,
+        "token_edits": 1,
+        "tokens": 18,
+        "base_id": "ascend-test-01288"
+      },
+      {
+        "id": "ascend-test-01290",
+        "category": "ascend/mixed/clean",
+        "character_edits": 6,
+        "characters": 25,
+        "token_edits": 2,
+        "tokens": 11,
+        "base_id": "ascend-test-01290"
+      },
+      {
+        "id": "ascend-test-01293",
+        "category": "ascend/zh/clean",
+        "character_edits": 5,
+        "characters": 17,
+        "token_edits": 5,
+        "tokens": 17,
+        "base_id": "ascend-test-01293"
+      },
+      {
+        "id": "ascend-test-01299",
+        "category": "ascend/mixed/clean",
+        "character_edits": 1,
+        "characters": 18,
+        "token_edits": 1,
+        "tokens": 12,
+        "base_id": "ascend-test-01299"
+      },
+      {
+        "id": "ascend-test-01312",
+        "category": "ascend/mixed/clean",
+        "character_edits": 1,
+        "characters": 23,
+        "token_edits": 1,
+        "tokens": 19,
+        "base_id": "ascend-test-01312"
+      },
+      {
+        "id": "ascend-test-00077-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 3,
+        "characters": 34,
+        "token_edits": 1,
+        "tokens": 7,
+        "base_id": "ascend-test-00077"
+      },
+      {
+        "id": "ascend-test-00116-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 3,
+        "characters": 37,
+        "token_edits": 3,
+        "tokens": 9,
+        "base_id": "ascend-test-00116"
+      },
+      {
+        "id": "ascend-test-00119-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 18,
+        "characters": 54,
+        "token_edits": 7,
+        "tokens": 18,
+        "base_id": "ascend-test-00119"
+      },
+      {
+        "id": "ascend-test-00199-white-10db",
+        "category": "ascend/mixed/white-10db",
+        "character_edits": 12,
+        "characters": 19,
+        "token_edits": 6,
+        "tokens": 7,
+        "base_id": "ascend-test-00199"
+      },
+      {
+        "id": "ascend-test-00245-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 1,
+        "characters": 11,
+        "token_edits": 1,
+        "tokens": 11,
+        "base_id": "ascend-test-00245"
+      },
+      {
+        "id": "ascend-test-00249-white-10db",
+        "category": "ascend/mixed/white-10db",
+        "character_edits": 0,
+        "characters": 22,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00249"
+      },
+      {
+        "id": "ascend-test-00268-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 0,
+        "characters": 8,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "ascend-test-00268"
+      },
+      {
+        "id": "ascend-test-00344-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 2,
+        "characters": 7,
+        "token_edits": 2,
+        "tokens": 7,
+        "base_id": "ascend-test-00344"
+      },
+      {
+        "id": "ascend-test-00346-white-10db",
+        "category": "ascend/mixed/white-10db",
+        "character_edits": 8,
+        "characters": 20,
+        "token_edits": 2,
+        "tokens": 14,
+        "base_id": "ascend-test-00346"
+      },
+      {
+        "id": "ascend-test-00404-white-10db",
+        "category": "ascend/mixed/white-10db",
+        "character_edits": 2,
+        "characters": 23,
+        "token_edits": 2,
+        "tokens": 14,
+        "base_id": "ascend-test-00404"
+      },
+      {
+        "id": "ascend-test-00420-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 11,
+        "characters": 38,
+        "token_edits": 11,
+        "tokens": 38,
+        "base_id": "ascend-test-00420"
+      },
+      {
+        "id": "ascend-test-00422-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 4,
+        "characters": 10,
+        "token_edits": 4,
+        "tokens": 10,
+        "base_id": "ascend-test-00422"
+      },
+      {
+        "id": "ascend-test-00430-white-10db",
+        "category": "ascend/mixed/white-10db",
+        "character_edits": 0,
+        "characters": 16,
+        "token_edits": 0,
+        "tokens": 12,
+        "base_id": "ascend-test-00430"
+      },
+      {
+        "id": "ascend-test-00520-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 6,
+        "characters": 19,
+        "token_edits": 3,
+        "tokens": 4,
+        "base_id": "ascend-test-00520"
+      },
+      {
+        "id": "ascend-test-00587-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 4,
+        "characters": 18,
+        "token_edits": 3,
+        "tokens": 9,
+        "base_id": "ascend-test-00587"
+      },
+      {
+        "id": "ascend-test-00662-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 0,
+        "characters": 7,
+        "token_edits": 0,
+        "tokens": 7,
+        "base_id": "ascend-test-00662"
+      },
+      {
+        "id": "ascend-test-00708-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 11,
+        "characters": 36,
+        "token_edits": 3,
+        "tokens": 6,
+        "base_id": "ascend-test-00708"
+      },
+      {
+        "id": "ascend-test-00778-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 4,
+        "characters": 56,
+        "token_edits": 2,
+        "tokens": 14,
+        "base_id": "ascend-test-00778"
+      },
+      {
+        "id": "ascend-test-00950-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 2,
+        "characters": 37,
+        "token_edits": 2,
+        "tokens": 37,
+        "base_id": "ascend-test-00950"
+      },
+      {
+        "id": "ascend-test-01010-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 1,
+        "characters": 13,
+        "token_edits": 1,
+        "tokens": 13,
+        "base_id": "ascend-test-01010"
+      },
+      {
+        "id": "ascend-test-01018-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 9,
+        "characters": 57,
+        "token_edits": 2,
+        "tokens": 13,
+        "base_id": "ascend-test-01018"
+      },
+      {
+        "id": "ascend-test-01065-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 7,
+        "characters": 27,
+        "token_edits": 2,
+        "tokens": 6,
+        "base_id": "ascend-test-01065"
+      },
+      {
+        "id": "ascend-test-01086-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 3,
+        "characters": 30,
+        "token_edits": 1,
+        "tokens": 7,
+        "base_id": "ascend-test-01086"
+      },
+      {
+        "id": "ascend-test-01152-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 0,
+        "characters": 9,
+        "token_edits": 0,
+        "tokens": 9,
+        "base_id": "ascend-test-01152"
+      },
+      {
+        "id": "ascend-test-01210-white-10db",
+        "category": "ascend/mixed/white-10db",
+        "character_edits": 5,
+        "characters": 16,
+        "token_edits": 2,
+        "tokens": 11,
+        "base_id": "ascend-test-01210"
+      },
+      {
+        "id": "ascend-test-01219-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 0,
+        "characters": 8,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "ascend-test-01219"
+      },
+      {
+        "id": "ascend-test-01221-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 5,
+        "base_id": "ascend-test-01221"
+      },
+      {
+        "id": "ascend-test-01229-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 3,
+        "characters": 42,
+        "token_edits": 2,
+        "tokens": 12,
+        "base_id": "ascend-test-01229"
+      },
+      {
+        "id": "ascend-test-01278-white-10db",
+        "category": "ascend/mixed/white-10db",
+        "character_edits": 27,
+        "characters": 40,
+        "token_edits": 17,
+        "tokens": 25,
+        "base_id": "ascend-test-01278"
+      },
+      {
+        "id": "ascend-test-01288-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 2,
+        "characters": 18,
+        "token_edits": 2,
+        "tokens": 18,
+        "base_id": "ascend-test-01288"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-0",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 44,
+        "token_edits": 0,
+        "tokens": 44,
+        "base_id": "fleurs/1579"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-0-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 44,
+        "token_edits": 0,
+        "tokens": 44,
+        "base_id": "fleurs/1579"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-0-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 44,
+        "token_edits": 0,
+        "tokens": 44,
+        "base_id": "fleurs/1579"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-1",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 2,
+        "characters": 35,
+        "token_edits": 2,
+        "tokens": 35,
+        "base_id": "fleurs/1605"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-1-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 2,
+        "characters": 35,
+        "token_edits": 2,
+        "tokens": 35,
+        "base_id": "fleurs/1605"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-1-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 2,
+        "characters": 35,
+        "token_edits": 2,
+        "tokens": 35,
+        "base_id": "fleurs/1605"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-2",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 1,
+        "characters": 26,
+        "token_edits": 1,
+        "tokens": 26,
+        "base_id": "fleurs/1581"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-2-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 2,
+        "characters": 26,
+        "token_edits": 2,
+        "tokens": 26,
+        "base_id": "fleurs/1581"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-2-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 2,
+        "characters": 26,
+        "token_edits": 2,
+        "tokens": 26,
+        "base_id": "fleurs/1581"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-3",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 15,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1648"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-3-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 15,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1648"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-3-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 15,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1648"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-4",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 23,
+        "base_id": "fleurs/1588"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-4-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 23,
+        "base_id": "fleurs/1588"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-4-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 23,
+        "base_id": "fleurs/1588"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-5",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1638"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-5-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1638"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-5-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 2,
+        "characters": 30,
+        "token_edits": 2,
+        "tokens": 30,
+        "base_id": "fleurs/1638"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-6",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 28,
+        "token_edits": 0,
+        "tokens": 28,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-6-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 28,
+        "token_edits": 0,
+        "tokens": 28,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-6-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 28,
+        "token_edits": 0,
+        "tokens": 28,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-7",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 2,
+        "characters": 30,
+        "token_edits": 2,
+        "tokens": 30,
+        "base_id": "fleurs/1519"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-7-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1519"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-7-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1519"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-8",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 7,
+        "characters": 31,
+        "token_edits": 7,
+        "tokens": 28,
+        "base_id": "fleurs/1523"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-8-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 7,
+        "characters": 31,
+        "token_edits": 7,
+        "tokens": 28,
+        "base_id": "fleurs/1523"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-8-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 7,
+        "characters": 31,
+        "token_edits": 7,
+        "tokens": 28,
+        "base_id": "fleurs/1523"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-9",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 4,
+        "characters": 24,
+        "token_edits": 4,
+        "tokens": 21,
+        "base_id": "fleurs/1593"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-9-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 4,
+        "characters": 24,
+        "token_edits": 4,
+        "tokens": 21,
+        "base_id": "fleurs/1593"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-9-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 4,
+        "characters": 24,
+        "token_edits": 4,
+        "tokens": 21,
+        "base_id": "fleurs/1593"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-10",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1640"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-10-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1640"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-10-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1640"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-11",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 14,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "fleurs/1554"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-11-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 14,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "fleurs/1554"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-11-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 14,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "fleurs/1554"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-12",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 13,
+        "token_edits": 0,
+        "tokens": 13,
+        "base_id": "fleurs/1577"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-12-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 13,
+        "token_edits": 0,
+        "tokens": 13,
+        "base_id": "fleurs/1577"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-12-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 13,
+        "token_edits": 0,
+        "tokens": 13,
+        "base_id": "fleurs/1577"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-13",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 48,
+        "token_edits": 0,
+        "tokens": 48,
+        "base_id": "fleurs/1574"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-13-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 48,
+        "token_edits": 0,
+        "tokens": 48,
+        "base_id": "fleurs/1574"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-13-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 48,
+        "token_edits": 0,
+        "tokens": 48,
+        "base_id": "fleurs/1574"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-14",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 2,
+        "characters": 47,
+        "token_edits": 2,
+        "tokens": 47,
+        "base_id": "fleurs/1591"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-14-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 3,
+        "characters": 47,
+        "token_edits": 3,
+        "tokens": 47,
+        "base_id": "fleurs/1591"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-14-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 5,
+        "characters": 47,
+        "token_edits": 5,
+        "tokens": 47,
+        "base_id": "fleurs/1591"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-15",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 14,
+        "characters": 52,
+        "token_edits": 6,
+        "tokens": 41,
+        "base_id": "fleurs/1606"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-15-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 14,
+        "characters": 52,
+        "token_edits": 6,
+        "tokens": 41,
+        "base_id": "fleurs/1606"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-15-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 14,
+        "characters": 52,
+        "token_edits": 6,
+        "tokens": 41,
+        "base_id": "fleurs/1606"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-16",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 4,
+        "characters": 77,
+        "token_edits": 4,
+        "tokens": 76,
+        "base_id": "fleurs/1525"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-16-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 4,
+        "characters": 77,
+        "token_edits": 4,
+        "tokens": 76,
+        "base_id": "fleurs/1525"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-16-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 5,
+        "characters": 77,
+        "token_edits": 5,
+        "tokens": 76,
+        "base_id": "fleurs/1525"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-18",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 3,
+        "characters": 29,
+        "token_edits": 3,
+        "tokens": 29,
+        "base_id": "fleurs/1631"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-18-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 3,
+        "characters": 29,
+        "token_edits": 3,
+        "tokens": 29,
+        "base_id": "fleurs/1631"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-18-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 3,
+        "characters": 29,
+        "token_edits": 3,
+        "tokens": 29,
+        "base_id": "fleurs/1631"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-19",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 22,
+        "token_edits": 0,
+        "tokens": 22,
+        "base_id": "fleurs/1572"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-19-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 22,
+        "token_edits": 0,
+        "tokens": 22,
+        "base_id": "fleurs/1572"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-19-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 22,
+        "token_edits": 0,
+        "tokens": 22,
+        "base_id": "fleurs/1572"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-20",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 13,
+        "characters": 58,
+        "token_edits": 9,
+        "tokens": 52,
+        "base_id": "fleurs/1556"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-20-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 13,
+        "characters": 58,
+        "token_edits": 9,
+        "tokens": 52,
+        "base_id": "fleurs/1556"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-20-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 13,
+        "characters": 58,
+        "token_edits": 9,
+        "tokens": 52,
+        "base_id": "fleurs/1556"
+      },
+      {
+        "id": "fleurs-en_us-validation-0",
+        "category": "regression/en_us/clean",
+        "character_edits": 0,
+        "characters": 64,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1548"
+      },
+      {
+        "id": "fleurs-en_us-validation-0-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 0,
+        "characters": 64,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1548"
+      },
+      {
+        "id": "fleurs-en_us-validation-0-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 1,
+        "characters": 64,
+        "token_edits": 2,
+        "tokens": 15,
+        "base_id": "fleurs/1548"
+      },
+      {
+        "id": "fleurs-en_us-validation-1",
+        "category": "regression/en_us/clean",
+        "character_edits": 14,
+        "characters": 213,
+        "token_edits": 7,
+        "tokens": 33,
+        "base_id": "fleurs/1620"
+      },
+      {
+        "id": "fleurs-en_us-validation-1-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 40,
+        "characters": 213,
+        "token_edits": 10,
+        "tokens": 33,
+        "base_id": "fleurs/1620"
+      },
+      {
+        "id": "fleurs-en_us-validation-1-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 31,
+        "characters": 213,
+        "token_edits": 7,
+        "tokens": 33,
+        "base_id": "fleurs/1620"
+      },
+      {
+        "id": "fleurs-en_us-validation-2",
+        "category": "regression/en_us/clean",
+        "character_edits": 0,
+        "characters": 87,
+        "token_edits": 0,
+        "tokens": 21,
+        "base_id": "fleurs/1510"
+      },
+      {
+        "id": "fleurs-en_us-validation-2-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 0,
+        "characters": 87,
+        "token_edits": 2,
+        "tokens": 21,
+        "base_id": "fleurs/1510"
+      },
+      {
+        "id": "fleurs-en_us-validation-2-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 0,
+        "characters": 87,
+        "token_edits": 2,
+        "tokens": 21,
+        "base_id": "fleurs/1510"
+      },
+      {
+        "id": "fleurs-en_us-validation-3",
+        "category": "regression/en_us/clean",
+        "character_edits": 16,
+        "characters": 45,
+        "token_edits": 6,
+        "tokens": 10,
+        "base_id": "fleurs/1578"
+      },
+      {
+        "id": "fleurs-en_us-validation-3-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 14,
+        "characters": 45,
+        "token_edits": 5,
+        "tokens": 10,
+        "base_id": "fleurs/1578"
+      },
+      {
+        "id": "fleurs-en_us-validation-3-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 20,
+        "characters": 45,
+        "token_edits": 7,
+        "tokens": 10,
+        "base_id": "fleurs/1578"
+      },
+      {
+        "id": "fleurs-en_us-validation-4",
+        "category": "regression/en_us/clean",
+        "character_edits": 0,
+        "characters": 44,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "fleurs/1652"
+      },
+      {
+        "id": "fleurs-en_us-validation-4-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 0,
+        "characters": 44,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "fleurs/1652"
+      },
+      {
+        "id": "fleurs-en_us-validation-4-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 7,
+        "characters": 44,
+        "token_edits": 2,
+        "tokens": 8,
+        "base_id": "fleurs/1652"
+      },
+      {
+        "id": "fleurs-en_us-validation-5",
+        "category": "regression/en_us/clean",
+        "character_edits": 14,
+        "characters": 66,
+        "token_edits": 3,
+        "tokens": 15,
+        "base_id": "fleurs/1531"
+      },
+      {
+        "id": "fleurs-en_us-validation-5-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 26,
+        "characters": 66,
+        "token_edits": 6,
+        "tokens": 15,
+        "base_id": "fleurs/1531"
+      },
+      {
+        "id": "fleurs-en_us-validation-5-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 29,
+        "characters": 66,
+        "token_edits": 7,
+        "tokens": 15,
+        "base_id": "fleurs/1531"
+      },
+      {
+        "id": "fleurs-en_us-validation-6",
+        "category": "regression/en_us/clean",
+        "character_edits": 0,
+        "characters": 64,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "fleurs/1528"
+      },
+      {
+        "id": "fleurs-en_us-validation-6-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 0,
+        "characters": 64,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "fleurs/1528"
+      },
+      {
+        "id": "fleurs-en_us-validation-6-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 0,
+        "characters": 64,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "fleurs/1528"
+      },
+      {
+        "id": "fleurs-en_us-validation-7",
+        "category": "regression/en_us/clean",
+        "character_edits": 6,
+        "characters": 120,
+        "token_edits": 3,
+        "tokens": 28,
+        "base_id": "fleurs/1595"
+      },
+      {
+        "id": "fleurs-en_us-validation-7-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 9,
+        "characters": 120,
+        "token_edits": 3,
+        "tokens": 28,
+        "base_id": "fleurs/1595"
+      },
+      {
+        "id": "fleurs-en_us-validation-7-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 7,
+        "characters": 120,
+        "token_edits": 3,
+        "tokens": 28,
+        "base_id": "fleurs/1595"
+      },
+      {
+        "id": "fleurs-en_us-validation-8",
+        "category": "regression/en_us/clean",
+        "character_edits": 0,
+        "characters": 89,
+        "token_edits": 0,
+        "tokens": 16,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-en_us-validation-8-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 0,
+        "characters": 89,
+        "token_edits": 0,
+        "tokens": 16,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-en_us-validation-8-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 17,
+        "characters": 89,
+        "token_edits": 4,
+        "tokens": 16,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-en_us-validation-9",
+        "category": "regression/en_us/clean",
+        "character_edits": 5,
+        "characters": 106,
+        "token_edits": 1,
+        "tokens": 19,
+        "base_id": "fleurs/1633"
+      },
+      {
+        "id": "fleurs-en_us-validation-9-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 5,
+        "characters": 106,
+        "token_edits": 1,
+        "tokens": 19,
+        "base_id": "fleurs/1633"
+      },
+      {
+        "id": "fleurs-en_us-validation-9-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 5,
+        "characters": 106,
+        "token_edits": 1,
+        "tokens": 19,
+        "base_id": "fleurs/1633"
+      },
+      {
+        "id": "long-cmn_hans_cn-dev",
+        "category": "regression/cmn_hans_cn/long",
+        "character_edits": 3,
+        "characters": 173,
+        "token_edits": 3,
+        "tokens": 173,
+        "base_id": "fleurs/long-cmn_hans_cn-dev"
+      },
+      {
+        "id": "long-en_us-dev",
+        "category": "regression/en_us/long",
+        "character_edits": 72,
+        "characters": 453,
+        "token_edits": 22,
+        "tokens": 87,
+        "base_id": "fleurs/long-en_us-dev"
+      },
+      {
+        "id": "long-cmn_hans_cn-holdout",
+        "category": "regression/cmn_hans_cn/long",
+        "character_edits": 2,
+        "characters": 152,
+        "token_edits": 2,
+        "tokens": 149,
+        "base_id": "fleurs/long-cmn_hans_cn-holdout"
+      },
+      {
+        "id": "long-en_us-holdout",
+        "category": "regression/en_us/long",
+        "character_edits": 12,
+        "characters": 445,
+        "token_edits": 5,
+        "tokens": 89,
+        "base_id": "fleurs/long-en_us-holdout"
+      },
+      {
+        "id": "silence",
+        "category": "regression/no-speech",
+        "character_edits": 0,
+        "characters": 0,
+        "token_edits": 0,
+        "tokens": 0,
+        "base_id": "fleurs/silence"
+      },
+      {
+        "id": "white-no-speech",
+        "category": "regression/no-speech",
+        "character_edits": 0,
+        "characters": 0,
+        "token_edits": 0,
+        "tokens": 0,
+        "base_id": "fleurs/white-no-speech"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-0-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 44,
+        "token_edits": 0,
+        "tokens": 44,
+        "base_id": "fleurs/1579"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-1-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 2,
+        "characters": 35,
+        "token_edits": 2,
+        "tokens": 35,
+        "base_id": "fleurs/1605"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-2-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 1,
+        "characters": 26,
+        "token_edits": 1,
+        "tokens": 26,
+        "base_id": "fleurs/1581"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-3-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 15,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1648"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-4-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 23,
+        "base_id": "fleurs/1588"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-5-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1638"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-6-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 28,
+        "token_edits": 0,
+        "tokens": 28,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-7-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1519"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-8-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 7,
+        "characters": 31,
+        "token_edits": 7,
+        "tokens": 28,
+        "base_id": "fleurs/1523"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-9-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 4,
+        "characters": 24,
+        "token_edits": 4,
+        "tokens": 21,
+        "base_id": "fleurs/1593"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-10-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1640"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-11-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 14,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "fleurs/1554"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-12-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 13,
+        "token_edits": 0,
+        "tokens": 13,
+        "base_id": "fleurs/1577"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-13-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 48,
+        "token_edits": 0,
+        "tokens": 48,
+        "base_id": "fleurs/1574"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-14-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 2,
+        "characters": 47,
+        "token_edits": 2,
+        "tokens": 47,
+        "base_id": "fleurs/1591"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-15-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 14,
+        "characters": 52,
+        "token_edits": 6,
+        "tokens": 41,
+        "base_id": "fleurs/1606"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-16-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 4,
+        "characters": 77,
+        "token_edits": 4,
+        "tokens": 76,
+        "base_id": "fleurs/1525"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-18-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 3,
+        "characters": 29,
+        "token_edits": 3,
+        "tokens": 29,
+        "base_id": "fleurs/1631"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-19-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 22,
+        "token_edits": 0,
+        "tokens": 22,
+        "base_id": "fleurs/1572"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-20-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 13,
+        "characters": 58,
+        "token_edits": 9,
+        "tokens": 52,
+        "base_id": "fleurs/1556"
+      },
+      {
+        "id": "fleurs-en_us-validation-0-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 1,
+        "characters": 64,
+        "token_edits": 2,
+        "tokens": 15,
+        "base_id": "fleurs/1548"
+      },
+      {
+        "id": "fleurs-en_us-validation-1-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 8,
+        "characters": 213,
+        "token_edits": 6,
+        "tokens": 33,
+        "base_id": "fleurs/1620"
+      },
+      {
+        "id": "fleurs-en_us-validation-2-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 0,
+        "characters": 87,
+        "token_edits": 2,
+        "tokens": 21,
+        "base_id": "fleurs/1510"
+      },
+      {
+        "id": "fleurs-en_us-validation-3-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 15,
+        "characters": 45,
+        "token_edits": 6,
+        "tokens": 10,
+        "base_id": "fleurs/1578"
+      },
+      {
+        "id": "fleurs-en_us-validation-4-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 0,
+        "characters": 44,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "fleurs/1652"
+      },
+      {
+        "id": "fleurs-en_us-validation-5-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 37,
+        "characters": 66,
+        "token_edits": 9,
+        "tokens": 15,
+        "base_id": "fleurs/1531"
+      },
+      {
+        "id": "fleurs-en_us-validation-6-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 0,
+        "characters": 64,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "fleurs/1528"
+      },
+      {
+        "id": "fleurs-en_us-validation-7-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 27,
+        "characters": 120,
+        "token_edits": 10,
+        "tokens": 28,
+        "base_id": "fleurs/1595"
+      },
+      {
+        "id": "fleurs-en_us-validation-8-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 39,
+        "characters": 89,
+        "token_edits": 8,
+        "tokens": 16,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-en_us-validation-9-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 7,
+        "characters": 106,
+        "token_edits": 2,
+        "tokens": 19,
+        "base_id": "fleurs/1633"
+      },
+      {
+        "id": "train-no-speech",
+        "category": "regression/no-speech/train",
+        "character_edits": 0,
+        "characters": 0,
+        "token_edits": 0,
+        "tokens": 0,
+        "base_id": "fleurs/train-no-speech"
+      }
+    ]
+  },
+  "after": {
+    "normalization": "NFKC + casefold; CER keeps alphanumeric; MER uses Han chars + English words; no number verbalization equivalence",
+    "timing": "compute_ms/compute_rtf and asr percentiles describe ASR only; rewrite times are separate; unknown timing is null",
+    "summary": {
+      "ascend/en/clean": {
+        "cases": 40,
+        "characters": 1447,
+        "character_edits": 195,
+        "tokens": 368,
+        "token_edits": 85,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 152.771625,
+        "compute_ms": 14701.649999999998,
+        "timed_cases": 40,
+        "exact_cases": 12,
+        "cer": 0.13476157567380787,
+        "mer": 0.23097826086956522,
+        "compute_rtf": 0.09623285737780166,
+        "asr_p50_ms": 317.98400000000004,
+        "asr_p95_ms": 745.3022999999998,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "ascend/zh/clean": {
+        "cases": 40,
+        "characters": 558,
+        "character_edits": 44,
+        "tokens": 556,
+        "token_edits": 33,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 142.9906875,
+        "compute_ms": 13693.569000000001,
+        "timed_cases": 40,
+        "exact_cases": 22,
+        "cer": 0.07885304659498207,
+        "mer": 0.05935251798561151,
+        "compute_rtf": 0.09576546025068941,
+        "asr_p50_ms": 308.302,
+        "asr_p95_ms": 638.4869999999997,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "ascend/mixed/clean": {
+        "cases": 40,
+        "characters": 1134,
+        "character_edits": 118,
+        "tokens": 680,
+        "token_edits": 61,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 192.82025000000002,
+        "compute_ms": 18031.935999999998,
+        "timed_cases": 40,
+        "exact_cases": 16,
+        "cer": 0.10405643738977072,
+        "mer": 0.08970588235294118,
+        "compute_rtf": 0.09351681682810803,
+        "asr_p50_ms": 404.4625,
+        "asr_p95_ms": 867.9783999999999,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "ascend/en/white-10db": {
+        "cases": 12,
+        "characters": 433,
+        "character_edits": 70,
+        "tokens": 110,
+        "token_edits": 27,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 48.6301875,
+        "compute_ms": 4569.013000000001,
+        "timed_cases": 12,
+        "exact_cases": 1,
+        "cer": 0.16166281755196305,
+        "mer": 0.24545454545454545,
+        "compute_rtf": 0.09395425423765848,
+        "asr_p50_ms": 312.627,
+        "asr_p95_ms": 653.7492999999998,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "ascend/mixed/white-10db": {
+        "cases": 7,
+        "characters": 156,
+        "character_edits": 47,
+        "tokens": 97,
+        "token_edits": 21,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 26.34,
+        "compute_ms": 2585.04,
+        "timed_cases": 7,
+        "exact_cases": 2,
+        "cer": 0.30128205128205127,
+        "mer": 0.21649484536082475,
+        "compute_rtf": 0.09814123006833712,
+        "asr_p50_ms": 331.752,
+        "asr_p95_ms": 467.0631,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "ascend/zh/white-10db": {
+        "cases": 11,
+        "characters": 166,
+        "character_edits": 22,
+        "tokens": 166,
+        "token_edits": 22,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 44.210562499999995,
+        "compute_ms": 4284.041,
+        "timed_cases": 11,
+        "exact_cases": 4,
+        "cer": 0.13253012048192772,
+        "mer": 0.13253012048192772,
+        "compute_rtf": 0.09690084807222257,
+        "asr_p50_ms": 295.961,
+        "asr_p95_ms": 861.276,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/cmn_hans_cn/clean": {
+        "cases": 20,
+        "characters": 676,
+        "character_edits": 51,
+        "tokens": 649,
+        "token_edits": 40,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 248.22000000000003,
+        "compute_ms": 22054.061,
+        "timed_cases": 20,
+        "exact_cases": 9,
+        "cer": 0.07544378698224852,
+        "mer": 0.061633281972265024,
+        "compute_rtf": 0.08884884779630972,
+        "asr_p50_ms": 1082.4180000000001,
+        "asr_p95_ms": 1669.96655,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/cmn_hans_cn/white-20db": {
+        "cases": 20,
+        "characters": 676,
+        "character_edits": 51,
+        "tokens": 649,
+        "token_edits": 39,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 248.22000000000003,
+        "compute_ms": 22073.293,
+        "timed_cases": 20,
+        "exact_cases": 10,
+        "cer": 0.07544378698224852,
+        "mer": 0.060092449922958396,
+        "compute_rtf": 0.08892632745145436,
+        "asr_p50_ms": 1081.5,
+        "asr_p95_ms": 1671.8105500000004,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/cmn_hans_cn/white-10db": {
+        "cases": 20,
+        "characters": 676,
+        "character_edits": 58,
+        "tokens": 649,
+        "token_edits": 46,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 248.22000000000003,
+        "compute_ms": 22019.729,
+        "timed_cases": 20,
+        "exact_cases": 10,
+        "cer": 0.08579881656804733,
+        "mer": 0.07087827426810478,
+        "compute_rtf": 0.08871053500926596,
+        "asr_p50_ms": 1086.853,
+        "asr_p95_ms": 1657.8825500000003,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/en_us/clean": {
+        "cases": 10,
+        "characters": 898,
+        "character_edits": 37,
+        "tokens": 176,
+        "token_edits": 18,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 79.99999999999999,
+        "compute_ms": 7501.344000000001,
+        "timed_cases": 10,
+        "exact_cases": 6,
+        "cer": 0.04120267260579064,
+        "mer": 0.10227272727272728,
+        "compute_rtf": 0.09376680000000004,
+        "asr_p50_ms": 703.0730000000001,
+        "asr_p95_ms": 1252.7723999999994,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/en_us/white-20db": {
+        "cases": 10,
+        "characters": 898,
+        "character_edits": 53,
+        "tokens": 176,
+        "token_edits": 17,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 79.99999999999999,
+        "compute_ms": 7453.912,
+        "timed_cases": 10,
+        "exact_cases": 6,
+        "cer": 0.05902004454342984,
+        "mer": 0.09659090909090909,
+        "compute_rtf": 0.09317390000000002,
+        "asr_p50_ms": 709.8895,
+        "asr_p95_ms": 1248.7953499999994,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/en_us/white-10db": {
+        "cases": 10,
+        "characters": 898,
+        "character_edits": 75,
+        "tokens": 176,
+        "token_edits": 21,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 79.99999999999999,
+        "compute_ms": 7514.615000000001,
+        "timed_cases": 10,
+        "exact_cases": 4,
+        "cer": 0.08351893095768374,
+        "mer": 0.11931818181818182,
+        "compute_rtf": 0.09393268750000003,
+        "asr_p50_ms": 703.7370000000001,
+        "asr_p95_ms": 1246.1012999999994,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/cmn_hans_cn/long": {
+        "cases": 2,
+        "characters": 325,
+        "character_edits": 5,
+        "tokens": 322,
+        "token_edits": 5,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 139.6,
+        "compute_ms": 12633.676,
+        "timed_cases": 2,
+        "exact_cases": 0,
+        "cer": 0.015384615384615385,
+        "mer": 0.015527950310559006,
+        "compute_rtf": 0.090499111747851,
+        "asr_p50_ms": 6316.838,
+        "asr_p95_ms": 6618.7366999999995,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/en_us/long": {
+        "cases": 2,
+        "characters": 898,
+        "character_edits": 97,
+        "tokens": 176,
+        "token_edits": 29,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 85.0,
+        "compute_ms": 7890.374,
+        "timed_cases": 2,
+        "exact_cases": 0,
+        "cer": 0.10801781737193764,
+        "mer": 0.16477272727272727,
+        "compute_rtf": 0.0928279294117647,
+        "asr_p50_ms": 3945.187,
+        "asr_p95_ms": 3990.3175,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/no-speech": {
+        "cases": 2,
+        "characters": 0,
+        "character_edits": 0,
+        "tokens": 0,
+        "token_edits": 0,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 10.0,
+        "compute_ms": 609.8340000000001,
+        "timed_cases": 2,
+        "exact_cases": 2,
+        "cer": null,
+        "mer": null,
+        "compute_rtf": 0.06098340000000001,
+        "asr_p50_ms": 304.91700000000003,
+        "asr_p95_ms": 305.62890000000004,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/cmn_hans_cn/train-10db": {
+        "cases": 20,
+        "characters": 676,
+        "character_edits": 50,
+        "tokens": 649,
+        "token_edits": 38,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 248.22000000000003,
+        "compute_ms": 22090.686,
+        "timed_cases": 20,
+        "exact_cases": 11,
+        "cer": 0.07396449704142012,
+        "mer": 0.05855161787365177,
+        "compute_rtf": 0.08899639835629683,
+        "asr_p50_ms": 1085.5495,
+        "asr_p95_ms": 1697.2305000000001,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/en_us/train-10db": {
+        "cases": 10,
+        "characters": 898,
+        "character_edits": 35,
+        "tokens": 176,
+        "token_edits": 19,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 79.99999999999999,
+        "compute_ms": 7255.573,
+        "timed_cases": 10,
+        "exact_cases": 5,
+        "cer": 0.03897550111358575,
+        "mer": 0.10795454545454546,
+        "compute_rtf": 0.09069466250000002,
+        "asr_p50_ms": 660.6030000000001,
+        "asr_p95_ms": 1237.7718499999994,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      },
+      "regression/no-speech/train": {
+        "cases": 1,
+        "characters": 0,
+        "character_edits": 0,
+        "tokens": 0,
+        "token_edits": 0,
+        "errors": 0,
+        "rewrite_errors": 0,
+        "auto_commit_blocked": 0,
+        "false_insertions": 0,
+        "audio_seconds": 2.48,
+        "compute_ms": 152.172,
+        "timed_cases": 1,
+        "exact_cases": 1,
+        "cer": null,
+        "mer": null,
+        "compute_rtf": 0.06135967741935484,
+        "asr_p50_ms": 152.172,
+        "asr_p95_ms": 152.172,
+        "rewrite_calls": 0,
+        "rewrite_p50_ms": null,
+        "rewrite_p95_ms": null
+      }
+    },
+    "per_case": [
+      {
+        "id": "ascend-test-00012",
+        "category": "ascend/en/clean",
+        "character_edits": 21,
+        "characters": 25,
+        "token_edits": 10,
+        "tokens": 10,
+        "base_id": "ascend-test-00012"
+      },
+      {
+        "id": "ascend-test-00045",
+        "category": "ascend/en/clean",
+        "character_edits": 9,
+        "characters": 43,
+        "token_edits": 2,
+        "tokens": 8,
+        "base_id": "ascend-test-00045"
+      },
+      {
+        "id": "ascend-test-00046",
+        "category": "ascend/en/clean",
+        "character_edits": 1,
+        "characters": 19,
+        "token_edits": 1,
+        "tokens": 5,
+        "base_id": "ascend-test-00046"
+      },
+      {
+        "id": "ascend-test-00077",
+        "category": "ascend/en/clean",
+        "character_edits": 3,
+        "characters": 34,
+        "token_edits": 1,
+        "tokens": 7,
+        "base_id": "ascend-test-00077"
+      },
+      {
+        "id": "ascend-test-00099",
+        "category": "ascend/zh/clean",
+        "character_edits": 2,
+        "characters": 15,
+        "token_edits": 2,
+        "tokens": 15,
+        "base_id": "ascend-test-00099"
+      },
+      {
+        "id": "ascend-test-00110",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 53,
+        "token_edits": 0,
+        "tokens": 13,
+        "base_id": "ascend-test-00110"
+      },
+      {
+        "id": "ascend-test-00116",
+        "category": "ascend/en/clean",
+        "character_edits": 2,
+        "characters": 37,
+        "token_edits": 3,
+        "tokens": 9,
+        "base_id": "ascend-test-00116"
+      },
+      {
+        "id": "ascend-test-00119",
+        "category": "ascend/en/clean",
+        "character_edits": 19,
+        "characters": 54,
+        "token_edits": 7,
+        "tokens": 18,
+        "base_id": "ascend-test-00119"
+      },
+      {
+        "id": "ascend-test-00127",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 9,
+        "token_edits": 0,
+        "tokens": 9,
+        "base_id": "ascend-test-00127"
+      },
+      {
+        "id": "ascend-test-00136",
+        "category": "ascend/en/clean",
+        "character_edits": 31,
+        "characters": 109,
+        "token_edits": 10,
+        "tokens": 27,
+        "base_id": "ascend-test-00136"
+      },
+      {
+        "id": "ascend-test-00153",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 10,
+        "token_edits": 1,
+        "tokens": 10,
+        "base_id": "ascend-test-00153"
+      },
+      {
+        "id": "ascend-test-00165",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 14,
+        "token_edits": 0,
+        "tokens": 4,
+        "base_id": "ascend-test-00165"
+      },
+      {
+        "id": "ascend-test-00190",
+        "category": "ascend/mixed/clean",
+        "character_edits": 1,
+        "characters": 21,
+        "token_edits": 1,
+        "tokens": 9,
+        "base_id": "ascend-test-00190"
+      },
+      {
+        "id": "ascend-test-00199",
+        "category": "ascend/mixed/clean",
+        "character_edits": 15,
+        "characters": 19,
+        "token_edits": 7,
+        "tokens": 7,
+        "base_id": "ascend-test-00199"
+      },
+      {
+        "id": "ascend-test-00203",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 15,
+        "token_edits": 1,
+        "tokens": 15,
+        "base_id": "ascend-test-00203"
+      },
+      {
+        "id": "ascend-test-00215",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 17,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00215"
+      },
+      {
+        "id": "ascend-test-00245",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 11,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "ascend-test-00245"
+      },
+      {
+        "id": "ascend-test-00249",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 22,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00249"
+      },
+      {
+        "id": "ascend-test-00268",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 8,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "ascend-test-00268"
+      },
+      {
+        "id": "ascend-test-00280",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 12,
+        "token_edits": 0,
+        "tokens": 12,
+        "base_id": "ascend-test-00280"
+      },
+      {
+        "id": "ascend-test-00302",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 9,
+        "token_edits": 0,
+        "tokens": 9,
+        "base_id": "ascend-test-00302"
+      },
+      {
+        "id": "ascend-test-00303",
+        "category": "ascend/zh/clean",
+        "character_edits": 11,
+        "characters": 12,
+        "token_edits": 2,
+        "tokens": 10,
+        "base_id": "ascend-test-00303"
+      },
+      {
+        "id": "ascend-test-00316",
+        "category": "ascend/zh/clean",
+        "character_edits": 2,
+        "characters": 7,
+        "token_edits": 2,
+        "tokens": 7,
+        "base_id": "ascend-test-00316"
+      },
+      {
+        "id": "ascend-test-00330",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 7,
+        "token_edits": 0,
+        "tokens": 7,
+        "base_id": "ascend-test-00330"
+      },
+      {
+        "id": "ascend-test-00333",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 7,
+        "token_edits": 1,
+        "tokens": 7,
+        "base_id": "ascend-test-00333"
+      },
+      {
+        "id": "ascend-test-00335",
+        "category": "ascend/mixed/clean",
+        "character_edits": 1,
+        "characters": 21,
+        "token_edits": 1,
+        "tokens": 15,
+        "base_id": "ascend-test-00335"
+      },
+      {
+        "id": "ascend-test-00336",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 7,
+        "token_edits": 0,
+        "tokens": 7,
+        "base_id": "ascend-test-00336"
+      },
+      {
+        "id": "ascend-test-00344",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 7,
+        "token_edits": 0,
+        "tokens": 7,
+        "base_id": "ascend-test-00344"
+      },
+      {
+        "id": "ascend-test-00346",
+        "category": "ascend/mixed/clean",
+        "character_edits": 8,
+        "characters": 20,
+        "token_edits": 2,
+        "tokens": 14,
+        "base_id": "ascend-test-00346"
+      },
+      {
+        "id": "ascend-test-00358",
+        "category": "ascend/mixed/clean",
+        "character_edits": 1,
+        "characters": 17,
+        "token_edits": 1,
+        "tokens": 10,
+        "base_id": "ascend-test-00358"
+      },
+      {
+        "id": "ascend-test-00379",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 18,
+        "token_edits": 1,
+        "tokens": 18,
+        "base_id": "ascend-test-00379"
+      },
+      {
+        "id": "ascend-test-00387",
+        "category": "ascend/zh/clean",
+        "character_edits": 2,
+        "characters": 13,
+        "token_edits": 2,
+        "tokens": 13,
+        "base_id": "ascend-test-00387"
+      },
+      {
+        "id": "ascend-test-00404",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00404"
+      },
+      {
+        "id": "ascend-test-00408",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 6,
+        "token_edits": 0,
+        "tokens": 6,
+        "base_id": "ascend-test-00408"
+      },
+      {
+        "id": "ascend-test-00420",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 38,
+        "token_edits": 0,
+        "tokens": 38,
+        "base_id": "ascend-test-00420"
+      },
+      {
+        "id": "ascend-test-00422",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 10,
+        "token_edits": 1,
+        "tokens": 10,
+        "base_id": "ascend-test-00422"
+      },
+      {
+        "id": "ascend-test-00425",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 36,
+        "token_edits": 0,
+        "tokens": 20,
+        "base_id": "ascend-test-00425"
+      },
+      {
+        "id": "ascend-test-00430",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 16,
+        "token_edits": 0,
+        "tokens": 12,
+        "base_id": "ascend-test-00430"
+      },
+      {
+        "id": "ascend-test-00437",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 25,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00437"
+      },
+      {
+        "id": "ascend-test-00464",
+        "category": "ascend/en/clean",
+        "character_edits": 8,
+        "characters": 30,
+        "token_edits": 4,
+        "tokens": 11,
+        "base_id": "ascend-test-00464"
+      },
+      {
+        "id": "ascend-test-00466",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 35,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "ascend-test-00466"
+      },
+      {
+        "id": "ascend-test-00467",
+        "category": "ascend/en/clean",
+        "character_edits": 6,
+        "characters": 38,
+        "token_edits": 2,
+        "tokens": 11,
+        "base_id": "ascend-test-00467"
+      },
+      {
+        "id": "ascend-test-00487",
+        "category": "ascend/zh/clean",
+        "character_edits": 4,
+        "characters": 14,
+        "token_edits": 4,
+        "tokens": 14,
+        "base_id": "ascend-test-00487"
+      },
+      {
+        "id": "ascend-test-00508",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 21,
+        "token_edits": 0,
+        "tokens": 5,
+        "base_id": "ascend-test-00508"
+      },
+      {
+        "id": "ascend-test-00509",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 26,
+        "token_edits": 0,
+        "tokens": 7,
+        "base_id": "ascend-test-00509"
+      },
+      {
+        "id": "ascend-test-00514",
+        "category": "ascend/en/clean",
+        "character_edits": 15,
+        "characters": 30,
+        "token_edits": 5,
+        "tokens": 9,
+        "base_id": "ascend-test-00514"
+      },
+      {
+        "id": "ascend-test-00520",
+        "category": "ascend/en/clean",
+        "character_edits": 7,
+        "characters": 19,
+        "token_edits": 3,
+        "tokens": 4,
+        "base_id": "ascend-test-00520"
+      },
+      {
+        "id": "ascend-test-00586",
+        "category": "ascend/en/clean",
+        "character_edits": 3,
+        "characters": 20,
+        "token_edits": 2,
+        "tokens": 6,
+        "base_id": "ascend-test-00586"
+      },
+      {
+        "id": "ascend-test-00587",
+        "category": "ascend/en/clean",
+        "character_edits": 2,
+        "characters": 18,
+        "token_edits": 2,
+        "tokens": 9,
+        "base_id": "ascend-test-00587"
+      },
+      {
+        "id": "ascend-test-00589",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 28,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "ascend-test-00589"
+      },
+      {
+        "id": "ascend-test-00634",
+        "category": "ascend/mixed/clean",
+        "character_edits": 14,
+        "characters": 43,
+        "token_edits": 2,
+        "tokens": 18,
+        "base_id": "ascend-test-00634"
+      },
+      {
+        "id": "ascend-test-00648",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 9,
+        "token_edits": 0,
+        "tokens": 9,
+        "base_id": "ascend-test-00648"
+      },
+      {
+        "id": "ascend-test-00655",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 29,
+        "token_edits": 0,
+        "tokens": 6,
+        "base_id": "ascend-test-00655"
+      },
+      {
+        "id": "ascend-test-00662",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 7,
+        "token_edits": 0,
+        "tokens": 7,
+        "base_id": "ascend-test-00662"
+      },
+      {
+        "id": "ascend-test-00675",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 42,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00675"
+      },
+      {
+        "id": "ascend-test-00680",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 10,
+        "token_edits": 0,
+        "tokens": 10,
+        "base_id": "ascend-test-00680"
+      },
+      {
+        "id": "ascend-test-00682",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 21,
+        "token_edits": 0,
+        "tokens": 16,
+        "base_id": "ascend-test-00682"
+      },
+      {
+        "id": "ascend-test-00685",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 14,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00685"
+      },
+      {
+        "id": "ascend-test-00688",
+        "category": "ascend/zh/clean",
+        "character_edits": 4,
+        "characters": 12,
+        "token_edits": 2,
+        "tokens": 12,
+        "base_id": "ascend-test-00688"
+      },
+      {
+        "id": "ascend-test-00691",
+        "category": "ascend/mixed/clean",
+        "character_edits": 3,
+        "characters": 18,
+        "token_edits": 1,
+        "tokens": 13,
+        "base_id": "ascend-test-00691"
+      },
+      {
+        "id": "ascend-test-00701",
+        "category": "ascend/mixed/clean",
+        "character_edits": 13,
+        "characters": 54,
+        "token_edits": 6,
+        "tokens": 13,
+        "base_id": "ascend-test-00701"
+      },
+      {
+        "id": "ascend-test-00703",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 31,
+        "token_edits": 0,
+        "tokens": 6,
+        "base_id": "ascend-test-00703"
+      },
+      {
+        "id": "ascend-test-00708",
+        "category": "ascend/en/clean",
+        "character_edits": 3,
+        "characters": 36,
+        "token_edits": 1,
+        "tokens": 6,
+        "base_id": "ascend-test-00708"
+      },
+      {
+        "id": "ascend-test-00714",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 16,
+        "token_edits": 0,
+        "tokens": 16,
+        "base_id": "ascend-test-00714"
+      },
+      {
+        "id": "ascend-test-00716",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 17,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00716"
+      },
+      {
+        "id": "ascend-test-00723",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 25,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "ascend-test-00723"
+      },
+      {
+        "id": "ascend-test-00726",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 12,
+        "token_edits": 0,
+        "tokens": 12,
+        "base_id": "ascend-test-00726"
+      },
+      {
+        "id": "ascend-test-00748",
+        "category": "ascend/mixed/clean",
+        "character_edits": 1,
+        "characters": 22,
+        "token_edits": 1,
+        "tokens": 17,
+        "base_id": "ascend-test-00748"
+      },
+      {
+        "id": "ascend-test-00750",
+        "category": "ascend/mixed/clean",
+        "character_edits": 1,
+        "characters": 32,
+        "token_edits": 1,
+        "tokens": 25,
+        "base_id": "ascend-test-00750"
+      },
+      {
+        "id": "ascend-test-00777",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 46,
+        "token_edits": 0,
+        "tokens": 9,
+        "base_id": "ascend-test-00777"
+      },
+      {
+        "id": "ascend-test-00778",
+        "category": "ascend/en/clean",
+        "character_edits": 2,
+        "characters": 56,
+        "token_edits": 1,
+        "tokens": 14,
+        "base_id": "ascend-test-00778"
+      },
+      {
+        "id": "ascend-test-00788",
+        "category": "ascend/en/clean",
+        "character_edits": 8,
+        "characters": 34,
+        "token_edits": 2,
+        "tokens": 9,
+        "base_id": "ascend-test-00788"
+      },
+      {
+        "id": "ascend-test-00792",
+        "category": "ascend/en/clean",
+        "character_edits": 2,
+        "characters": 28,
+        "token_edits": 1,
+        "tokens": 7,
+        "base_id": "ascend-test-00792"
+      },
+      {
+        "id": "ascend-test-00809",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 28,
+        "token_edits": 0,
+        "tokens": 28,
+        "base_id": "ascend-test-00809"
+      },
+      {
+        "id": "ascend-test-00813",
+        "category": "ascend/en/clean",
+        "character_edits": 5,
+        "characters": 43,
+        "token_edits": 2,
+        "tokens": 9,
+        "base_id": "ascend-test-00813"
+      },
+      {
+        "id": "ascend-test-00854",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 55,
+        "token_edits": 4,
+        "tokens": 12,
+        "base_id": "ascend-test-00854"
+      },
+      {
+        "id": "ascend-test-00858",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 16,
+        "token_edits": 0,
+        "tokens": 16,
+        "base_id": "ascend-test-00858"
+      },
+      {
+        "id": "ascend-test-00878",
+        "category": "ascend/en/clean",
+        "character_edits": 4,
+        "characters": 39,
+        "token_edits": 2,
+        "tokens": 9,
+        "base_id": "ascend-test-00878"
+      },
+      {
+        "id": "ascend-test-00880",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 33,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "ascend-test-00880"
+      },
+      {
+        "id": "ascend-test-00888",
+        "category": "ascend/mixed/clean",
+        "character_edits": 7,
+        "characters": 32,
+        "token_edits": 7,
+        "tokens": 27,
+        "base_id": "ascend-test-00888"
+      },
+      {
+        "id": "ascend-test-00937",
+        "category": "ascend/mixed/clean",
+        "character_edits": 3,
+        "characters": 23,
+        "token_edits": 3,
+        "tokens": 16,
+        "base_id": "ascend-test-00937"
+      },
+      {
+        "id": "ascend-test-00950",
+        "category": "ascend/zh/clean",
+        "character_edits": 2,
+        "characters": 37,
+        "token_edits": 2,
+        "tokens": 37,
+        "base_id": "ascend-test-00950"
+      },
+      {
+        "id": "ascend-test-00962",
+        "category": "ascend/mixed/clean",
+        "character_edits": 9,
+        "characters": 28,
+        "token_edits": 4,
+        "tokens": 16,
+        "base_id": "ascend-test-00962"
+      },
+      {
+        "id": "ascend-test-00968",
+        "category": "ascend/mixed/clean",
+        "character_edits": 8,
+        "characters": 64,
+        "token_edits": 5,
+        "tokens": 31,
+        "base_id": "ascend-test-00968"
+      },
+      {
+        "id": "ascend-test-01005",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 35,
+        "token_edits": 0,
+        "tokens": 25,
+        "base_id": "ascend-test-01005"
+      },
+      {
+        "id": "ascend-test-01010",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 13,
+        "token_edits": 1,
+        "tokens": 13,
+        "base_id": "ascend-test-01010"
+      },
+      {
+        "id": "ascend-test-01016",
+        "category": "ascend/mixed/clean",
+        "character_edits": 2,
+        "characters": 60,
+        "token_edits": 2,
+        "tokens": 51,
+        "base_id": "ascend-test-01016"
+      },
+      {
+        "id": "ascend-test-01018",
+        "category": "ascend/en/clean",
+        "character_edits": 9,
+        "characters": 57,
+        "token_edits": 2,
+        "tokens": 13,
+        "base_id": "ascend-test-01018"
+      },
+      {
+        "id": "ascend-test-01019",
+        "category": "ascend/mixed/clean",
+        "character_edits": 3,
+        "characters": 59,
+        "token_edits": 1,
+        "tokens": 21,
+        "base_id": "ascend-test-01019"
+      },
+      {
+        "id": "ascend-test-01039",
+        "category": "ascend/mixed/clean",
+        "character_edits": 2,
+        "characters": 38,
+        "token_edits": 2,
+        "tokens": 27,
+        "base_id": "ascend-test-01039"
+      },
+      {
+        "id": "ascend-test-01040",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 23,
+        "base_id": "ascend-test-01040"
+      },
+      {
+        "id": "ascend-test-01064",
+        "category": "ascend/mixed/clean",
+        "character_edits": 4,
+        "characters": 15,
+        "token_edits": 2,
+        "tokens": 4,
+        "base_id": "ascend-test-01064"
+      },
+      {
+        "id": "ascend-test-01065",
+        "category": "ascend/en/clean",
+        "character_edits": 2,
+        "characters": 27,
+        "token_edits": 1,
+        "tokens": 6,
+        "base_id": "ascend-test-01065"
+      },
+      {
+        "id": "ascend-test-01070",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 28,
+        "token_edits": 1,
+        "tokens": 28,
+        "base_id": "ascend-test-01070"
+      },
+      {
+        "id": "ascend-test-01074",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 16,
+        "token_edits": 0,
+        "tokens": 16,
+        "base_id": "ascend-test-01074"
+      },
+      {
+        "id": "ascend-test-01086",
+        "category": "ascend/en/clean",
+        "character_edits": 3,
+        "characters": 30,
+        "token_edits": 1,
+        "tokens": 7,
+        "base_id": "ascend-test-01086"
+      },
+      {
+        "id": "ascend-test-01095",
+        "category": "ascend/en/clean",
+        "character_edits": 3,
+        "characters": 22,
+        "token_edits": 1,
+        "tokens": 7,
+        "base_id": "ascend-test-01095"
+      },
+      {
+        "id": "ascend-test-01123",
+        "category": "ascend/zh/clean",
+        "character_edits": 3,
+        "characters": 12,
+        "token_edits": 3,
+        "tokens": 12,
+        "base_id": "ascend-test-01123"
+      },
+      {
+        "id": "ascend-test-01131",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 26,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "ascend-test-01131"
+      },
+      {
+        "id": "ascend-test-01132",
+        "category": "ascend/mixed/clean",
+        "character_edits": 6,
+        "characters": 27,
+        "token_edits": 1,
+        "tokens": 16,
+        "base_id": "ascend-test-01132"
+      },
+      {
+        "id": "ascend-test-01145",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 9,
+        "token_edits": 0,
+        "tokens": 5,
+        "base_id": "ascend-test-01145"
+      },
+      {
+        "id": "ascend-test-01149",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 32,
+        "token_edits": 3,
+        "tokens": 30,
+        "base_id": "ascend-test-01149"
+      },
+      {
+        "id": "ascend-test-01152",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 9,
+        "token_edits": 0,
+        "tokens": 9,
+        "base_id": "ascend-test-01152"
+      },
+      {
+        "id": "ascend-test-01185",
+        "category": "ascend/mixed/clean",
+        "character_edits": 9,
+        "characters": 28,
+        "token_edits": 2,
+        "tokens": 20,
+        "base_id": "ascend-test-01185"
+      },
+      {
+        "id": "ascend-test-01210",
+        "category": "ascend/mixed/clean",
+        "character_edits": 3,
+        "characters": 16,
+        "token_edits": 2,
+        "tokens": 11,
+        "base_id": "ascend-test-01210"
+      },
+      {
+        "id": "ascend-test-01219",
+        "category": "ascend/zh/clean",
+        "character_edits": 0,
+        "characters": 8,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "ascend-test-01219"
+      },
+      {
+        "id": "ascend-test-01221",
+        "category": "ascend/en/clean",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 5,
+        "base_id": "ascend-test-01221"
+      },
+      {
+        "id": "ascend-test-01222",
+        "category": "ascend/en/clean",
+        "character_edits": 3,
+        "characters": 59,
+        "token_edits": 2,
+        "tokens": 15,
+        "base_id": "ascend-test-01222"
+      },
+      {
+        "id": "ascend-test-01224",
+        "category": "ascend/en/clean",
+        "character_edits": 2,
+        "characters": 18,
+        "token_edits": 1,
+        "tokens": 6,
+        "base_id": "ascend-test-01224"
+      },
+      {
+        "id": "ascend-test-01229",
+        "category": "ascend/en/clean",
+        "character_edits": 5,
+        "characters": 42,
+        "token_edits": 3,
+        "tokens": 12,
+        "base_id": "ascend-test-01229"
+      },
+      {
+        "id": "ascend-test-01235",
+        "category": "ascend/en/clean",
+        "character_edits": 4,
+        "characters": 16,
+        "token_edits": 2,
+        "tokens": 5,
+        "base_id": "ascend-test-01235"
+      },
+      {
+        "id": "ascend-test-01236",
+        "category": "ascend/en/clean",
+        "character_edits": 13,
+        "characters": 70,
+        "token_edits": 7,
+        "tokens": 18,
+        "base_id": "ascend-test-01236"
+      },
+      {
+        "id": "ascend-test-01247",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 25,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-01247"
+      },
+      {
+        "id": "ascend-test-01277",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 18,
+        "token_edits": 1,
+        "tokens": 18,
+        "base_id": "ascend-test-01277"
+      },
+      {
+        "id": "ascend-test-01278",
+        "category": "ascend/mixed/clean",
+        "character_edits": 0,
+        "characters": 40,
+        "token_edits": 0,
+        "tokens": 25,
+        "base_id": "ascend-test-01278"
+      },
+      {
+        "id": "ascend-test-01288",
+        "category": "ascend/zh/clean",
+        "character_edits": 1,
+        "characters": 18,
+        "token_edits": 1,
+        "tokens": 18,
+        "base_id": "ascend-test-01288"
+      },
+      {
+        "id": "ascend-test-01290",
+        "category": "ascend/mixed/clean",
+        "character_edits": 2,
+        "characters": 25,
+        "token_edits": 2,
+        "tokens": 11,
+        "base_id": "ascend-test-01290"
+      },
+      {
+        "id": "ascend-test-01293",
+        "category": "ascend/zh/clean",
+        "character_edits": 5,
+        "characters": 17,
+        "token_edits": 5,
+        "tokens": 17,
+        "base_id": "ascend-test-01293"
+      },
+      {
+        "id": "ascend-test-01299",
+        "category": "ascend/mixed/clean",
+        "character_edits": 1,
+        "characters": 18,
+        "token_edits": 1,
+        "tokens": 12,
+        "base_id": "ascend-test-01299"
+      },
+      {
+        "id": "ascend-test-01312",
+        "category": "ascend/mixed/clean",
+        "character_edits": 1,
+        "characters": 23,
+        "token_edits": 1,
+        "tokens": 19,
+        "base_id": "ascend-test-01312"
+      },
+      {
+        "id": "ascend-test-00077-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 3,
+        "characters": 34,
+        "token_edits": 1,
+        "tokens": 7,
+        "base_id": "ascend-test-00077"
+      },
+      {
+        "id": "ascend-test-00116-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 3,
+        "characters": 37,
+        "token_edits": 3,
+        "tokens": 9,
+        "base_id": "ascend-test-00116"
+      },
+      {
+        "id": "ascend-test-00119-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 18,
+        "characters": 54,
+        "token_edits": 7,
+        "tokens": 18,
+        "base_id": "ascend-test-00119"
+      },
+      {
+        "id": "ascend-test-00199-white-10db",
+        "category": "ascend/mixed/white-10db",
+        "character_edits": 9,
+        "characters": 19,
+        "token_edits": 5,
+        "tokens": 7,
+        "base_id": "ascend-test-00199"
+      },
+      {
+        "id": "ascend-test-00245-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 1,
+        "characters": 11,
+        "token_edits": 1,
+        "tokens": 11,
+        "base_id": "ascend-test-00245"
+      },
+      {
+        "id": "ascend-test-00249-white-10db",
+        "category": "ascend/mixed/white-10db",
+        "character_edits": 0,
+        "characters": 22,
+        "token_edits": 0,
+        "tokens": 14,
+        "base_id": "ascend-test-00249"
+      },
+      {
+        "id": "ascend-test-00268-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 0,
+        "characters": 8,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "ascend-test-00268"
+      },
+      {
+        "id": "ascend-test-00344-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 2,
+        "characters": 7,
+        "token_edits": 2,
+        "tokens": 7,
+        "base_id": "ascend-test-00344"
+      },
+      {
+        "id": "ascend-test-00346-white-10db",
+        "category": "ascend/mixed/white-10db",
+        "character_edits": 8,
+        "characters": 20,
+        "token_edits": 2,
+        "tokens": 14,
+        "base_id": "ascend-test-00346"
+      },
+      {
+        "id": "ascend-test-00404-white-10db",
+        "category": "ascend/mixed/white-10db",
+        "character_edits": 3,
+        "characters": 23,
+        "token_edits": 2,
+        "tokens": 14,
+        "base_id": "ascend-test-00404"
+      },
+      {
+        "id": "ascend-test-00420-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 11,
+        "characters": 38,
+        "token_edits": 11,
+        "tokens": 38,
+        "base_id": "ascend-test-00420"
+      },
+      {
+        "id": "ascend-test-00422-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 3,
+        "characters": 10,
+        "token_edits": 3,
+        "tokens": 10,
+        "base_id": "ascend-test-00422"
+      },
+      {
+        "id": "ascend-test-00430-white-10db",
+        "category": "ascend/mixed/white-10db",
+        "character_edits": 0,
+        "characters": 16,
+        "token_edits": 0,
+        "tokens": 12,
+        "base_id": "ascend-test-00430"
+      },
+      {
+        "id": "ascend-test-00520-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 6,
+        "characters": 19,
+        "token_edits": 3,
+        "tokens": 4,
+        "base_id": "ascend-test-00520"
+      },
+      {
+        "id": "ascend-test-00587-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 5,
+        "characters": 18,
+        "token_edits": 2,
+        "tokens": 9,
+        "base_id": "ascend-test-00587"
+      },
+      {
+        "id": "ascend-test-00662-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 0,
+        "characters": 7,
+        "token_edits": 0,
+        "tokens": 7,
+        "base_id": "ascend-test-00662"
+      },
+      {
+        "id": "ascend-test-00708-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 11,
+        "characters": 36,
+        "token_edits": 3,
+        "tokens": 6,
+        "base_id": "ascend-test-00708"
+      },
+      {
+        "id": "ascend-test-00778-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 2,
+        "characters": 56,
+        "token_edits": 1,
+        "tokens": 14,
+        "base_id": "ascend-test-00778"
+      },
+      {
+        "id": "ascend-test-00950-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 2,
+        "characters": 37,
+        "token_edits": 2,
+        "tokens": 37,
+        "base_id": "ascend-test-00950"
+      },
+      {
+        "id": "ascend-test-01010-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 1,
+        "characters": 13,
+        "token_edits": 1,
+        "tokens": 13,
+        "base_id": "ascend-test-01010"
+      },
+      {
+        "id": "ascend-test-01018-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 9,
+        "characters": 57,
+        "token_edits": 2,
+        "tokens": 13,
+        "base_id": "ascend-test-01018"
+      },
+      {
+        "id": "ascend-test-01065-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 7,
+        "characters": 27,
+        "token_edits": 2,
+        "tokens": 6,
+        "base_id": "ascend-test-01065"
+      },
+      {
+        "id": "ascend-test-01086-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 3,
+        "characters": 30,
+        "token_edits": 1,
+        "tokens": 7,
+        "base_id": "ascend-test-01086"
+      },
+      {
+        "id": "ascend-test-01152-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 0,
+        "characters": 9,
+        "token_edits": 0,
+        "tokens": 9,
+        "base_id": "ascend-test-01152"
+      },
+      {
+        "id": "ascend-test-01210-white-10db",
+        "category": "ascend/mixed/white-10db",
+        "character_edits": 5,
+        "characters": 16,
+        "token_edits": 2,
+        "tokens": 11,
+        "base_id": "ascend-test-01210"
+      },
+      {
+        "id": "ascend-test-01219-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 0,
+        "characters": 8,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "ascend-test-01219"
+      },
+      {
+        "id": "ascend-test-01221-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 5,
+        "base_id": "ascend-test-01221"
+      },
+      {
+        "id": "ascend-test-01229-white-10db",
+        "category": "ascend/en/white-10db",
+        "character_edits": 3,
+        "characters": 42,
+        "token_edits": 2,
+        "tokens": 12,
+        "base_id": "ascend-test-01229"
+      },
+      {
+        "id": "ascend-test-01278-white-10db",
+        "category": "ascend/mixed/white-10db",
+        "character_edits": 22,
+        "characters": 40,
+        "token_edits": 10,
+        "tokens": 25,
+        "base_id": "ascend-test-01278"
+      },
+      {
+        "id": "ascend-test-01288-white-10db",
+        "category": "ascend/zh/white-10db",
+        "character_edits": 2,
+        "characters": 18,
+        "token_edits": 2,
+        "tokens": 18,
+        "base_id": "ascend-test-01288"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-0",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 44,
+        "token_edits": 0,
+        "tokens": 44,
+        "base_id": "fleurs/1579"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-0-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 44,
+        "token_edits": 0,
+        "tokens": 44,
+        "base_id": "fleurs/1579"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-0-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 44,
+        "token_edits": 0,
+        "tokens": 44,
+        "base_id": "fleurs/1579"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-1",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 1,
+        "characters": 35,
+        "token_edits": 1,
+        "tokens": 35,
+        "base_id": "fleurs/1605"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-1-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 2,
+        "characters": 35,
+        "token_edits": 2,
+        "tokens": 35,
+        "base_id": "fleurs/1605"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-1-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 2,
+        "characters": 35,
+        "token_edits": 2,
+        "tokens": 35,
+        "base_id": "fleurs/1605"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-2",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 1,
+        "characters": 26,
+        "token_edits": 1,
+        "tokens": 26,
+        "base_id": "fleurs/1581"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-2-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 1,
+        "characters": 26,
+        "token_edits": 1,
+        "tokens": 26,
+        "base_id": "fleurs/1581"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-2-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 2,
+        "characters": 26,
+        "token_edits": 2,
+        "tokens": 26,
+        "base_id": "fleurs/1581"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-3",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 15,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1648"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-3-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 15,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1648"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-3-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 15,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1648"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-4",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 23,
+        "base_id": "fleurs/1588"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-4-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 23,
+        "base_id": "fleurs/1588"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-4-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 23,
+        "base_id": "fleurs/1588"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-5",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1638"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-5-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1638"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-5-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 2,
+        "characters": 30,
+        "token_edits": 2,
+        "tokens": 30,
+        "base_id": "fleurs/1638"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-6",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 28,
+        "token_edits": 0,
+        "tokens": 28,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-6-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 28,
+        "token_edits": 0,
+        "tokens": 28,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-6-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 28,
+        "token_edits": 0,
+        "tokens": 28,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-7",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1519"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-7-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1519"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-7-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1519"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-8",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 7,
+        "characters": 31,
+        "token_edits": 7,
+        "tokens": 28,
+        "base_id": "fleurs/1523"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-8-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 7,
+        "characters": 31,
+        "token_edits": 7,
+        "tokens": 28,
+        "base_id": "fleurs/1523"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-8-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 7,
+        "characters": 31,
+        "token_edits": 7,
+        "tokens": 28,
+        "base_id": "fleurs/1523"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-9",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 4,
+        "characters": 24,
+        "token_edits": 4,
+        "tokens": 21,
+        "base_id": "fleurs/1593"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-9-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 4,
+        "characters": 24,
+        "token_edits": 4,
+        "tokens": 21,
+        "base_id": "fleurs/1593"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-9-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 4,
+        "characters": 24,
+        "token_edits": 4,
+        "tokens": 21,
+        "base_id": "fleurs/1593"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-10",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 1,
+        "characters": 30,
+        "token_edits": 1,
+        "tokens": 30,
+        "base_id": "fleurs/1640"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-10-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1640"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-10-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1640"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-11",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 1,
+        "characters": 14,
+        "token_edits": 2,
+        "tokens": 11,
+        "base_id": "fleurs/1554"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-11-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 1,
+        "characters": 14,
+        "token_edits": 1,
+        "tokens": 11,
+        "base_id": "fleurs/1554"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-11-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 14,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "fleurs/1554"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-12",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 13,
+        "token_edits": 0,
+        "tokens": 13,
+        "base_id": "fleurs/1577"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-12-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 13,
+        "token_edits": 0,
+        "tokens": 13,
+        "base_id": "fleurs/1577"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-12-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 13,
+        "token_edits": 0,
+        "tokens": 13,
+        "base_id": "fleurs/1577"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-13",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 48,
+        "token_edits": 0,
+        "tokens": 48,
+        "base_id": "fleurs/1574"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-13-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 48,
+        "token_edits": 0,
+        "tokens": 48,
+        "base_id": "fleurs/1574"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-13-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 48,
+        "token_edits": 0,
+        "tokens": 48,
+        "base_id": "fleurs/1574"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-14",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 2,
+        "characters": 47,
+        "token_edits": 2,
+        "tokens": 47,
+        "base_id": "fleurs/1591"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-14-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 2,
+        "characters": 47,
+        "token_edits": 2,
+        "tokens": 47,
+        "base_id": "fleurs/1591"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-14-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 4,
+        "characters": 47,
+        "token_edits": 4,
+        "tokens": 47,
+        "base_id": "fleurs/1591"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-15",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 14,
+        "characters": 52,
+        "token_edits": 6,
+        "tokens": 41,
+        "base_id": "fleurs/1606"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-15-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 14,
+        "characters": 52,
+        "token_edits": 6,
+        "tokens": 41,
+        "base_id": "fleurs/1606"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-15-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 14,
+        "characters": 52,
+        "token_edits": 6,
+        "tokens": 41,
+        "base_id": "fleurs/1606"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-16",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 4,
+        "characters": 77,
+        "token_edits": 4,
+        "tokens": 76,
+        "base_id": "fleurs/1525"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-16-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 4,
+        "characters": 77,
+        "token_edits": 4,
+        "tokens": 76,
+        "base_id": "fleurs/1525"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-16-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 7,
+        "characters": 77,
+        "token_edits": 7,
+        "tokens": 76,
+        "base_id": "fleurs/1525"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-18",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 3,
+        "characters": 29,
+        "token_edits": 3,
+        "tokens": 29,
+        "base_id": "fleurs/1631"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-18-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 3,
+        "characters": 29,
+        "token_edits": 3,
+        "tokens": 29,
+        "base_id": "fleurs/1631"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-18-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 3,
+        "characters": 29,
+        "token_edits": 3,
+        "tokens": 29,
+        "base_id": "fleurs/1631"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-19",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 0,
+        "characters": 22,
+        "token_edits": 0,
+        "tokens": 22,
+        "base_id": "fleurs/1572"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-19-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 0,
+        "characters": 22,
+        "token_edits": 0,
+        "tokens": 22,
+        "base_id": "fleurs/1572"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-19-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 0,
+        "characters": 22,
+        "token_edits": 0,
+        "tokens": 22,
+        "base_id": "fleurs/1572"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-20",
+        "category": "regression/cmn_hans_cn/clean",
+        "character_edits": 13,
+        "characters": 58,
+        "token_edits": 9,
+        "tokens": 52,
+        "base_id": "fleurs/1556"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-20-white-20db",
+        "category": "regression/cmn_hans_cn/white-20db",
+        "character_edits": 13,
+        "characters": 58,
+        "token_edits": 9,
+        "tokens": 52,
+        "base_id": "fleurs/1556"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-20-white-10db",
+        "category": "regression/cmn_hans_cn/white-10db",
+        "character_edits": 13,
+        "characters": 58,
+        "token_edits": 9,
+        "tokens": 52,
+        "base_id": "fleurs/1556"
+      },
+      {
+        "id": "fleurs-en_us-validation-0",
+        "category": "regression/en_us/clean",
+        "character_edits": 0,
+        "characters": 64,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1548"
+      },
+      {
+        "id": "fleurs-en_us-validation-0-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 0,
+        "characters": 64,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1548"
+      },
+      {
+        "id": "fleurs-en_us-validation-0-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 1,
+        "characters": 64,
+        "token_edits": 2,
+        "tokens": 15,
+        "base_id": "fleurs/1548"
+      },
+      {
+        "id": "fleurs-en_us-validation-1",
+        "category": "regression/en_us/clean",
+        "character_edits": 11,
+        "characters": 213,
+        "token_edits": 8,
+        "tokens": 33,
+        "base_id": "fleurs/1620"
+      },
+      {
+        "id": "fleurs-en_us-validation-1-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 29,
+        "characters": 213,
+        "token_edits": 8,
+        "tokens": 33,
+        "base_id": "fleurs/1620"
+      },
+      {
+        "id": "fleurs-en_us-validation-1-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 44,
+        "characters": 213,
+        "token_edits": 11,
+        "tokens": 33,
+        "base_id": "fleurs/1620"
+      },
+      {
+        "id": "fleurs-en_us-validation-2",
+        "category": "regression/en_us/clean",
+        "character_edits": 0,
+        "characters": 87,
+        "token_edits": 2,
+        "tokens": 21,
+        "base_id": "fleurs/1510"
+      },
+      {
+        "id": "fleurs-en_us-validation-2-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 0,
+        "characters": 87,
+        "token_edits": 0,
+        "tokens": 21,
+        "base_id": "fleurs/1510"
+      },
+      {
+        "id": "fleurs-en_us-validation-2-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 0,
+        "characters": 87,
+        "token_edits": 0,
+        "tokens": 21,
+        "base_id": "fleurs/1510"
+      },
+      {
+        "id": "fleurs-en_us-validation-3",
+        "category": "regression/en_us/clean",
+        "character_edits": 15,
+        "characters": 45,
+        "token_edits": 5,
+        "tokens": 10,
+        "base_id": "fleurs/1578"
+      },
+      {
+        "id": "fleurs-en_us-validation-3-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 14,
+        "characters": 45,
+        "token_edits": 6,
+        "tokens": 10,
+        "base_id": "fleurs/1578"
+      },
+      {
+        "id": "fleurs-en_us-validation-3-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 8,
+        "characters": 45,
+        "token_edits": 2,
+        "tokens": 10,
+        "base_id": "fleurs/1578"
+      },
+      {
+        "id": "fleurs-en_us-validation-4",
+        "category": "regression/en_us/clean",
+        "character_edits": 0,
+        "characters": 44,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "fleurs/1652"
+      },
+      {
+        "id": "fleurs-en_us-validation-4-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 0,
+        "characters": 44,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "fleurs/1652"
+      },
+      {
+        "id": "fleurs-en_us-validation-4-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 0,
+        "characters": 44,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "fleurs/1652"
+      },
+      {
+        "id": "fleurs-en_us-validation-5",
+        "category": "regression/en_us/clean",
+        "character_edits": 0,
+        "characters": 66,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1531"
+      },
+      {
+        "id": "fleurs-en_us-validation-5-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 0,
+        "characters": 66,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1531"
+      },
+      {
+        "id": "fleurs-en_us-validation-5-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 0,
+        "characters": 66,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1531"
+      },
+      {
+        "id": "fleurs-en_us-validation-6",
+        "category": "regression/en_us/clean",
+        "character_edits": 0,
+        "characters": 64,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "fleurs/1528"
+      },
+      {
+        "id": "fleurs-en_us-validation-6-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 0,
+        "characters": 64,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "fleurs/1528"
+      },
+      {
+        "id": "fleurs-en_us-validation-6-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 0,
+        "characters": 64,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "fleurs/1528"
+      },
+      {
+        "id": "fleurs-en_us-validation-7",
+        "category": "regression/en_us/clean",
+        "character_edits": 6,
+        "characters": 120,
+        "token_edits": 2,
+        "tokens": 28,
+        "base_id": "fleurs/1595"
+      },
+      {
+        "id": "fleurs-en_us-validation-7-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 5,
+        "characters": 120,
+        "token_edits": 2,
+        "tokens": 28,
+        "base_id": "fleurs/1595"
+      },
+      {
+        "id": "fleurs-en_us-validation-7-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 5,
+        "characters": 120,
+        "token_edits": 2,
+        "tokens": 28,
+        "base_id": "fleurs/1595"
+      },
+      {
+        "id": "fleurs-en_us-validation-8",
+        "category": "regression/en_us/clean",
+        "character_edits": 0,
+        "characters": 89,
+        "token_edits": 0,
+        "tokens": 16,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-en_us-validation-8-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 0,
+        "characters": 89,
+        "token_edits": 0,
+        "tokens": 16,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-en_us-validation-8-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 12,
+        "characters": 89,
+        "token_edits": 3,
+        "tokens": 16,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-en_us-validation-9",
+        "category": "regression/en_us/clean",
+        "character_edits": 5,
+        "characters": 106,
+        "token_edits": 1,
+        "tokens": 19,
+        "base_id": "fleurs/1633"
+      },
+      {
+        "id": "fleurs-en_us-validation-9-white-20db",
+        "category": "regression/en_us/white-20db",
+        "character_edits": 5,
+        "characters": 106,
+        "token_edits": 1,
+        "tokens": 19,
+        "base_id": "fleurs/1633"
+      },
+      {
+        "id": "fleurs-en_us-validation-9-white-10db",
+        "category": "regression/en_us/white-10db",
+        "character_edits": 5,
+        "characters": 106,
+        "token_edits": 1,
+        "tokens": 19,
+        "base_id": "fleurs/1633"
+      },
+      {
+        "id": "long-cmn_hans_cn-dev",
+        "category": "regression/cmn_hans_cn/long",
+        "character_edits": 3,
+        "characters": 173,
+        "token_edits": 3,
+        "tokens": 173,
+        "base_id": "fleurs/long-cmn_hans_cn-dev"
+      },
+      {
+        "id": "long-en_us-dev",
+        "category": "regression/en_us/long",
+        "character_edits": 85,
+        "characters": 453,
+        "token_edits": 24,
+        "tokens": 87,
+        "base_id": "fleurs/long-en_us-dev"
+      },
+      {
+        "id": "long-cmn_hans_cn-holdout",
+        "category": "regression/cmn_hans_cn/long",
+        "character_edits": 2,
+        "characters": 152,
+        "token_edits": 2,
+        "tokens": 149,
+        "base_id": "fleurs/long-cmn_hans_cn-holdout"
+      },
+      {
+        "id": "long-en_us-holdout",
+        "category": "regression/en_us/long",
+        "character_edits": 12,
+        "characters": 445,
+        "token_edits": 5,
+        "tokens": 89,
+        "base_id": "fleurs/long-en_us-holdout"
+      },
+      {
+        "id": "silence",
+        "category": "regression/no-speech",
+        "character_edits": 0,
+        "characters": 0,
+        "token_edits": 0,
+        "tokens": 0,
+        "base_id": "fleurs/silence"
+      },
+      {
+        "id": "white-no-speech",
+        "category": "regression/no-speech",
+        "character_edits": 0,
+        "characters": 0,
+        "token_edits": 0,
+        "tokens": 0,
+        "base_id": "fleurs/white-no-speech"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-0-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 44,
+        "token_edits": 0,
+        "tokens": 44,
+        "base_id": "fleurs/1579"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-1-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 2,
+        "characters": 35,
+        "token_edits": 2,
+        "tokens": 35,
+        "base_id": "fleurs/1605"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-2-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 1,
+        "characters": 26,
+        "token_edits": 1,
+        "tokens": 26,
+        "base_id": "fleurs/1581"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-3-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 15,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1648"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-4-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 23,
+        "token_edits": 0,
+        "tokens": 23,
+        "base_id": "fleurs/1588"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-5-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1638"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-6-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 28,
+        "token_edits": 0,
+        "tokens": 28,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-7-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1519"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-8-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 7,
+        "characters": 31,
+        "token_edits": 7,
+        "tokens": 28,
+        "base_id": "fleurs/1523"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-9-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 4,
+        "characters": 24,
+        "token_edits": 4,
+        "tokens": 21,
+        "base_id": "fleurs/1593"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-10-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 30,
+        "token_edits": 0,
+        "tokens": 30,
+        "base_id": "fleurs/1640"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-11-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 14,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "fleurs/1554"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-12-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 13,
+        "token_edits": 0,
+        "tokens": 13,
+        "base_id": "fleurs/1577"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-13-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 48,
+        "token_edits": 0,
+        "tokens": 48,
+        "base_id": "fleurs/1574"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-14-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 2,
+        "characters": 47,
+        "token_edits": 2,
+        "tokens": 47,
+        "base_id": "fleurs/1591"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-15-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 14,
+        "characters": 52,
+        "token_edits": 6,
+        "tokens": 41,
+        "base_id": "fleurs/1606"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-16-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 4,
+        "characters": 77,
+        "token_edits": 4,
+        "tokens": 76,
+        "base_id": "fleurs/1525"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-18-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 3,
+        "characters": 29,
+        "token_edits": 3,
+        "tokens": 29,
+        "base_id": "fleurs/1631"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-19-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 0,
+        "characters": 22,
+        "token_edits": 0,
+        "tokens": 22,
+        "base_id": "fleurs/1572"
+      },
+      {
+        "id": "fleurs-cmn_hans_cn-validation-20-train-10db",
+        "category": "regression/cmn_hans_cn/train-10db",
+        "character_edits": 13,
+        "characters": 58,
+        "token_edits": 9,
+        "tokens": 52,
+        "base_id": "fleurs/1556"
+      },
+      {
+        "id": "fleurs-en_us-validation-0-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 1,
+        "characters": 64,
+        "token_edits": 2,
+        "tokens": 15,
+        "base_id": "fleurs/1548"
+      },
+      {
+        "id": "fleurs-en_us-validation-1-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 14,
+        "characters": 213,
+        "token_edits": 7,
+        "tokens": 33,
+        "base_id": "fleurs/1620"
+      },
+      {
+        "id": "fleurs-en_us-validation-2-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 0,
+        "characters": 87,
+        "token_edits": 2,
+        "tokens": 21,
+        "base_id": "fleurs/1510"
+      },
+      {
+        "id": "fleurs-en_us-validation-3-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 10,
+        "characters": 45,
+        "token_edits": 4,
+        "tokens": 10,
+        "base_id": "fleurs/1578"
+      },
+      {
+        "id": "fleurs-en_us-validation-4-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 0,
+        "characters": 44,
+        "token_edits": 0,
+        "tokens": 8,
+        "base_id": "fleurs/1652"
+      },
+      {
+        "id": "fleurs-en_us-validation-5-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 0,
+        "characters": 66,
+        "token_edits": 0,
+        "tokens": 15,
+        "base_id": "fleurs/1531"
+      },
+      {
+        "id": "fleurs-en_us-validation-6-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 0,
+        "characters": 64,
+        "token_edits": 0,
+        "tokens": 11,
+        "base_id": "fleurs/1528"
+      },
+      {
+        "id": "fleurs-en_us-validation-7-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 5,
+        "characters": 120,
+        "token_edits": 3,
+        "tokens": 28,
+        "base_id": "fleurs/1595"
+      },
+      {
+        "id": "fleurs-en_us-validation-8-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 0,
+        "characters": 89,
+        "token_edits": 0,
+        "tokens": 16,
+        "base_id": "fleurs/1559"
+      },
+      {
+        "id": "fleurs-en_us-validation-9-train-10db",
+        "category": "regression/en_us/train-10db",
+        "character_edits": 5,
+        "characters": 106,
+        "token_edits": 1,
+        "tokens": 19,
+        "base_id": "fleurs/1633"
+      },
+      {
+        "id": "train-no-speech",
+        "category": "regression/no-speech/train",
+        "character_edits": 0,
+        "characters": 0,
+        "token_edits": 0,
+        "tokens": 0,
+        "base_id": "fleurs/train-no-speech"
+      }
+    ]
+  },
+  "warnings": 0
+}

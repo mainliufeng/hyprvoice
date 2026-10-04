@@ -1,6 +1,7 @@
 #include "speech.h"
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <stdexcept>
 
 namespace hv {
@@ -25,6 +26,18 @@ SpeechDetector::SpeechDetector(const std::string &model) {
 }
 std::vector<AudioRange> SpeechDetector::locate(std::span<const float> audio) {
   SherpaOnnxVoiceActivityDetectorReset(handle_.get());
+  // ASR log-mel features can recognize quiet playback which amplitude-sensitive
+  // VAD rejects. Normalize only the detector input, not the recorded waveform.
+  double energy = 0;
+  float peak = 0;
+  for (float sample : audio) {
+    energy += static_cast<double>(sample) * sample;
+    peak = std::max(peak, std::abs(sample));
+  }
+  double rms = audio.empty() ? 0 : std::sqrt(energy / audio.size());
+  float gain = rms > 0 && peak > 0
+                   ? std::max(1.0, std::min({8.0, 0.025 / rms, 0.8 / peak}))
+                   : 1.0;
   std::vector<AudioRange> found;
   auto collect = [&] {
     while (!SherpaOnnxVoiceActivityDetectorEmpty(handle_.get())) {
@@ -48,6 +61,8 @@ std::vector<AudioRange> SpeechDetector::locate(std::span<const float> audio) {
     std::array<float, 512> frame{};
     size_t count = std::min(frame.size(), audio.size() - pos);
     std::copy_n(audio.data() + pos, count, frame.data());
+    for (auto &sample : frame)
+      sample *= gain;
     SherpaOnnxVoiceActivityDetectorAcceptWaveform(handle_.get(), frame.data(),
                                                   frame.size());
     collect();
@@ -110,11 +125,11 @@ RecognitionJobs(std::span<const float> audio,
   std::vector<std::vector<float>> jobs;
   if (ranges.empty())
     return jobs;
-  // Short recordings retain the whole speech envelope, including quiet words.
-  // Long recordings retain every sample: VAD gaps only nominate cut positions.
-  size_t begin = audio.size() <= maximum_samples ? ranges.front().begin : 0;
-  size_t finish =
-      audio.size() <= maximum_samples ? ranges.back().end : audio.size();
+  // VAD can miss quiet words before the first or after the last detected
+  // region. Keep the entire recording at every duration, including its edges.
+  // Detection gates silence-only recordings and nominates long-job cuts.
+  size_t begin = 0;
+  size_t finish = audio.size();
   while (begin < finish) {
     size_t boundary = std::min(finish, begin + maximum_samples);
     if (boundary < finish) {

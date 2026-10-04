@@ -1,0 +1,310 @@
+{
+  "scope": "Public FLEURS derivatives, isolated Hyprland, and real laptop speaker-to-microphone capture; no user recordings or daily text exported",
+  "cases": [
+    {
+      "id": "normal-continuous",
+      "audio": "normal-continuous.wav",
+      "reference": "因为远离大陆，哺乳动物无法长途跋涉而来，使得巨龟成为科隆群岛主要的食草动物。 亚马逊河也是地球上最宽的河流，有些河段的宽度可达6英里。",
+      "sources": [
+        "fleurs-cmn_hans_cn-validation-1",
+        "fleurs-cmn_hans_cn-validation-2"
+      ],
+      "gains": [
+        1,
+        1
+      ],
+      "sha256": "7c67a47c5b58d81653a51f9aa6905927a538e0db87d9ebe7ed69fdbe392b0eee"
+    },
+    {
+      "id": "level-matched",
+      "audio": "level-matched.wav",
+      "reference": "因为远离大陆，哺乳动物无法长途跋涉而来，使得巨龟成为科隆群岛主要的食草动物。 亚马逊河也是地球上最宽的河流，有些河段的宽度可达6英里。",
+      "sources": [
+        "fleurs-cmn_hans_cn-validation-1",
+        "fleurs-cmn_hans_cn-validation-2"
+      ],
+      "gains": [
+        1,
+        3.8
+      ],
+      "sha256": "39b6d4fe2e0fcb15158520a1499c2daf462d88ef2e3769e12e6a2e5eb87e8def"
+    },
+    {
+      "id": "quiet-prefix",
+      "audio": "quiet-prefix.wav",
+      "reference": "因为远离大陆，哺乳动物无法长途跋涉而来，使得巨龟成为科隆群岛主要的食草动物。 亚马逊河也是地球上最宽的河流，有些河段的宽度可达6英里。",
+      "sources": [
+        "fleurs-cmn_hans_cn-validation-1",
+        "fleurs-cmn_hans_cn-validation-2"
+      ],
+      "gains": [
+        0.01,
+        1
+      ],
+      "sha256": "fb5e45a35ac725377c00ae57fe4304c137eceb087815265de6b24f4b1f891810"
+    },
+    {
+      "id": "quiet-suffix",
+      "audio": "quiet-suffix.wav",
+      "reference": "亚马逊河也是地球上最宽的河流，有些河段的宽度可达6英里。 因为远离大陆，哺乳动物无法长途跋涉而来，使得巨龟成为科隆群岛主要的食草动物。",
+      "sources": [
+        "fleurs-cmn_hans_cn-validation-2",
+        "fleurs-cmn_hans_cn-validation-1"
+      ],
+      "gains": [
+        1,
+        0.01
+      ],
+      "sha256": "ca6745a0f36a30cb4d34f4f6a361211a40664828ba6b7779d9298a87bcc62478"
+    },
+    {
+      "id": "quiet-whole",
+      "audio": "quiet-whole.wav",
+      "reference": "因为远离大陆，哺乳动物无法长途跋涉而来，使得巨龟成为科隆群岛主要的食草动物。 亚马逊河也是地球上最宽的河流，有些河段的宽度可达6英里。",
+      "sources": [
+        "fleurs-cmn_hans_cn-validation-1",
+        "fleurs-cmn_hans_cn-validation-2"
+      ],
+      "gains": [
+        0.01,
+        0.05
+      ],
+      "sha256": "d1bae6e5052a04ffdad0d97a447eedc2587c697d7d59c111face45e135edf5c1"
+    }
+  ],
+  "quiet_prefix_before": {
+    "finish_ms": 485.771,
+    "id": "quiet-prefix",
+    "speech": true,
+    "streaming": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里",
+    "text": "长度跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+    "total_ms": 1305.719
+  },
+  "quiet_after": [
+    {
+      "auto_commit_blocked": false,
+      "finish_ms": 767.848,
+      "id": "normal-continuous",
+      "speech": true,
+      "streaming": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为科隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+      "text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+      "total_ms": 1763.131,
+      "warning": ""
+    },
+    {
+      "auto_commit_blocked": false,
+      "finish_ms": 719.415,
+      "id": "level-matched",
+      "speech": true,
+      "streaming": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为科隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+      "text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+      "total_ms": 1730.003,
+      "warning": ""
+    },
+    {
+      "auto_commit_blocked": false,
+      "finish_ms": 717.727,
+      "id": "quiet-prefix",
+      "speech": true,
+      "streaming": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里",
+      "text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+      "total_ms": 1672.387,
+      "warning": ""
+    },
+    {
+      "auto_commit_blocked": false,
+      "finish_ms": 740.99,
+      "id": "quiet-suffix",
+      "speech": true,
+      "streaming": "亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物",
+      "text": "亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。",
+      "total_ms": 1717.025,
+      "warning": ""
+    },
+    {
+      "auto_commit_blocked": false,
+      "finish_ms": 736.562,
+      "id": "quiet-whole",
+      "speech": true,
+      "streaming": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+      "text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+      "total_ms": 1733.822,
+      "warning": ""
+    }
+  ],
+  "desktop_checks": {
+    "desktop-quiet-after": {
+      "checks": [
+        "real PipeWire speech produces a final transcript",
+        "preview does not steal editor focus",
+        "UTF-8 transcript is pasted into real GTK Wayland editor",
+        "continuous recording retains 因为远离大陆",
+        "continuous recording retains 哺乳动物",
+        "continuous recording retains 亚马逊河",
+        "continuous recording retains 河段"
+      ],
+      "raw": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+      "text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+      "editor_text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。"
+    },
+    "desktop-suffix-after": {
+      "checks": [
+        "real PipeWire speech produces a final transcript",
+        "preview does not steal editor focus",
+        "UTF-8 transcript is pasted into real GTK Wayland editor",
+        "continuous recording retains 因为远离大陆",
+        "continuous recording retains 哺乳动物",
+        "continuous recording retains 亚马逊河",
+        "continuous recording retains 河段"
+      ],
+      "raw": "亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。",
+      "text": "亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。",
+      "editor_text": "亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。"
+    },
+    "desktop-final-context": {
+      "checks": [
+        "real PipeWire speech produces a final transcript",
+        "preview does not steal editor focus",
+        "production recording reads actual editor prefix",
+        "speech beginning survives context lookup",
+        "actual editor context and transcript reach real model",
+        "UTF-8 transcript is pasted into real GTK Wayland editor",
+        "continuous recording retains 因为远离大陆",
+        "continuous recording retains 哺乳动物",
+        "continuous recording retains 亚马逊河",
+        "continuous recording retains 河段"
+      ],
+      "raw": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+      "text": "因为远离大陆，哺乳动物无法长途跋涉而来，使得巨龟成为科隆群岛主要的食草动物。亚马逊河也是地球上最宽的河流，有些河段的宽度可达六英里。",
+      "editor_text": "我们正在开发 Hyprvoice，使用 Hyprland。因为远离大陆，哺乳动物无法长途跋涉而来，使得巨龟成为科隆群岛主要的食草动物。亚马逊河也是地球上最宽的河流，有些河段的宽度可达六英里。"
+    },
+    "desktop-vad-final": {
+      "checks": [
+        "real PipeWire speech produces a final transcript",
+        "preview does not steal editor focus",
+        "production recording reads actual editor prefix",
+        "speech beginning survives context lookup",
+        "actual editor context and transcript reach real model",
+        "UTF-8 transcript is pasted into real GTK Wayland editor",
+        "continuous recording retains 因为远离大陆",
+        "continuous recording retains 哺乳动物",
+        "continuous recording retains 亚马逊河",
+        "continuous recording retains 河段"
+      ],
+      "raw": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+      "text": "因为远离大陆，哺乳动物无法长途跋涉而来，使得巨龟成为科隆群岛主要的食草动物。亚马逊河也是地球上最宽的河流，有些河段的宽度可达六英里。",
+      "editor_text": "我们正在开发 Hyprvoice，使用 Hyprland。因为远离大陆，哺乳动物无法长途跋涉而来，使得巨龟成为科隆群岛主要的食草动物。亚马逊河也是地球上最宽的河流，有些河段的宽度可达六英里。"
+    },
+    "hardware-verified": {
+      "checks": [
+        "real microphone retains recognized speech after key release",
+        "real microphone speech passes VAD without confirmation",
+        "held-key release automatically pastes into isolated editor",
+        "hardware acoustic recording retains 因为远离大陆",
+        "hardware acoustic recording retains 哺乳动物",
+        "hardware acoustic recording retains 亚马逊河",
+        "hardware acoustic recording retains 宽度可达"
+      ],
+      "state": {
+        "backend": "x-asr",
+        "command_mode": false,
+        "context": "",
+        "context_note": "",
+        "error": "",
+        "phase": "idle",
+        "raw": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+        "scene": "raw",
+        "seconds": 17.526215933,
+        "text": "已发送粘贴请求"
+      },
+      "editor_text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+      "hardware": true,
+      "stream_volume": 131072,
+      "accuracy": {
+        "reference": "因为远离大陆，哺乳动物无法长途跋涉而来，使得巨龟成为科隆群岛主要的食草动物。 亚马逊河也是地球上最宽的河流，有些河段的宽度可达6英里。",
+        "characters": 61,
+        "character_edits": 3,
+        "cer": 0.04918032786885246
+      },
+      "conditions": {
+        "speech": "level-matched, gains 1 and 3.8, 17 seconds",
+        "speaker_device_volume_percent": 55,
+        "microphone_device_volume_percent": 50,
+        "playback_stream_volume_percent": 200,
+        "global_device_settings_changed": false,
+        "saved_microphone_audio": false,
+        "text_model_used": false
+      },
+      "limitations": "Lower uncalibrated speaker playback retained only the first sentence; calibrated playback retained both. This tests laptop acoustics, not the unavailable original phone recording. Word errors remain and are measured separately."
+    },
+    "desktop-vad-reject": {
+      "checks": [
+        "real PipeWire speech produces a final transcript",
+        "preview does not steal editor focus",
+        "negative VAD retains visible speech and confirmation warning",
+        "uncertain speech never auto-pastes",
+        "UTF-8 transcript is pasted into real GTK Wayland editor",
+        "continuous recording retains 因为远离大陆",
+        "continuous recording retains 哺乳动物",
+        "continuous recording retains 亚马逊河",
+        "continuous recording retains 河段"
+      ],
+      "state": {
+        "backend": "x-asr",
+        "command_mode": false,
+        "context": "",
+        "context_note": "",
+        "error": "语音检测未确认讲话，已保留识别文字；请确认后插入或取消",
+        "phase": "ready",
+        "raw": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。",
+        "scene": "raw",
+        "seconds": 17.462786409,
+        "text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。"
+      },
+      "editor_text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为克隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里。"
+    }
+  },
+  "no_speech_after": [
+    {
+      "finish_ms": 72.081,
+      "id": "silence",
+      "speech": false,
+      "streaming": "H",
+      "text": "",
+      "total_ms": 362.034,
+      "warning": ""
+    },
+    {
+      "finish_ms": 70.191,
+      "id": "white-no-speech",
+      "speech": false,
+      "streaming": "",
+      "text": "",
+      "total_ms": 350.537,
+      "warning": ""
+    },
+    {
+      "finish_ms": 64.905,
+      "id": "train-no-speech",
+      "speech": false,
+      "streaming": "",
+      "text": "",
+      "total_ms": 176.604,
+      "warning": ""
+    }
+  ],
+  "vad_fault_injection": {
+    "test_double": "Constant-zero VAD classifier, test-only; never installed",
+    "recognizer": "Real installed X-ASR",
+    "cli": {
+      "auto_commit_blocked": true,
+      "finish_ms": 54.13,
+      "speech": false,
+      "streaming": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为科隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里",
+      "text": "因为远离大陆， 哺乳动物无法长途跋涉而来， 使得巨龟成为科隆群岛主主要的食草动物。亚马逊河也是地球上最宽的河流， 有些河段的宽度可达六英里",
+      "total_ms": 999.034,
+      "warning": "语音检测未确认讲话，已保留识别文字；请确认后插入或取消"
+    },
+    "desktop": "desktop-vad-reject"
+  }
+}

@@ -106,6 +106,8 @@ hyprvoice replay /绝对路径/manifest.jsonl > results.jsonl
 
 本机与 Qwen3-ASR 0.6B/1.7B、Fun-ASR-Nano 的真实对比，以及 ASR＋DeepSeek 工作流的分开评分见 [2026-10-04 笔记本测评](docs/benchmark-20261004.md)。采样、前文条件与复现方式见 [benchmark 协议](docs/benchmark-protocol.md)。
 
+连续录音、弱音首尾被精修裁掉，以及语音检测误判后清空预览的问题与实测见 [丢段修复记录](docs/continuous-recording-fix.md)。若显示“语音检测未确认讲话”，已有长句会保留供确认，自动插入暂停；可点击“插入文字”或取消。
+
 ## 可选 Fun-ASR-Nano 后端
 
 `./scripts/install.sh --with-fun` 额外编译 CPU worker 并安装经过 SHA256 验证的模型。普通安装不下载 Fun；首次 Fun 安装约需 1.3 GB 模型空间。默认仍为 X-ASR。

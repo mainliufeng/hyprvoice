@@ -182,11 +182,14 @@ Transcript Asr::finish(const std::atomic<bool> *cancelled) {
   if (!stream_)
     return result;
   auto intervals = speech_->locate(samples_);
+  std::cerr << "Recognition diagnostic: audio_s=" << samples_.size() / 16000.0
+            << " speech_regions=" << intervals.size();
+  for (auto interval : intervals)
+    std::cerr << " [" << interval.begin / 16000.0 << ','
+              << interval.end / 16000.0 << ']';
+  std::cerr << '\n';
   result.speech = !intervals.empty();
-  if (!result.speech) {
-    cancel();
-    return result;
-  }
+  auto recorded_hypothesis = current();
   std::vector<float> tail(20480, 0);
   SherpaOnnxOnlineStreamAcceptWaveform(stream_, 16000, tail.data(),
                                        tail.size());
@@ -194,6 +197,21 @@ Transcript Asr::finish(const std::atomic<bool> *cancelled) {
   while (SherpaOnnxIsOnlineStreamReady(online_, stream_))
     SherpaOnnxDecodeOnlineStream(online_, stream_);
   result.streaming = current();
+  if (!result.speech) {
+    // A negative VAD result is not proof that an existing ASR hypothesis is
+    // empty. Retain it for explicit review, without auto-pasting possible noise.
+    // Padding itself can produce a stray character on pure silence. Use only
+    // the existing hypothesis from real audio, and ignore tiny noise fragments.
+    result.streaming = recorded_hypothesis;
+    if (g_utf8_strlen(recorded_hypothesis.c_str(), -1) >= 4) {
+      result.text = recorded_hypothesis;
+      result.warning = "语音检测未确认讲话，已保留识别文字；请确认后插入或取消";
+    }
+    std::cerr << "Recognition diagnostic: no confirmed speech; retained_chars="
+              << g_utf8_strlen(result.text.c_str(), -1) << '\n';
+    cancel();
+    return result;
+  }
   result.text = result.streaming;
   try {
     std::vector<std::string> utterances;
@@ -205,13 +223,19 @@ Transcript Asr::finish(const std::atomic<bool> *cancelled) {
       utterances.push_back(std::move(text));
     }
     auto refined = AssembleTranscript(utterances);
-    if (!refined.empty())
+    if (!refined.empty() && PreservesTranscriptLength(result.streaming, refined))
       result.text = std::move(refined);
+    else if (!refined.empty())
+      std::cerr << "Refinement diagnostic: shortened result rejected; "
+                   "preserving streaming result\n";
   } catch (const std::exception &e) {
     std::cerr << "Refinement failed; preserving streaming result: " << e.what()
               << '\n';
   }
   cancel();
+  std::cerr << "Recognition diagnostic: streaming_chars="
+            << g_utf8_strlen(result.streaming.c_str(), -1)
+            << " final_chars=" << g_utf8_strlen(result.text.c_str(), -1) << '\n';
   return result;
 }
 void Asr::cancel() {
