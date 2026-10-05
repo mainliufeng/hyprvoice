@@ -35,18 +35,18 @@
 从仓库根目录执行。资产、环境、源代码归档、编译产物与凭据都留在被忽略的构建目录，不能提交模型或编译二进制。需要已有的 Hyprvoice 构建依赖，以及 OpenBLAS 的头文件和库。
 
 ```bash
-export HV_BENCH="$PWD/apps/hyprvoice/build/benchmark-20261004"
+export HV_BENCH="$PWD/build/benchmark-20261004"
 export UV_CACHE_DIR="$HV_BENCH/uv-cache"
 export UV_PYTHON_INSTALL_DIR="$HV_BENCH/python"
 uv venv --python 3.12 "$HV_BENCH/venv"
 uv pip install --python "$HV_BENCH/venv/bin/python" \
-  -r apps/hyprvoice/tests/requirements-benchmark.txt
-"$HV_BENCH/venv/bin/python" apps/hyprvoice/tests/benchmark_assets.py "$HV_BENCH"
-"$HV_BENCH/venv/bin/python" apps/hyprvoice/tests/benchmark_prepare.py \
-  "$HV_BENCH" apps/hyprvoice/tests/fixtures/manifest.jsonl
-python3 apps/hyprvoice/tests/benchmark_build.py "$HV_BENCH" --openblas-prefix /usr
-cmake -S apps/hyprvoice -B apps/hyprvoice/build -DBUILD_TESTING=ON
-cmake --build apps/hyprvoice/build --target hyprvoice workflow_probe -j4
+  -r tests/requirements-benchmark.txt
+"$HV_BENCH/venv/bin/python" tests/benchmark_assets.py "$HV_BENCH"
+"$HV_BENCH/venv/bin/python" tests/benchmark_prepare.py \
+  "$HV_BENCH" tests/fixtures/manifest.jsonl
+python3 tests/benchmark_build.py "$HV_BENCH" --openblas-prefix /usr
+cmake -S . -B build -DBUILD_TESTING=ON
+cmake --build build --target hyprvoice workflow_probe -j4
 ```
 
 `--openblas-prefix` 也可以指向测试目录中独立解压的包。本机使用 Arch OpenBLAS 0.3.34-1；没有安装或更换系统库。构建脚本固定三个外部源码 commit，并检查提取的源码是否仍与归档相同。原生运行时是测试依赖，没有复制到应用源码或替换日常服务。
@@ -55,7 +55,7 @@ cmake --build apps/hyprvoice/build --target hyprvoice workflow_probe -j4
 
 ```bash
 HYPRVOICE_CONFIG="$HV_BENCH/current-config.json" \
-  apps/hyprvoice/build/hyprvoice replay "$HV_BENCH/screen.jsonl" > "$HV_BENCH/current-screen.jsonl"
+  build/hyprvoice replay "$HV_BENCH/screen.jsonl" > "$HV_BENCH/current-screen.jsonl"
 OPENBLAS_NUM_THREADS=8 "$HV_BENCH/qwen_benchmark" \
   "$HV_BENCH/qwen06" "$HV_BENCH/screen.jsonl" plain > "$HV_BENCH/qwen06-screen.jsonl"
 OPENBLAS_NUM_THREADS=8 "$HV_BENCH/qwen_benchmark" \
@@ -63,7 +63,7 @@ OPENBLAS_NUM_THREADS=8 "$HV_BENCH/qwen_benchmark" \
 OMP_NUM_THREADS=8 "$HV_BENCH/fun_benchmark" \
   "$HV_BENCH/fun-nano/funasr-encoder-f16.gguf" "$HV_BENCH/fun-nano/qwen3-0.6b-q8_0.gguf" \
   "$HV_BENCH/fun-vad/fsmn-vad.gguf" "$HV_BENCH/screen.jsonl" > "$HV_BENCH/fun-screen.jsonl"
-python3 apps/hyprvoice/tests/benchmark_score.py "$HV_BENCH/screen.jsonl" \
+python3 tests/benchmark_score.py "$HV_BENCH/screen.jsonl" \
   "$HV_BENCH/current-screen.jsonl" --verify-audio --output "$HV_BENCH/current-screen-score.json"
 ```
 
@@ -74,10 +74,10 @@ Qwen 适配器可选第五个参数为分段秒数，`0` 表示整段识别；�
 仅在已授权发送对应测试文字时执行外部处理；`--env-file` 只读取配置指定的 API key 变量，不执行 shell，不访问剪贴板。默认一个 worker，本次批量测评使用四个。
 
 ```bash
-python3 apps/hyprvoice/tests/benchmark_workflow.py \
+python3 tests/benchmark_workflow.py \
   "$HOME/.config/hyprvoice/config.json" "$HV_BENCH/ascend-full.jsonl" \
   "$HV_BENCH/current-ascend-full.jsonl" "$HV_BENCH/current-full-workflow.jsonl" \
-  --probe apps/hyprvoice/build/workflow_probe \
+  --probe build/workflow_probe \
   --env-file "$HOME/.config/hyprvoice/llm.env" --workers 4
 ```
 

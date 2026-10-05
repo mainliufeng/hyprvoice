@@ -2,6 +2,7 @@
 
 独立的 Hyprland 语音输入工具。保留现有 Fcitx 拼音，用快捷键录音，通过悬浮条预览，最终粘贴到应用。
 构建与运行不依赖 `voice-input`、Fcitx 开发库或 `vinput-registry`。本地模型文件可复用现有下载。旧项目移植的辅助代码已移除，独立实现范围见 [实现说明](docs/independent-implementation.md)。
+本仓库原先位于 Mobius 单仓库的 `apps/hyprvoice/`，拆分时把该路径的提交历史一并迁移过来；GPL-3.0，见 [LICENSE](LICENSE) 与 [NOTICE](NOTICE)。
 
 ## 能力与边界
 
@@ -27,9 +28,9 @@ Arch 可用对应软件包 `gtk4 gtk4-layer-shell pipewire at-spi2-core curl she
 JSON 依赖固定为 nlohmann/json 3.11.3 单文件版，随源码提供并保留 MIT 许可。
 
 ```bash
-cmake -S apps/hyprvoice -B apps/hyprvoice/build -DCMAKE_BUILD_TYPE=Release
-cmake --build apps/hyprvoice/build -j2
-ctest --test-dir apps/hyprvoice/build --output-on-failure
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j2
+ctest --test-dir build --output-on-failure
 ```
 
 ## 配置真实模型
@@ -38,13 +39,13 @@ ctest --test-dir apps/hyprvoice/build --output-on-failure
 先确认自己的模型目录和 Silero VAD 文件；可保留已下载的模型，也可复制到 `~/.local/share/hyprvoice/` 后使用。
 
 ```bash
-python3 apps/hyprvoice/scripts/configure.py \
+python3 scripts/configure.py \
   --streaming ~/.local/share/hyprvoice/models/x-asr-960ms-streaming-zipformer-transducer-zh-en-punct-int8 \
   --offline ~/.local/share/hyprvoice/models/x-asr-zipformer-transducer-zh-en-punct-int8 \
   --vad ~/.local/share/hyprvoice/silero_vad.onnx \
   --hotwords ~/.config/hyprvoice/hotwords.txt
-apps/hyprvoice/build/hyprvoice doctor
-apps/hyprvoice/build/hyprvoice serve
+build/hyprvoice doctor
+build/hyprvoice serve
 ```
 
 `--hotwords` 可省略。每行一个词，可写 `Hyprland:5.0`；UTF-8，支持 `#` 注释。配置存在时脚本拒绝覆盖。
@@ -76,7 +77,7 @@ apps/hyprvoice/build/hyprvoice serve
 本机已按用户要求安装，当前状态和快捷键见 [安装记录](docs/installation.md)。下面是其他机器的通用安装步骤。
 
 ```bash
-bash apps/hyprvoice/scripts/install.sh
+bash scripts/install.sh
 systemctl --user import-environment WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE DISPLAY
 systemctl --user daemon-reload
 systemctl --user enable --now hyprvoice.service

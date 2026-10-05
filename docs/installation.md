@@ -4,11 +4,11 @@
 
 ## 已安装
 
-- 程序：`~/.local/bin/hyprvoice`，校验和与通过验收的 Mobius 构建一致。
+- 程序：`~/.local/bin/hyprvoice`，校验和与通过验收的源码构建一致。
 - 用户服务：`~/.config/systemd/user/hyprvoice.service`，已启用并处于 `active/running`。
 - 配置：`~/.config/hyprvoice/config.json`，权限 600；默认原文听写、自动提交；黑白灰界面已更新。2026-10-04 经明确授权开启前文辅助（最多 1024 字）并配置 DeepSeek。
 - 热词：`~/.config/hyprvoice/hotwords.txt`，权限 600。
-- 流式／离线模型：`~/.local/share/hyprvoice/models/`；Silero：`~/.local/share/hyprvoice/silero_vad.onnx`。模型是实际复制文件，运行不依赖 Mobius 的构建目录或旧项目代码。
+- 流式／离线模型：`~/.local/share/hyprvoice/models/`；Silero：`~/.local/share/hyprvoice/silero_vad.onnx`。模型是实际复制文件，运行不依赖源码构建目录或旧项目代码。
 - Hyprland 的 dotfiles 主配置加载 `~/dotfiles/linux/desktop/hyprland/hyprvoice.conf`。命令使用 `~/.local/bin/hyprvoice`，不依赖合成器的 PATH。
 - 登录时执行 `~/.config/hypr/scripts/hyprvoice-session.sh`，先导入当前 Wayland/display/Hyprland socket 标识，再重启服务。当前会话也已完成环境导入。新登录尚未实际发生；该启动脚本通过 shell 语法检查，当前启动链路已实际执行。
 

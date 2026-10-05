@@ -5,7 +5,6 @@
 ## 安装与选择
 
 ```bash
-cd apps/hyprvoice
 ./scripts/install.sh --with-fun
 systemctl --user restart hyprvoice.service
 hyprvoice backend fun

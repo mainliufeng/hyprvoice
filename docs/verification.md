@@ -15,7 +15,6 @@
 此固定集用于回归诊断；诊断时查看了所有 fold，因此 holdout 不代表本次未见测试集，也不代表微信／豆包结果或全部自由口述效果。
 
 ```bash
-cd apps/hyprvoice
 HYPRVOICE_CONFIG=build/local-config.json build/hyprvoice replay \
   tests/fixtures/manifest.jsonl > build/results.jsonl
 python3 tests/score.py tests/fixtures/manifest.jsonl build/results.jsonl \
@@ -52,8 +51,8 @@ python3 tests/score.py tests/fixtures/manifest.jsonl build/results.jsonl \
 已在忽略的 `build/local-assets/` 复制 VAD 和热词，并生成不启用 LLM 的 `build/local-config.json`。模型权重复用本机已下载的文件，不依赖旧应用进程或旧仓库代码。它们是本机运行材料，不随 Git 提交；新机器仍按 README 配置真实模型。
 
 ```bash
-HYPRVOICE_CONFIG="$PWD/apps/hyprvoice/build/local-config.json" \
-  apps/hyprvoice/build/hyprvoice serve
+HYPRVOICE_CONFIG="$PWD/build/local-config.json" \
+  build/hyprvoice serve
 ```
 
 以上是研发阶段的工作区启动方式。后续已按用户要求安装用户服务和 F8 快捷键，见 [安装记录](installation.md)。

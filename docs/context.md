@@ -44,10 +44,10 @@
 已准备 10 条独立编写的公开上下文用例：项目专名、否定、前后数字变更、指代、新话题、空前文、上下文中的注入文字和前文重复。配置获授权的真实模型后，可复现：
 
 ```bash
-apps/hyprvoice/build/context_probe /path/to/authorized-model-config.json \
-  apps/hyprvoice/tests/fixtures/context.jsonl > /tmp/hyprvoice-context-results.jsonl
-python3 apps/hyprvoice/tests/context_score.py \
-  apps/hyprvoice/tests/fixtures/context.jsonl /tmp/hyprvoice-context-results.jsonl
+build/context_probe /path/to/authorized-model-config.json \
+  tests/fixtures/context.jsonl > /tmp/hyprvoice-context-results.jsonl
+python3 tests/context_score.py \
+  tests/fixtures/context.jsonl /tmp/hyprvoice-context-results.jsonl
 ```
 
 每条分别请求有／无前文的真实模型，计分忽略标点、空格和英文大小写。专名用例是针对性的纠错检查，不代表真实语音整体准确率。原有 10 例与 `tests/fixtures/context-extra.jsonl` 的 8 例均已执行。
