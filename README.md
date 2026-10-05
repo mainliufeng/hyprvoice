@@ -51,9 +51,25 @@ apps/hyprvoice/build/hyprvoice serve
 `hyprvoice init` 仅生成默认配置，不下载或伪造模型；使用前必须核对里面的实际路径。
 `HYPRVOICE_CONFIG=/绝对路径/config.json` 可以隔离配置和测试。
 
-文本处理在配置中填写 `llm.base_url` 和 `llm.model`，密钥只从 `llm.api_key_env` 指定的环境变量读取，默认 `HYPRVOICE_API_KEY`。
-HTTPS 默认开启验证；可信本地 HTTP 服务需明确设置 `llm.allow_http=true`。场景提示词位于 `prompts`，修改配置后重启。
-默认 `scene=raw`、`context.enabled=false`，不调用任何大模型。启用纠错／整理／翻译或指令模式会发送本次转录与选中文字；启用前文辅助还会发送当前输入框光标前最多 1024 个字符（可设置 1..2048）。不再缓存不同窗口的最近提交记录，不发送录音。转录和前文不写入持久日志；本地 CLI `status` 会返回本次转录与实际使用的前文，回到待机时清除前文。文本处理失败保留识别原文并等待用户确认，不自动插入失败后的替代结果。
+### 文本处理（可选）
+
+在配置里填 `llm` 段。`model` 留空就等于没有配置文本处理，需要时会提示“文本处理模型未配置”，不会静默跳过。
+
+| 字段 | 说明 |
+|---|---|
+| `base_url` | OpenAI 兼容根地址；程序自己拼 `/chat/completions`，不要把这段路径写进去 |
+| `model` | 模型名；留空即未配置 |
+| `api_key_env` | 从哪个环境变量读密钥，默认 `HYPRVOICE_API_KEY`；密钥不要写进 `config.json` |
+| `timeout_seconds` | 1..60，默认 15；接口慢的服务商可以调大 |
+| `allow_http` | 默认 false，只接受 HTTPS；只有可信的本地服务才设 true |
+
+密钥放在 `~/.config/hyprvoice/llm.env`（权限 600），由 systemd 的 `EnvironmentFile` 注入服务环境，不写在 `config.json` 里；改完配置或密钥后重启服务。
+
+常用地址：DeepSeek `https://api.deepseek.com/v1`、OpenAI `https://api.openai.com/v1`、本地 Ollama `http://127.0.0.1:11434/v1`（同时设 `allow_http: true`）。换服务商只改 `base_url` 和 `model`。
+
+场景提示词位于 `prompts`，**键名就是场景名**；自己加一个键（例如 `polish`）后 `hyprvoice scene polish` 就能用。`scene` 是运行时状态，`hyprvoice scene` 不写回配置，重启服务回到配置里的值（`backend` 相反，切换成功后会保存）。
+
+默认 `scene=raw`、`context.enabled=false`，两者同时满足才完全不调用大模型。启用纠错／整理／翻译或指令模式会发送本次转录与选中文字；启用前文辅助还会发送当前输入框光标前最多 1024 个字符（可设置 1..2048）。不再缓存不同窗口的最近提交记录，不发送录音。转录和前文不写入持久日志；本地 CLI `status` 会返回本次转录与实际使用的前文，回到待机时清除前文。文本处理失败保留识别原文并等待用户确认，不自动插入失败后的替代结果。
 
 ## 日常运行
 
@@ -71,6 +87,7 @@ Hyprland 重启后应从该会话重新导入环境；也可在 Hyprland 自动�
 
 Lua 配置使用 `config/hyprvoice.lua` 的绑定；仍使用 hyprlang 时参考 `config/hyprvoice.conf`。二者选一，根据自己的配置合并。
 [Hyprland 官方绑定文档](https://wiki.hypr.land/Configuring/Basics/Binds/)。
+快捷键不写在 hyprvoice 自己的配置里：每条绑定只是调用一条下面的 CLI 命令，所以可以换成任意按键；“轻按切换＋按住说话”就是同一个键的 `press` 加一条 `bindr release`。两个示例文件等价，改完执行 `hyprctl reload`，不需要重启服务。
 
 | 按键示例 | 动作 |
 |---|---|
@@ -81,7 +98,7 @@ Lua 配置使用 `config/hyprvoice.lua` 的绑定；仍使用 hyprlang 时参考
 | Super+Alt+Escape | 取消当前会话 |
 | Super+Alt+1 / 2 / 3 / 4 | 原文／纠错／整理／英文翻译 |
 
-CLI 同样支持 `start stop toggle press release command cancel commit raw status scene NAME quit`。
+CLI 同样支持 `start stop toggle press release command cancel commit raw status scene NAME backend fun|x-asr quit`。
 运行 `doctor` 后还应核对麦克风静音状态；程序不自动取消你的麦克风静音，也不修改默认音频设备。
 
 替换旧语音工具时停用旧 Vinput 插件和旧语音后台，保留 Fcitx 拼音。验证新工具在你的日常应用中可用后再切换，避免两套快捷键同时录音。
@@ -114,6 +131,6 @@ hyprvoice replay /绝对路径/manifest.jsonl > results.jsonl
 
 `./scripts/install.sh --with-fun` 额外编译 CPU worker 并安装经过 SHA256 验证的模型。普通安装不下载 Fun；首次 Fun 安装约需 1.3 GB 模型空间。默认仍为 X-ASR。
 
-服务运行时执行 `hyprvoice backend fun`，等 `hyprvoice status` 显示 `phase: idle`、`backend: fun` 后即可使用原来的 F8/F9。切回执行 `hyprvoice backend x-asr`。模型加载成功后保存选择，下次启动仍使用所选后端；失败保留之前的后端。录音或存在待确认结果时拒绝切换。
+服务运行时执行 `hyprvoice backend fun`，等 `hyprvoice status` 显示 `phase: idle`、`backend: fun` 后即可使用原来的 F8/F9。切回执行 `hyprvoice backend x-asr`。模型加载成功后保存选择，下次启动仍使用所选后端；失败保留之前的后端。录音或存在待确认结果时拒绝切换。`hyprvoice doctor` 只检查当前所选后端需要的资产。可调项：`fun.threads`（1..64，解码线程）和 `fun.timeout_seconds`（5..600，默认 120，不含首次加载）。
 
 Fun 使用独立 FSMN VAD，结束录音后识别完整语音段；录音时显示时长和音量，**不提供逐字预览**。最终预览、输入框前文、DeepSeek、取消和上屏继续走同一链路。后端失败时显示错误并保留输入框内容，不自动换模型或插入文字。具体安装、参数和真实验收见 [Fun 后端说明](docs/fun-backend.md)。
