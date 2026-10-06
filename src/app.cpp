@@ -97,17 +97,44 @@ App::~App() {
   if (window_)
     gtk_window_destroy(GTK_WINDOW(window_));
 }
-void App::update(const Json &patch) {
-  std::lock_guard lock(mutex_);
+void App::updateLocked(const Json &patch) {
   state_.update(patch);
   if (patch.contains("phase") && patch.at("phase") == "idle") {
     state_["context"] = "";
     state_["context_note"] = "";
+    rewrite_request_.reset();
+    manual_confirmation_ = false;
   }
+}
+void App::update(const Json &patch) {
+  std::lock_guard lock(mutex_);
+  updateLocked(patch);
+}
+void App::updateSession(uint64_t version, const Json &patch) {
+  std::lock_guard lock(mutex_);
+  if (version == session_version_ && !cancel_)
+    updateLocked(patch);
+}
+bool App::rememberRewrite(uint64_t version, const TextRequest &request) {
+  std::lock_guard lock(mutex_);
+  if (version != session_version_ || cancel_)
+    return false;
+  rewrite_request_ = request;
+  return true;
+}
+void App::finishSession(uint64_t version) {
+  std::lock_guard lock(mutex_);
+  if (version != session_version_ || cancel_)
+    updateLocked({{"phase", "idle"}, {"text", ""}, {"raw", ""}, {"error", ""}});
+  busy_ = false;
 }
 Json App::snapshot() {
   std::lock_guard lock(mutex_);
-  return state_;
+  auto state = state_;
+  state["busy"] = busy_.load();
+  state["retry_available"] = rewrite_request_.has_value() && !delivered_;
+  state["manual_confirmation"] = manual_confirmation_;
+  return state;
 }
 void App::bindSocket() {
   auto dir = RuntimePath();
@@ -171,15 +198,25 @@ void App::start(bool cmd) {
     throw std::runtime_error("正在处理上一段语音，请稍候");
   if (!asr_)
     throw std::runtime_error("本地模型不可用，请检查配置并重启");
-  if (snapshot().value("phase", std::string()) == "ready")
+  if (snapshot().value("phase", std::string()) == "ready" ||
+      snapshot().value("retry_available", false))
     throw std::runtime_error("请先提交或取消上一段结果");
-  target_ = desktop_.target();
-  selected_ = cmd ? desktop_.selection(target_) : "";
+  auto next_target = desktop_.target();
+  auto next_selected = cmd ? desktop_.selection(next_target) : "";
+  target_ = next_target;
+  selected_ = next_selected;
   focusEvents();
   focus_changed_ = false;
   delivered_ = false;
   stop_ = false;
-  cancel_ = false;
+  uint64_t version;
+  {
+    std::lock_guard lock(mutex_);
+    version = ++session_version_;
+    rewrite_request_.reset();
+    manual_confirmation_ = false;
+    cancel_ = false;
+  }
   level_ = 0;
   recording_text_.clear();
   busy_ = true;
@@ -196,14 +233,15 @@ void App::start(bool cmd) {
           {"context_note", contextual ? "读取当前输入框前文…" : ""}});
   if (worker_.joinable())
     worker_.join();
-  worker_ = std::thread([this, scene, selected, target, contextual, cmd] {
+  worker_ = std::thread([this, scene, selected, target, contextual, cmd,
+                         version] {
     try {
       // Capture before the bounded accessibility query so a slow application
       // cannot discard the beginning of a held-key utterance.
       audio_.start(config_.data.value("audio_source", std::string()));
       auto start = std::chrono::steady_clock::now();
       asr_->begin(&cancel_);
-      update({{"phase", "recording"}, {"text", ""}});
+      updateSession(version, {{"phase", "recording"}, {"text", ""}});
       std::string history;
       bool protected_field = false;
       if (contextual) {
@@ -215,7 +253,7 @@ void App::start(bool cmd) {
                                ? "未读到输入框前文"
                            : history.empty() ? "当前输入框没有前文"
                                              : "参考光标前文";
-        update({{"context", history}, {"context_note", note}});
+        updateSession(version, {{"context", history}, {"context_note", note}});
       }
       if (protected_field && cmd)
         throw std::runtime_error("密码输入框不能使用文本修改指令");
@@ -245,7 +283,7 @@ void App::start(bool cmd) {
         auto text = asr_->push(pcm);
         preview_chars = g_utf8_strlen(text.c_str(), -1);
         if (!text.empty())
-          update({{"text", text}});
+          updateSession(version, {{"text", text}});
       };
       while (!stop_ && !cancel_) {
         consume(audio_.take());
@@ -255,7 +293,7 @@ void App::start(bool cmd) {
         auto elapsed = std::chrono::duration<double>(
                            std::chrono::steady_clock::now() - start)
                            .count();
-        update({{"seconds", elapsed}});
+        updateSession(version, {{"seconds", elapsed}});
         auto now = std::chrono::steady_clock::now();
         if (now - diagnostic_at >= std::chrono::seconds(2)) {
           std::cerr << "Capture diagnostic: elapsed_s=" << elapsed
@@ -273,7 +311,8 @@ void App::start(bool cmd) {
         if (count >= maximum ||
             elapsed >= config_.data.value("max_recording_seconds", 180)) {
           stop_ = true;
-          update({{"error", "已到录音时长上限，正在处理完整结果"}});
+          updateSession(version,
+                        {{"error", "已到录音时长上限，正在处理完整结果"}});
           break;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
@@ -284,46 +323,77 @@ void App::start(bool cmd) {
                 << " preview_chars=" << preview_chars << '\n';
       if (cancel_) {
         asr_->cancel();
-        update({{"phase", "idle"}, {"text", ""}, {"raw", ""}, {"error", ""}});
+        updateSession(
+            version,
+            {{"phase", "idle"}, {"text", ""}, {"raw", ""}, {"error", ""}});
       } else {
-        update({{"phase", "finalizing"}, {"text", ""}});
+        updateSession(version, {{"phase", "finalizing"}, {"text", ""}});
         auto result = asr_->finish(&cancel_);
         if (cancel_)
-          update({{"phase", "idle"}, {"text", ""}, {"raw", ""}});
+          updateSession(version,
+                        {{"phase", "idle"}, {"text", ""}, {"raw", ""}});
         else if (result.text.empty())
           update(
               {{"phase", "idle"}, {"text", "未检测到可识别语音"}, {"raw", ""}});
         else {
-          std::string output = result.text, error = result.warning;
-          update({{"raw", result.text}, {"text", result.text}});
+          TextResult output{result.text, result.warning};
+          updateSession(version, {{"raw", result.text}, {"text", result.text}});
           if (!protected_field && (cmd || scene != "raw" || !history.empty())) {
-            update({{"phase", "rewriting"}});
-            try {
-              output = Rewrite(config_, result.text,
-                               scene == "raw" ? "correct" : scene, selected,
-                               history, cancel_);
-            } catch (const std::exception &e) {
-              error = e.what();
-              if (cmd)
-                output.clear();
+            TextRequest request{
+                result.text,    scene == "raw" ? "correct" : scene,
+                selected,       history,
+                result.warning, cmd};
+            if (rememberRewrite(version, request)) {
+              updateSession(version, {{"phase", "rewriting"}});
+              output = ProcessText(config_, request, cancel_);
             }
           }
-          if (cancel_)
-            update({{"phase", "idle"}, {"text", ""}, {"raw", ""}});
-          else
-            update({{"phase", cmd && output.empty() ? "error" : "ready"},
-                    {"text", output},
-                    {"error", error}});
+          updateSession(
+              version,
+              {{"phase", cmd && output.text.empty() ? "error" : "ready"},
+               {"text", output.text},
+               {"error", output.error}});
         }
       }
     } catch (const std::exception &e) {
       audio_.stop();
       asr_->cancel();
-      update({{"phase", cancel_ ? "idle" : "error"},
-              {"text", ""},
-              {"error", cancel_ ? "" : e.what()}});
+      updateSession(version, {{"phase", cancel_ ? "idle" : "error"},
+                              {"text", ""},
+                              {"error", cancel_ ? "" : e.what()}});
     }
-    busy_ = false;
+    finishSession(version);
+  });
+}
+void App::retry() {
+  TextRequest request;
+  uint64_t version;
+  {
+    std::lock_guard lock(mutex_);
+    if (busy_)
+      throw std::runtime_error("正在处理本次文字，请稍候");
+    auto phase = state_.at("phase").get<std::string>();
+    if (delivered_ || !rewrite_request_ ||
+        (phase != "ready" && phase != "error"))
+      throw std::runtime_error("没有可重试的本次文字，请先录音");
+    request = *rewrite_request_;
+    version = session_version_;
+    manual_confirmation_ = true;
+    cancel_ = false;
+    busy_ = true;
+    updateLocked({{"phase", "retrying"}, {"error", ""}});
+  }
+  if (worker_.joinable())
+    worker_.join();
+  worker_ = std::thread([this, request, version] {
+    auto output = ProcessText(config_, request, cancel_);
+    updateSession(
+        version,
+        {{"phase",
+          request.command_mode && output.text.empty() ? "error" : "ready"},
+         {"text", output.text},
+         {"error", output.error}});
+    finishSession(version);
   });
 }
 void App::commit(bool raw) {
@@ -337,6 +407,11 @@ void App::commit(bool raw) {
   auto text = state.at(raw ? "raw" : "text").get<std::string>();
   desktop_.paste(target_, text, selected_);
   delivered_ = true;
+  {
+    std::lock_guard lock(mutex_);
+    ++session_version_;
+    rewrite_request_.reset();
+  }
   update({{"phase", "idle"},
           {"text", "已发送粘贴请求"},
           {"error", ""},
@@ -376,14 +451,21 @@ Json App::command(const std::string &cmd, const std::string &arg) {
       pressed_ = false;
     } else if (cmd == "cancel") {
       pressed_ = false;
+      std::lock_guard lock(mutex_);
       cancel_ = true;
       stop_ = true;
       delivered_ = true;
-      if (!busy_)
-        update({{"phase", "idle"}, {"text", ""}, {"raw", ""}, {"error", ""}});
-      else
-        update({{"phase", "cancelling"}});
-    } else if (cmd == "commit")
+      ++session_version_;
+      rewrite_request_.reset();
+      updateLocked({{"phase", busy_ ? "cancelling" : "idle"},
+                    {"text", ""},
+                    {"raw", ""},
+                    {"error", ""},
+                    {"context", ""},
+                    {"context_note", ""}});
+    } else if (cmd == "retry")
+      retry();
+    else if (cmd == "commit")
       commit(false);
     else if (cmd == "raw")
       commit(true);
@@ -391,7 +473,8 @@ Json App::command(const std::string &cmd, const std::string &arg) {
       if (arg != "fun" && arg != "x-asr")
         throw std::runtime_error("Backend must be fun or x-asr");
       auto phase = snapshot().at("phase").get<std::string>();
-      if (busy_ || phase == "ready")
+      if (busy_ || phase == "ready" ||
+          snapshot().value("retry_available", false))
         throw std::runtime_error(
             "请先结束、提交或取消当前录音，再切换识别后端");
       if (config_.data.at("asr").at("backend") != arg) {
@@ -421,8 +504,8 @@ Json App::command(const std::string &cmd, const std::string &arg) {
     } else if (cmd == "scene") {
       if (arg != "raw" && !config_.data.at("prompts").contains(arg))
         throw std::runtime_error("Unknown scene");
-      if (busy_)
-        throw std::runtime_error("请在录音结束后切换场景");
+      if (busy_ || snapshot().value("retry_available", false))
+        throw std::runtime_error("请先提交或取消本次结果，再切换场景");
       scene_ = arg;
       update({{"scene", scene_}});
     } else if (cmd == "quit") {
@@ -435,7 +518,9 @@ Json App::command(const std::string &cmd, const std::string &arg) {
   } catch (const std::exception &e) {
     if (cmd == "press")
       pressed_ = false;
-    update({{"error", e.what()}});
+    // Rejected concurrent actions must not overwrite the active result/error.
+    if (!busy_)
+      update({{"error", e.what()}});
     return {{"ok", false}, {"error", e.what()}};
   }
 }
@@ -467,6 +552,7 @@ void App::ui() {
   auto state = snapshot();
   std::string phase = state.at("phase");
   if (!busy_ && phase == "ready" && !delivered_ &&
+      !state.value("manual_confirmation", false) &&
       config_.data.value("auto_commit", true) &&
       !state.at("command_mode").get<bool>()) {
     if (!focus_changed_ && state.at("error").get<std::string>().empty()) {
@@ -479,16 +565,21 @@ void App::ui() {
     phase = state.at("phase");
   }
   static const std::map<std::string, std::string> names = {
-      {"loading", "正在准备"},    {"idle", "就绪"},
-      {"starting", "连接麦克风"}, {"recording", "正在听"},
-      {"finalizing", "正在识别"}, {"rewriting", "正在整理"},
-      {"ready", "待确认"},        {"error", "需要处理"},
+      {"loading", "正在准备"},
+      {"idle", "就绪"},
+      {"starting", "连接麦克风"},
+      {"recording", "正在听"},
+      {"finalizing", "正在识别"},
+      {"rewriting", "正在整理"},
+      {"retrying", "正在重试文字处理"},
+      {"ready", "待确认"},
+      {"error", "需要处理"},
       {"cancelling", "取消中"}};
   const bool recording = phase == "recording", ready = phase == "ready";
   const bool command_mode = state.at("command_mode").get<bool>();
   const bool processing = phase == "loading" || phase == "starting" ||
                           phase == "finalizing" || phase == "rewriting" ||
-                          phase == "cancelling";
+                          phase == "retrying" || phase == "cancelling";
   const auto scene = state.at("scene").get<std::string>();
   const auto mode =
       command_mode ? std::string("修改选中文字") : SceneLabel(scene);
@@ -532,7 +623,9 @@ void App::ui() {
     else if (phase == "loading" || phase == "starting")
       text = "正在准备语音输入…";
     else if (phase == "error")
-      text = "这次没有完成，请稍后重试。";
+      text = state.value("retry_available", false)
+                 ? "可重试本次文字处理，或取消。"
+                 : "这次没有完成，请检查配置后重新录音。";
     else
       text = "正在识别这段语音…";
   }
@@ -566,8 +659,14 @@ void App::ui() {
   std::string hint;
   if (recording)
     hint = RecordingHint(command_mode, pressed_);
+  else if (phase == "retrying")
+    hint = "复用本次原文和前文，无需重新录音";
   else if (ready)
-    hint = command_mode ? "确认后替换选中文字" : "检查后插入文字";
+    hint = state.value("manual_confirmation", false)
+               ? (command_mode ? "重试结果需确认后替换选中文字"
+                               : "重试结果需确认后插入")
+           : command_mode ? "确认后替换选中文字"
+                          : "检查后插入文字";
   else
     hint = phase == "error" ? "本次内容不会自动输入"
            : (config_.data.value("auto_commit", true) && !command_mode &&
@@ -594,10 +693,21 @@ void App::ui() {
     meter_history_.fill(0);
   gtk_widget_set_visible(meter_, recording);
   gtk_widget_set_visible(commit_button_, ready);
+  gtk_widget_set_sensitive(commit_button_, !busy_);
+  gtk_widget_set_visible(
+      retry_button_, state.value("retry_available", false) &&
+                         (ready || phase == "error" || phase == "retrying"));
+  gtk_widget_set_sensitive(retry_button_, !busy_);
+  gtk_button_set_label(GTK_BUTTON(retry_button_),
+                       phase == "retrying" ? "重试中…" : "重试文字处理");
+  gtk_widget_set_tooltip_text(
+      retry_button_, "复用本次原转录、场景、选区和前文；结果需手动确认");
   gtk_button_set_label(GTK_BUTTON(commit_button_),
                        command_mode ? "确认修改" : "插入文字");
-  gtk_widget_set_visible(raw_button_, ready && !command_mode &&
-                                          state.at("text") != state.at("raw"));
+  gtk_widget_set_visible(
+      raw_button_, ready && !command_mode &&
+                       (state.at("text") != state.at("raw") || !error.empty()));
+  gtk_widget_set_sensitive(raw_button_, !busy_);
   gtk_widget_set_visible(stop_button_, recording);
   gtk_widget_set_tooltip_text(cancel_button_,
                               phase == "error" ? "关闭" : "取消本次语音");
@@ -747,7 +857,10 @@ void App::run() {
   gtk_widget_set_hexpand(hint_, true);
   gtk_box_append(GTK_BOX(row), hint_);
   for (auto [label, cmd] : std::vector<std::pair<const char *, const char *>>{
-           {"使用原文", "raw"}, {"结束录音", "stop"}, {"插入文字", "commit"}}) {
+           {"使用原文", "raw"},
+           {"重试文字处理", "retry"},
+           {"结束录音", "stop"},
+           {"插入文字", "commit"}}) {
     auto button = gtk_button_new_with_label(label);
     g_object_set_data_full(G_OBJECT(button), "command", g_strdup(cmd), g_free);
     g_signal_connect(button, "clicked",
@@ -760,6 +873,8 @@ void App::run() {
     gtk_box_append(GTK_BOX(row), button);
     if (std::string(cmd) == "raw")
       raw_button_ = button;
+    else if (std::string(cmd) == "retry")
+      retry_button_ = button;
     else {
       gtk_widget_add_css_class(button, "primary");
       if (std::string(cmd) == "commit")

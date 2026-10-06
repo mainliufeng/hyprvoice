@@ -100,7 +100,9 @@ Lua 配置使用 `config/hyprvoice.lua` 的绑定；仍使用 hyprlang 时参考
 | Super+Alt+Escape | 取消当前会话 |
 | Super+Alt+1 / 2 / 3 / 4 | 原文／纠错／整理／英文翻译 |
 
-CLI 同样支持 `start stop toggle press release command cancel commit raw status scene NAME backend fun|x-asr quit`。
+文字处理失败后可以点击“重试文字处理”或运行 `hyprvoice retry`，无需重新录音。重试复用本次原转录、场景、选区和已读取的前文，不重新读取当前输入框；重试结果需要手动确认后插入或替换选区。处理时按钮显示“重试中…”且不能重复启动。普通听写失败可点“使用原文”；指令模式失败保留选区，不能把口述指令作为原文插入。提交或取消后不再保留可重试的本次内容，切换场景或识别后端前须先提交或取消待处理结果。
+
+CLI 同样支持 `start stop toggle press release command cancel retry commit raw status scene NAME backend fun|x-asr quit`。
 运行 `doctor` 后还应核对麦克风静音状态；程序不自动取消你的麦克风静音，也不修改默认音频设备。
 
 替换旧语音工具时停用旧 Vinput 插件和旧语音后台，保留 Fcitx 拼音。验证新工具在你的日常应用中可用后再切换，避免两套快捷键同时录音。

@@ -174,10 +174,15 @@ void Desktop::paste(const Target &t, const std::string &text,
   // Paste has no application acknowledgement. Default: leave output on the
   // clipboard. Optional delayed restore is explicitly best-effort.
   if (config_.data.value("clipboard_restore", false) && previous) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(700));
-    auto value = clipboard();
-    if (value && *value == text)
-      setClipboard(*previous);
+    try {
+      std::this_thread::sleep_for(std::chrono::milliseconds(700));
+      auto value = clipboard();
+      if (value && *value == text)
+        setClipboard(*previous);
+    } catch (const std::exception &) {
+      // The paste request already went out. A best-effort restore failure
+      // must not leave this result available for a second insertion.
+    }
   }
 }
 } // namespace hv

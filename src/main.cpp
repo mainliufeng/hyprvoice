@@ -12,7 +12,8 @@ int main(int argc, char **argv) {
           << "hyprvoice init | serve | doctor | transcribe WAV | replay "
              "MANIFEST\n"
           << "hyprvoice start | stop | toggle | press | release | command | "
-             "cancel | commit | raw | status | scene NAME | backend fun|x-asr "
+             "cancel | retry | commit | raw | status | scene NAME | backend "
+             "fun|x-asr "
              "| quit\n"
           << "HYPRVOICE_CONFIG overrides ~/.config/hyprvoice/config.json\n";
       return 0;

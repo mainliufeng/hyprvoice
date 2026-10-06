@@ -99,6 +99,24 @@ std::string Rewrite(const Config &c, const std::string &text,
   auto result = content.get<std::string>();
   if (!g_utf8_validate(result.data(), result.size(), nullptr))
     throw std::runtime_error("文本处理结果不是 UTF-8");
+  bool blank = true;
+  for (const char *p = result.c_str(); *p; p = g_utf8_next_char(p))
+    blank &= g_unichar_isspace(g_utf8_get_char(p));
+  if (blank || result.find('\0') != std::string::npos)
+    throw std::runtime_error("文本处理接口没有返回有效文字");
+  return result;
+}
+TextResult ProcessText(const Config &config, const TextRequest &request,
+                       std::atomic<bool> &cancel) {
+  TextResult result{request.command_mode ? "" : request.raw, request.warning};
+  try {
+    result.text = Rewrite(config, request.raw, request.scene, request.selected,
+                          request.history, cancel);
+  } catch (const std::exception &error) {
+    if (!result.error.empty())
+      result.error += '\n';
+    result.error += "文本处理未完成：" + std::string(error.what());
+  }
   return result;
 }
 } // namespace hv
