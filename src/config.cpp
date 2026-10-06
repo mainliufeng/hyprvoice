@@ -3,6 +3,8 @@
 #include <fcntl.h>
 #include <fstream>
 #include <stdexcept>
+#include <sys/file.h>
+#include <sys/stat.h>
 #include <unistd.h>
 namespace hv {
 std::string ExpandPath(std::string s) {
@@ -88,74 +90,172 @@ Json DefaultConfig() {
             {"translate",
              "将输入翻译成英文，保留事实、数字与专有名词。只返回译文。"}}}};
 }
-Config::Config(const std::filesystem::path &p) : data(DefaultConfig()) {
+Config::Config(const std::filesystem::path &p)
+    : data(DefaultConfig()), source_path(p) {
   if (!std::filesystem::exists(p))
-    throw std::runtime_error("Config missing: " + p.string() +
-                             "; run hyprvoice init");
-  data.merge_patch(Json::parse(ReadFile(p)));
-  auto backend = data.at("asr").value("backend", std::string());
-  if (backend != "x-asr" && backend != "fun")
-    throw std::runtime_error("asr.backend must be x-asr or fun");
-  int threads = data.at("fun").value("threads", 8);
-  if (threads < 1 || threads > 64)
-    throw std::runtime_error("fun.threads must be 1..64");
-  int timeout = data.at("fun").value("timeout_seconds", 120);
-  if (timeout < 5 || timeout > 600)
-    throw std::runtime_error("fun.timeout_seconds must be 5..600");
-  if (data.value("gain", 1.0) <= 0 || data.value("gain", 1.0) > 8)
-    throw std::runtime_error("gain must be in (0,8]");
-  int limit = data.value("max_recording_seconds", 180);
-  if (limit < 1 || limit > 600)
-    throw std::runtime_error("max_recording_seconds must be 1..600");
-  int context_limit = data.at("context").value("max_chars", 1024);
-  if (context_limit < 1 || context_limit > 2048)
-    throw std::runtime_error("context.max_chars must be 1..2048");
-  if (!data.contains("prompts") || !data.at("prompts").is_object())
-    throw std::runtime_error("prompts must be an object of scene prompts");
-  for (auto &[name, prompt] : data.at("prompts").items()) {
-    if (name.empty() || name.find('\0') != std::string::npos)
-      throw std::runtime_error(
-          "Prompt scene names must be non-empty and contain no NUL");
-    if (!prompt.is_string())
-      throw std::runtime_error("Prompt values must be strings");
+    throw std::runtime_error("Config missing; run hyprvoice init");
+  source_text = ReadFile(p);
+  try {
+    auto input = Json::parse(source_text);
+    if (!input.is_object())
+      throw std::runtime_error("Configuration must be an object");
+    data.merge_patch(input);
+    ValidateConfig(data);
+  } catch (const Json::exception &) {
+    // JSON diagnostics can quote malformed values, including legacy secrets.
+    throw std::runtime_error("Configuration JSON or field type is invalid");
   }
-  if (data.contains("scene") && !data.at("scene").is_string())
-    throw std::runtime_error("scene must be a string");
-  auto scene = data.value("scene", std::string("raw"));
-  if (scene.empty() || scene.find('\0') != std::string::npos)
-    throw std::runtime_error("scene must be non-empty and contain no NUL");
-  if (scene != "raw" && !data.at("prompts").contains(scene))
-    throw std::runtime_error("Unknown scene: " + scene);
 }
+void ValidateConfig(const Json &data) {
+  try {
+    if (!data.is_object())
+      throw std::runtime_error("Configuration must be an object");
+    if (!data.at("auto_commit").is_boolean() ||
+        !data.at("context").at("enabled").is_boolean())
+      throw std::runtime_error(
+          "auto_commit and context.enabled must be booleans");
+    if (!data.at("audio_source").is_string() ||
+        data.at("audio_source").get<std::string>().find('\0') !=
+            std::string::npos)
+      throw std::runtime_error("audio_source must be a string without NUL");
+    auto backend = data.at("asr").value("backend", std::string());
+    if (backend != "x-asr" && backend != "fun")
+      throw std::runtime_error("asr.backend must be x-asr or fun");
+    int threads = data.at("fun").value("threads", 8);
+    if (threads < 1 || threads > 64)
+      throw std::runtime_error("fun.threads must be 1..64");
+    int timeout = data.at("fun").value("timeout_seconds", 120);
+    if (timeout < 5 || timeout > 600)
+      throw std::runtime_error("fun.timeout_seconds must be 5..600");
+    if (data.value("gain", 1.0) <= 0 || data.value("gain", 1.0) > 8)
+      throw std::runtime_error("gain must be in (0,8]");
+    int limit = data.value("max_recording_seconds", 180);
+    if (limit < 1 || limit > 600)
+      throw std::runtime_error("max_recording_seconds must be 1..600");
+    int context_limit = data.at("context").value("max_chars", 1024);
+    if (context_limit < 1 || context_limit > 2048)
+      throw std::runtime_error("context.max_chars must be 1..2048");
+    if (!data.contains("prompts") || !data.at("prompts").is_object())
+      throw std::runtime_error("prompts must be an object of scene prompts");
+    for (auto &[name, prompt] : data.at("prompts").items()) {
+      if (name.empty() || name.find('\0') != std::string::npos)
+        throw std::runtime_error(
+            "Prompt scene names must be non-empty and contain no NUL");
+      if (!prompt.is_string())
+        throw std::runtime_error("Prompt values must be strings");
+    }
+    if (data.contains("scene") && !data.at("scene").is_string())
+      throw std::runtime_error("scene must be a string");
+    auto scene = data.value("scene", std::string("raw"));
+    if (scene.empty() || scene.find('\0') != std::string::npos)
+      throw std::runtime_error("scene must be non-empty and contain no NUL");
+    if (scene != "raw" && !data.at("prompts").contains(scene))
+      throw std::runtime_error("Unknown scene: " + scene);
+  } catch (const Json::exception &) {
+    throw std::runtime_error(
+        "Configuration field type or required field is invalid");
+  }
+}
+
 std::string Config::path(const char *key) const {
   return ExpandPath(data.at(key).get<std::string>());
 }
-void SaveBackend(const std::string &backend) {
-  auto path = ConfigPath();
-  auto data = Json::parse(ReadFile(path));
-  data["asr"]["backend"] = backend;
-  auto content = data.dump(2) + '\n';
-  auto temporary = path.string() + ".XXXXXX";
-  int fd = mkstemp(temporary.data());
-  if (fd < 0)
-    throw std::runtime_error("Cannot save recognition backend");
+void ValidateSettingsPatch(const Json &patch) {
+  if (!patch.is_object() || patch.empty())
+    throw std::runtime_error("Settings patch must be a non-empty object");
+  for (const auto &[key, value] : patch.items()) {
+    bool valid = key == "scene"         ? value.is_string()
+                 : key == "auto_commit" ? value.is_boolean()
+                 : key == "asr"     ? value.is_object() && value.size() == 1 &&
+                                          value.contains("backend") &&
+                                          value.at("backend").is_string()
+                 : key == "context" ? value.is_object() && value.size() == 1 &&
+                                          value.contains("enabled") &&
+                                          value.at("enabled").is_boolean()
+                                    : false;
+    if (!valid)
+      throw std::runtime_error(
+          "Only backend, scene, auto_commit and context.enabled may be saved");
+  }
+}
+std::string SaveSettings(const std::filesystem::path &path,
+                         const std::string &expected, const Json &patch,
+                         const std::atomic<bool> *cancel) {
+  ValidateSettingsPatch(patch);
+  auto cancelled = [&] {
+    if (cancel && cancel->load())
+      throw std::runtime_error("设置保存已取消");
+  };
+  struct stat status{};
+  if (lstat(path.c_str(), &status) < 0 || !S_ISREG(status.st_mode) ||
+      status.st_uid != getuid())
+    throw std::runtime_error("配置文件不是当前用户的普通文件；未覆盖");
+  auto lock_path = path.string() + ".settings.lock";
+  int lock =
+      open(lock_path.c_str(), O_CREAT | O_RDWR | O_CLOEXEC | O_NOFOLLOW, 0600);
+  if (lock < 0)
+    throw std::runtime_error("无法锁定配置；未保存");
+  int fd = -1;
+  std::string temporary;
   try {
+    if (fstat(lock, &status) < 0 || !S_ISREG(status.st_mode) ||
+        status.st_uid != getuid() || flock(lock, LOCK_EX | LOCK_NB) < 0)
+      throw std::runtime_error("配置正在被其它保存操作占用；未保存");
+    cancelled();
+    if (ReadFile(path) != expected)
+      throw std::runtime_error(
+          "配置文件已被其它操作修改；未覆盖，请重新加载配置后再保存");
+    Json stored;
+    try {
+      stored = Json::parse(expected);
+      if (!stored.is_object())
+        throw std::runtime_error("Configuration must be an object");
+      stored.merge_patch(patch);
+      auto effective = DefaultConfig();
+      effective.merge_patch(stored);
+      ValidateConfig(effective);
+    } catch (const Json::exception &) {
+      throw std::runtime_error("Configuration JSON or field type is invalid");
+    }
+    auto content = stored.dump(2) + '\n';
+    temporary = path.string() + ".XXXXXX";
+    fd = mkstemp(temporary.data());
+    if (fd < 0)
+      throw std::runtime_error("无法创建设置临时文件；未保存");
     size_t pos = 0;
     while (pos < content.size()) {
+      cancelled();
       auto n = write(fd, content.data() + pos, content.size() - pos);
       if (n < 0 && errno == EINTR)
         continue;
       if (n <= 0)
-        throw std::runtime_error("Cannot save recognition backend");
+        throw std::runtime_error("设置写入失败；未覆盖配置");
       pos += n;
     }
-    if (fsync(fd) < 0 || rename(temporary.c_str(), path.c_str()) < 0)
-      throw std::runtime_error("Cannot save recognition backend");
+    if (fsync(fd) < 0)
+      throw std::runtime_error("设置同步失败；未覆盖配置");
+    cancelled();
+    if (ReadFile(path) != expected || lstat(path.c_str(), &status) < 0 ||
+        !S_ISREG(status.st_mode) || status.st_uid != getuid())
+      throw std::runtime_error(
+          "配置文件已变化；未覆盖，请重新加载配置后再保存");
+    cancelled();
+    if (rename(temporary.c_str(), path.c_str()) < 0)
+      throw std::runtime_error("设置替换失败；未覆盖配置");
     close(fd);
+    close(lock);
+    return content;
   } catch (...) {
-    close(fd);
-    unlink(temporary.c_str());
+    if (fd >= 0)
+      close(fd);
+    if (!temporary.empty())
+      unlink(temporary.c_str());
+    close(lock);
     throw;
   }
+}
+void SaveBackend(const std::string &backend) {
+  auto path = ConfigPath();
+  SaveSettings(path, ReadFile(path), {{"asr", {{"backend", backend}}}});
 }
 } // namespace hv

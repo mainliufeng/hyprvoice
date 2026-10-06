@@ -13,7 +13,8 @@ struct Transcript {
 };
 class Asr {
 public:
-  explicit Asr(const Config &config);
+  explicit Asr(const Config &config,
+               const std::atomic<bool> *cancelled = nullptr);
   ~Asr();
   Asr(const Asr &) = delete;
   Asr &operator=(const Asr &) = delete;

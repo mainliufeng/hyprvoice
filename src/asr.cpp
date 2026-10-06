@@ -16,9 +16,9 @@ static std::string Asset(const std::string &dir, const std::string &name) {
     throw std::runtime_error("Model file missing: " + p.string());
   return p.string();
 }
-Asr::Asr(const Config &c) {
+Asr::Asr(const Config &c, const std::atomic<bool> *cancelled) {
   if (c.data.at("asr").at("backend") == "fun") {
-    fun_ = std::make_unique<FunBackend>(c);
+    fun_ = std::make_unique<FunBackend>(c, cancelled);
     return;
   }
   std::string hotwords;

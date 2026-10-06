@@ -30,6 +30,7 @@ children = call('org.a11y.atspi.Registry', '/org/a11y/atspi/accessible/root',
                 'org.a11y.atspi.Accessible', 'GetChildren')[0]
 values, seen = [], set()
 activated = False
+action_errors = []
 
 
 def walk(dest, path):
@@ -41,22 +42,29 @@ def walk(dest, path):
         name = call(dest, path, 'org.freedesktop.DBus.Properties', 'Get',
                     GLib.Variant('(ss)', ('org.a11y.atspi.Accessible', 'Name')))[0]
         states = call(dest, path, 'org.a11y.atspi.Accessible', 'GetState')[0]
-        # ATSPI_STATE_ENABLED=7, SENSITIVE=24, SHOWING=25. Keep raw states too.
+        # ATSPI_STATE_ENABLED=8, SENSITIVE=24, SHOWING=25. Keep raw states too.
+        entry = None
+        focused = bool(states[0] & (1 << 12))
         if name:
             values.append({'name': name, 'states': states,
-                           'enabled': bool(states[0] & (1 << 7)),
+                           'enabled': bool(states[0] & (1 << 8)),
                            'sensitive': bool(states[0] & (1 << 24)),
-                           'showing': bool(states[0] & (1 << 25))})
+                           'showing': bool(states[0] & (1 << 25)),
+                           'focused': focused})
+            entry = values[-1]
         if wanted == name and not activated:
             try:
                 activated = bool(call(dest, path, 'org.a11y.atspi.Component',
                                       'GrabFocus')[0]) if focus else bool(call(
                     dest, path, 'org.a11y.atspi.Action', 'DoAction',
                     GLib.Variant('(i)', (0,)))[0])
-            except GLib.Error:
-                pass
+            except GLib.Error as error:
+                action_errors.append(str(error))
         for child in call(dest, path, 'org.a11y.atspi.Accessible', 'GetChildren')[0]:
-            walk(*child)
+            focused = bool(walk(*child)) or focused
+        if entry is not None:
+            entry['focus_within'] = focused
+        return focused
     except GLib.Error:
         pass
 
@@ -67,6 +75,6 @@ for dest, path in children:
                   GLib.Variant('(s)', (dest,)))[0]
     if actual == pid:
         walk(dest, path)
-print(json.dumps({'widgets': values, 'activated': activated}, ensure_ascii=False))
+print(json.dumps({'widgets': values, 'activated': activated, 'action_errors': action_errors}, ensure_ascii=False))
 if wanted and not activated:
     raise SystemExit(1)

@@ -7,7 +7,8 @@ namespace hv {
 // cancellation without sharing llama/ggml state with the GTK application.
 class FunBackend {
 public:
-  explicit FunBackend(const Config &config);
+  explicit FunBackend(const Config &config,
+                      const std::atomic<bool> *cancelled = nullptr);
   ~FunBackend();
   void prepare(const std::atomic<bool> *cancelled = nullptr);
   Transcript decode(std::span<const float> pcm,

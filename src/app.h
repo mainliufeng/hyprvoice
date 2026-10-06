@@ -4,6 +4,7 @@
 #include "desktop.h"
 #include "input_watch.h"
 #include "rewrite.h"
+#include "settings_panel.h"
 #include <array>
 #include <atomic>
 #include <cstdint>
@@ -21,6 +22,19 @@ public:
 
 private:
   Config config_;
+  std::unique_ptr<SettingsPanel> settings_panel_;
+  std::atomic<bool> settings_cancel_ = false;
+  bool settings_saving_ = false;
+  Json previous_settings_;
+  struct SettingsResult {
+    Config config;
+    std::unique_ptr<Asr> recognizer;
+    Json previous;
+    bool success = false;
+    std::string error;
+    explicit SettingsResult(Config next) : config(std::move(next)) {}
+  };
+  std::unique_ptr<SettingsResult> settings_result_;
   Desktop desktop_;
   Audio audio_;
   std::unique_ptr<Asr> asr_;
@@ -58,6 +72,10 @@ private:
   GMainLoop *loop_ = nullptr;
   int socket_ = -1, lock_ = -1, focus_socket_ = -1;
   std::string focus_events_;
+  Json settingsValues() const;
+  void requireSettingsIdle();
+  void applySettings(const Json &patch);
+  void finishSettings();
   void start(bool command);
   void commit(bool raw);
   void deliver(const std::string &text, const Json &guard);

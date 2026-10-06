@@ -75,7 +75,11 @@ def accessible(click=None):
     args = ['/usr/bin/python3', str(repo / 'tests/retry_a11y.py'), str(app.pid)]
     if click:
         args.append(click)
-    return json.loads(run(*args))
+    reply = subprocess.run(args, env=env, capture_output=True, text=True, timeout=8)
+    value = json.loads(reply.stdout)
+    if reply.returncode and not click:
+        raise RuntimeError('Private widget inspection failed')
+    return value
 
 
 def label(name):
@@ -87,8 +91,13 @@ def label(name):
 
 
 def click(name):
-    label(name)
-    assert accessible(name)['activated']
+    wait(lambda: any(w['name'] == name and w['showing'] and w['sensitive']
+                     for w in accessible()['widgets']))
+    value = accessible(name)
+    if not value['activated']:
+        (evidence/'action-failure.json').write_text(json.dumps(
+            {'state': state(), 'widgets': value}, ensure_ascii=False, indent=2))
+    assert value['activated']
 
 
 def photo(name):
@@ -382,8 +391,12 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     index = plan('failure', 'empty')
     begin(); finish()
     click('重试文字处理')
-    failed = phase('ready')
-    check('empty-retry-keeps-original', failed['text'] == raw and failed['raw'] == raw and failed['error'])
+    # GTK Action.DoAction queues the callback. Wait for the new retry result,
+    # not the initial ready state, which already contains raw and an error.
+    failed = wait(lambda: s if (s := state())['phase'] == 'ready' and not s['busy']
+                  and s['retry_result'] and s['manual_confirmation'] else None)
+    check('empty-retry-keeps-original', failed['text'] == raw and failed['raw'] == raw and
+          '没有返回文字' in failed['error'] and len(server.bodies) == index + 2)
     label('使用原文')
     before = first_path.read_text()
     click('使用原文')

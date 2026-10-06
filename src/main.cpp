@@ -15,7 +15,9 @@ int main(int argc, char **argv) {
              "cancel | retry | commit | raw | review | confirm TOKEN | copy | "
              "status | scene NAME | backend "
              "fun|x-asr "
-             "| quit\n"
+             "| settings | settings-status | diagnose\n"
+          << "hyprvoice settings-save JSON | settings-previous | "
+             "settings-cancel | quit\n"
           << "HYPRVOICE_CONFIG overrides ~/.config/hyprvoice/config.json\n";
       return 0;
     }

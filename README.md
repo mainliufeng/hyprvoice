@@ -104,7 +104,7 @@ Lua 配置使用 `config/hyprvoice.lua` 的绑定；仍使用 hyprlang 时参考
 
 同窗口控件、光标、选区和内容保护，以及位置变化后的两步确认见 [目标保护说明](docs/target-protection.md)。默认纠错／整理的保真边界与合成用例见 [策略验证](docs/fidelity-verification.md)。
 
-CLI 同样支持 `start stop toggle press release command cancel retry commit raw review confirm TOKEN copy status scene NAME backend fun|x-asr quit`。
+CLI 同样支持 `start stop toggle press release command cancel retry commit raw review confirm TOKEN copy status scene NAME backend fun|x-asr quit`。空闲时用 `hyprvoice settings` 打开轻量设置窗口，用 `hyprvoice diagnose` 做不录音、不联网的本地诊断；详见 [设置与诊断](docs/settings-and-diagnostics.md)。本轮尚未安装，获准后的切换及回退见 [迭代切换方案](docs/iteration-installation-rollback-plan.md)。
 运行 `doctor` 后还应核对麦克风静音状态；程序不自动取消你的麦克风静音，也不修改默认音频设备。
 
 替换旧语音工具时停用旧 Vinput 插件和旧语音后台，保留 Fcitx 拼音。验证新工具在你的日常应用中可用后再切换，避免两套快捷键同时录音。

@@ -1,5 +1,6 @@
 #include "app.h"
 #include "context.h"
+#include "diagnostics.h"
 #include "overlay_style.h"
 #include "process.h"
 #include "rewrite.h"
@@ -83,12 +84,16 @@ App::App(Config c) : config_(std::move(c)), desktop_(config_) {
   state_["review_token"] = "";
   state_["preferred_raw"] = false;
   state_["retry_result"] = false;
+  state_["model_ready"] = false;
+  state_["settings_note"] = "";
 }
 App::~App() {
+  settings_cancel_ = true;
   cancel_ = true;
   stop_ = true;
   if (worker_.joinable())
     worker_.join();
+  settings_panel_.reset();
   if (focus_socket_ >= 0)
     close(focus_socket_);
   if (socket_ >= 0) {
@@ -207,6 +212,8 @@ void App::focusEvents() {
     focus_events_.clear();
 }
 void App::start(bool cmd) {
+  if (settings_panel_ && settings_panel_->visible())
+    throw std::runtime_error("请先关闭设置窗口，再回到输入位置开始录音");
   if (busy_)
     throw std::runtime_error("正在处理上一段语音，请稍候");
   if (!asr_)
@@ -617,10 +624,145 @@ void App::copyResult() {
           {"raw", ""},
           {"error", ""}});
 }
+Json App::settingsValues() const {
+  return {{"asr", {{"backend", config_.data.at("asr").at("backend")}}},
+          {"scene", scene_},
+          {"auto_commit", config_.data.at("auto_commit")},
+          {"context", {{"enabled", config_.data.at("context").at("enabled")}}}};
+}
+void App::requireSettingsIdle() {
+  if (busy_ || !delivered_)
+    throw std::runtime_error("请先结束、提交或取消本次语音，再打开或保存设置");
+}
+void App::applySettings(const Json &patch) {
+  requireSettingsIdle();
+  auto next = config_;
+  // Runtime scene selection remains in effect when the legacy backend command
+  // saves only its own field. The settings panel explicitly saves all four.
+  next.data["scene"] = scene_;
+  try {
+    ValidateSettingsPatch(patch);
+    next.data.merge_patch(patch);
+    ValidateConfig(next.data);
+  } catch (...) {
+    throw std::runtime_error("设置值无效；仅接受后端、有效场景和两个布尔开关");
+  }
+  auto previous = settingsValues();
+  const bool replace = !asr_ || next.data.at("asr").at("backend") !=
+                                    config_.data.at("asr").at("backend");
+  if (worker_.joinable())
+    worker_.join();
+  settings_cancel_ = false;
+  settings_saving_ = true;
+  busy_ = true;
+  update({{"settings_note", "正在验证并保存设置…"}});
+  worker_ = std::thread([this, next = std::move(next), previous, patch,
+                         replace]() mutable {
+    auto result = std::make_unique<SettingsResult>(std::move(next));
+    result->previous = previous;
+    try {
+      if (replace) {
+        try {
+          result->recognizer =
+              std::make_unique<Asr>(result->config, &settings_cancel_);
+        } catch (...) {
+          // Worker error strings and configuration paths may contain private
+          // values. Return a fixed local message instead of echoing them.
+          throw std::runtime_error(
+              settings_cancel_ ? "设置保存已取消"
+                               : "新识别后端未能加载；原设置和原后端已保留");
+        }
+      }
+      result->config.source_text =
+          SaveSettings(result->config.source_path, result->config.source_text,
+                       patch, &settings_cancel_);
+      result->success = true;
+    } catch (const std::exception &e) {
+      result->error = e.what();
+    }
+    std::lock_guard lock(mutex_);
+    settings_result_ = std::move(result);
+    // Main-thread publication keeps config_, scene_ and the recognizer
+    // coherent. busy_ stays true until that publication, so no session can
+    // start in between.
+  });
+}
+void App::finishSettings() {
+  std::unique_ptr<SettingsResult> result;
+  {
+    std::lock_guard lock(mutex_);
+    result = std::move(settings_result_);
+  }
+  if (!result)
+    return;
+  if (worker_.joinable())
+    worker_.join();
+  if (result->success) {
+    config_ = std::move(result->config);
+    if (result->recognizer)
+      asr_ = std::move(result->recognizer);
+    scene_ = config_.data.at("scene").get<std::string>();
+    previous_settings_ = std::move(result->previous);
+    update({{"phase", "idle"},
+            {"backend", config_.data.at("asr").at("backend")},
+            {"scene", scene_},
+            {"text", ""},
+            {"raw", ""},
+            {"error", ""},
+            {"model_ready", asr_ != nullptr},
+            {"settings_note", "设置已保存并生效；可恢复上次设置为草稿"}});
+  } else
+    update({{"settings_note", result->error}});
+  settings_saving_ = false;
+  busy_ = false;
+}
 Json App::command(const std::string &cmd, const std::string &arg) {
   try {
     if (cmd == "status")
       return {{"ok", true}, {"state", snapshot()}};
+    if (cmd == "settings-status")
+      return {{"ok", true},
+              {"settings", settingsValues()},
+              {"saving", settings_saving_},
+              {"open", settings_panel_ && settings_panel_->visible()},
+              {"message", snapshot().at("settings_note")}};
+    if (cmd == "diagnose") {
+      if (busy_)
+        throw std::runtime_error("正在处理，请稍后刷新本地诊断");
+      return {{"ok", true},
+              {"diagnostics", LocalDiagnostics(config_, asr_ != nullptr)}};
+    }
+    if (cmd == "settings") {
+      requireSettingsIdle();
+      if (!settings_panel_)
+        settings_panel_ = std::make_unique<SettingsPanel>(
+            [this](const auto &command, const auto &arg) {
+              return this->command(command, arg);
+            });
+      update({{"settings_note", ""}});
+      settings_panel_->show(config_, scene_);
+      return {{"ok", true}};
+    }
+    if (cmd == "settings-save") {
+      Json patch;
+      try {
+        patch = Json::parse(arg);
+      } catch (...) {
+        throw std::runtime_error("设置 JSON 无效；未保存");
+      }
+      applySettings(patch);
+      return {{"ok", true}, {"saving", true}};
+    }
+    if (cmd == "settings-previous") {
+      requireSettingsIdle();
+      if (previous_settings_.is_null())
+        throw std::runtime_error("本次运行还没有已保存的上次设置");
+      return {{"ok", true}, {"settings", previous_settings_}};
+    }
+    if (cmd == "settings-cancel") {
+      settings_cancel_ = true;
+      return {{"ok", true}, {"saving", settings_saving_}};
+    }
     if (cmd == "start")
       start(false);
     else if (cmd == "command")
@@ -649,6 +791,10 @@ Json App::command(const std::string &cmd, const std::string &arg) {
         stop_ = true;
       pressed_ = false;
     } else if (cmd == "cancel") {
+      if (settings_saving_) {
+        settings_cancel_ = true;
+        return {{"ok", true}, {"saving", true}};
+      }
       pressed_ = false;
       std::lock_guard lock(mutex_);
       cancel_ = true;
@@ -681,35 +827,9 @@ Json App::command(const std::string &cmd, const std::string &arg) {
     else if (cmd == "backend") {
       if (arg != "fun" && arg != "x-asr")
         throw std::runtime_error("Backend must be fun or x-asr");
-      auto phase = snapshot().at("phase").get<std::string>();
-      if (busy_ || phase == "ready" ||
-          snapshot().value("retry_available", false))
-        throw std::runtime_error(
-            "请先结束、提交或取消当前录音，再切换识别后端");
-      if (config_.data.at("asr").at("backend") != arg) {
-        auto next = config_;
-        next.data["asr"]["backend"] = arg;
-        if (worker_.joinable())
-          worker_.join();
-        busy_ = true;
-        update({{"phase", "loading"},
-                {"text", "正在切换本地识别模型…"},
-                {"raw", ""},
-                {"error", ""},
-                {"seconds", 0}});
-        worker_ = std::thread([this, next, arg] {
-          try {
-            auto recognizer = std::make_unique<Asr>(next);
-            SaveBackend(arg); // Persist only after the real model is usable.
-            asr_ = std::move(recognizer);
-            config_.data["asr"]["backend"] = arg;
-            update({{"phase", "idle"}, {"backend", arg}, {"text", ""}});
-          } catch (const std::exception &e) {
-            update({{"phase", "error"}, {"error", e.what()}, {"text", ""}});
-          }
-          busy_ = false;
-        });
-      }
+      requireSettingsIdle();
+      if (!asr_ || config_.data.at("asr").at("backend") != arg)
+        applySettings({{"asr", {{"backend", arg}}}});
     } else if (cmd == "scene") {
       if (arg != "raw" && !config_.data.at("prompts").contains(arg))
         throw std::runtime_error("Unknown scene");
@@ -718,6 +838,7 @@ Json App::command(const std::string &cmd, const std::string &arg) {
       scene_ = arg;
       update({{"scene", scene_}});
     } else if (cmd == "quit") {
+      settings_cancel_ = true;
       cancel_ = true;
       stop_ = true;
       g_main_loop_quit(loop_);
@@ -728,7 +849,11 @@ Json App::command(const std::string &cmd, const std::string &arg) {
     if (cmd == "press")
       pressed_ = false;
     // Rejected concurrent actions must not overwrite the active result/error.
-    if (!busy_)
+    if (cmd.starts_with("settings") || cmd == "diagnose" ||
+        (settings_panel_ && settings_panel_->visible() && delivered_)) {
+      if (!busy_)
+        update({{"settings_note", e.what()}});
+    } else if (!busy_)
       update({{"error", e.what()}});
     return {{"ok", false}, {"error", e.what()}};
   }
@@ -756,9 +881,12 @@ void App::sockets() {
   }
 }
 void App::ui() {
+  finishSettings();
   sockets();
   focusEvents();
   auto state = snapshot();
+  if (settings_panel_)
+    settings_panel_->tick(settings_saving_, state.at("settings_note"));
   std::string phase = state.at("phase");
   if (!busy_ && phase == "ready" && !delivered_ &&
       !state.value("manual_confirmation", false) &&
@@ -1141,10 +1269,12 @@ void App::run() {
   busy_ = true;
   worker_ = std::thread([this] {
     try {
-      asr_ = std::make_unique<Asr>(config_);
-      update({{"phase", "idle"}, {"text", ""}});
+      asr_ = std::make_unique<Asr>(config_, &cancel_);
+      update({{"phase", "idle"}, {"text", ""}, {"model_ready", true}});
     } catch (const std::exception &e) {
-      update({{"phase", "error"}, {"text", ""}, {"error", e.what()}});
+      update({{"phase", "error"},
+              {"text", ""},
+              {"error", "本地识别模型初始化失败，请检查本地配置"}});
     }
     busy_ = false;
   });
@@ -1161,6 +1291,7 @@ void App::run() {
       this);
   auto onSignal = +[](gpointer data) -> gboolean {
     auto self = static_cast<App *>(data);
+    self->settings_cancel_ = true;
     self->cancel_ = true;
     self->stop_ = true;
     g_main_loop_quit(self->loop_);

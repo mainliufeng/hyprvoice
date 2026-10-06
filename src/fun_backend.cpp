@@ -68,7 +68,7 @@ public:
   ~Wave() { unlink(path.c_str()); }
 };
 } // namespace
-FunBackend::FunBackend(const Config &c)
+FunBackend::FunBackend(const Config &c, const std::atomic<bool> *cancelled)
     : worker_(ExpandPath(c.data.at("fun").at("worker"))),
       models_(ExpandPath(c.data.at("fun").at("model_dir"))),
       threads_(c.data.at("fun").at("threads")),
@@ -83,7 +83,7 @@ FunBackend::FunBackend(const Config &c)
       throw std::runtime_error(
           "Fun model missing: " +
           (std::filesystem::path(models_) / name).string());
-  prepare();
+  prepare(cancelled);
 }
 FunBackend::~FunBackend() { stop(); }
 void FunBackend::stop() {
