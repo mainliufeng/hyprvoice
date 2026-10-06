@@ -2,6 +2,7 @@
 #include "asr.h"
 #include "audio.h"
 #include "desktop.h"
+#include "input_watch.h"
 #include "rewrite.h"
 #include <array>
 #include <atomic>
@@ -37,13 +38,21 @@ private:
   std::optional<TextRequest> rewrite_request_;
   uint64_t session_version_ = 0;
   bool manual_confirmation_ = false;
+  Json origin_guard_, reviewed_guard_;
+  std::string review_token_;
+  uint64_t reviewed_version_ = 0;
+  bool preferred_raw_ = false;
+  std::string reviewed_text_;
+  std::unique_ptr<InputWatch> target_watch_;
+  bool capture_changed_ = false;
   GtkWidget *window_ = nullptr, *title_ = nullptr, *text_ = nullptr,
             *hint_ = nullptr, *meter_ = nullptr, *raw_button_ = nullptr,
             *commit_button_ = nullptr, *stop_button_ = nullptr,
             *retry_button_ = nullptr, *cancel_button_ = nullptr,
+            *review_button_ = nullptr, *copy_button_ = nullptr,
             *mode_ = nullptr, *duration_ = nullptr, *spinner_ = nullptr,
             *icon_ = nullptr, *context_ = nullptr, *warning_ = nullptr,
-            *scroll_ = nullptr;
+            *scroll_ = nullptr, *position_ = nullptr;
   std::array<float, 21> meter_history_{};
   std::string display_text_, display_phase_, recording_text_;
   GMainLoop *loop_ = nullptr;
@@ -51,6 +60,10 @@ private:
   std::string focus_events_;
   void start(bool command);
   void commit(bool raw);
+  void deliver(const std::string &text, const Json &guard);
+  void review();
+  void confirm(const std::string &token);
+  void copyResult();
   void retry();
   void ui();
   void sockets();

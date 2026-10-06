@@ -7,12 +7,15 @@ from pathlib import Path
 
 from gi.repository import Gio, GLib
 
-runtime = Path(os.environ['XDG_RUNTIME_DIR']).resolve()
-assert runtime != Path(f'/run/user/{os.getuid()}')
+runtime = Path(os.environ['XDG_RUNTIME_DIR'])
+assert runtime.resolve() != Path(f'/run/user/{os.getuid()}')
 address = os.environ['AT_SPI_BUS_ADDRESS']
 assert address.startswith('unix:path=' + str(runtime) + '/')
 pid = int(sys.argv[1])
 wanted = sys.argv[2] if len(sys.argv) > 2 else None
+focus = bool(wanted and wanted.startswith('focus:'))
+if focus:
+    wanted = wanted[6:]
 bus = Gio.DBusConnection.new_for_address_sync(
     address, Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT |
     Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION, None, None)
@@ -46,8 +49,10 @@ def walk(dest, path):
                            'showing': bool(states[0] & (1 << 25))})
         if wanted == name and not activated:
             try:
-                activated = bool(call(dest, path, 'org.a11y.atspi.Action',
-                                      'DoAction', GLib.Variant('(i)', (0,)))[0])
+                activated = bool(call(dest, path, 'org.a11y.atspi.Component',
+                                      'GrabFocus')[0]) if focus else bool(call(
+                    dest, path, 'org.a11y.atspi.Action', 'DoAction',
+                    GLib.Variant('(i)', (0,)))[0])
             except GLib.Error:
                 pass
         for child in call(dest, path, 'org.a11y.atspi.Accessible', 'GetChildren')[0]:

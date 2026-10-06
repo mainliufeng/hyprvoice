@@ -1,0 +1,119 @@
+#include "context.h"
+#include <iostream>
+#include <stdexcept>
+
+namespace {
+void check(bool value, const char *message) {
+  if (!value)
+    throw std::runtime_error(message);
+}
+hv::Json target() {
+  return {{"available", true},
+          {"protected", false},
+          {"reliable", true},
+          {"toolkit", "gtk"},
+          {"control", {{"bus", ":1.42"}, {"path", "/test/entry"}}},
+          {"caret", 8},
+          {"selections", hv::Json::array()},
+          {"selection_digests", hv::Json::array()},
+          {"characters", 12},
+          {"digest", std::string(64, 'a')}};
+}
+} // namespace
+
+int main() {
+  try {
+    const auto original = target();
+    check(hv::EquivalentInputTarget(original, original),
+          "stable editable target must match");
+    for (const auto &patch :
+         {hv::Json{{"available", false}}, hv::Json{{"reliable", false}},
+          hv::Json{{"protected", true}}, hv::Json{{"toolkit", "chromium"}},
+          hv::Json{{"control", {{"bus", ":1.43"}, {"path", "/test/entry"}}}},
+          hv::Json{{"control", {{"bus", ":1.42"}, {"path", "/test/other"}}}},
+          hv::Json{{"caret", 9}},
+          hv::Json{{"selections", hv::Json::array({{1, 4}})}},
+          hv::Json{{"characters", 13}},
+          hv::Json{{"digest", std::string(64, 'b')}}}) {
+      auto changed = original;
+      changed.update(patch);
+      check(!hv::EquivalentInputTarget(original, changed) &&
+                !hv::EquivalentInputTarget(changed, original),
+            "changed or unsafe targets must not match");
+    }
+    auto selected = original;
+    selected["selections"] = hv::Json::array({{2, 7}, {9, 11}});
+    selected["selection_digests"] =
+        hv::Json::array({std::string(64, 'b'), std::string(64, 'c')});
+    check(hv::EquivalentInputTarget(selected, selected),
+          "stable multiple selections must compare");
+    auto shifted = selected;
+    shifted["selections"] = hv::Json::array({{3, 8}, {9, 11}});
+    check(!hv::EquivalentInputTarget(selected, shifted),
+          "equal-length selection moved to another range must not match");
+    auto reordered = selected;
+    reordered["selections"] = hv::Json::array({{9, 11}, {2, 7}});
+    check(!hv::EquivalentInputTarget(selected, reordered),
+          "selection ordering changes must not match");
+    auto changed_digest = selected;
+    changed_digest["selection_digests"][0] = std::string(64, 'd');
+    check(!hv::EquivalentInputTarget(selected, changed_digest),
+          "selected text digest changes must not match");
+    for (const auto &digests :
+         {hv::Json::array(), hv::Json::array({"bad", "bad"}),
+          hv::Json::array({42, std::string(64, 'b')})}) {
+      auto invalid = selected;
+      invalid["selection_digests"] = digests;
+      check(!hv::EquivalentInputTarget(invalid, invalid),
+            "missing or malformed selection digests must fail closed");
+    }
+    // Even two identical malformed snapshots must fail closed, without throws.
+    for (const auto &patch :
+         {hv::Json{{"reliable", "true"}},
+          hv::Json{{"protected", nullptr}},
+          hv::Json{{"caret", -1}},
+          hv::Json{{"caret", 13}},
+          hv::Json{{"caret", 8.5}},
+          hv::Json{{"characters", -1}},
+          hv::Json{{"caret", int64_t{4294967304}}},
+          hv::Json{{"characters", int64_t{4294967308}}},
+          hv::Json{{"characters", 65537}},
+          hv::Json{{"characters", "12"}},
+          hv::Json{{"control", {{"bus", ""}, {"path", "/test/entry"}}}},
+          hv::Json{{"control", {{"bus", "not-unique"}, {"path", "relative"}}}},
+          hv::Json{{"selections", "bad"}},
+          hv::Json{{"selections", hv::Json::array({{1}})}},
+          hv::Json{{"selections", hv::Json::array({{2, 1}})}},
+          hv::Json{{"selections", hv::Json::array({{-1, 2}})}},
+          hv::Json{{"selections", hv::Json::array({{1, 13}})}},
+          hv::Json{{"selections", hv::Json::array({{"1", 2}})}},
+          hv::Json{{"selections", hv::Json::array({{int64_t{4294967297},
+                                                    int64_t{4294967298}}})}},
+          hv::Json{{"digest", ""}},
+          hv::Json{{"digest", std::string(64, 'z')}}}) {
+      auto invalid = original;
+      invalid.update(patch);
+      check(!hv::EquivalentInputTarget(invalid, invalid),
+            "identical malformed snapshots must not match");
+    }
+    for (const char *key :
+         {"available", "protected", "reliable", "toolkit", "control", "caret",
+          "selections", "selection_digests", "characters", "digest"}) {
+      auto missing = original;
+      missing.erase(key);
+      check(!hv::EquivalentInputTarget(missing, missing),
+            "missing snapshot fields must fail closed");
+    }
+    check(!hv::EquivalentInputTarget(hv::Json::array(), original),
+          "invalid top-level snapshot must fail closed");
+    auto unknown = hv::ReadInputTarget(0);
+    check(!unknown.at("available").get<bool>() &&
+              !unknown.at("reliable").get<bool>() && !unknown.contains("text"),
+          "invalid PID must not query accessibility or return input text");
+    std::cout << "Input target comparison checks passed\n";
+    return 0;
+  } catch (const std::exception &error) {
+    std::cerr << error.what() << '\n';
+    return 1;
+  }
+}

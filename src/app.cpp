@@ -1,4 +1,5 @@
 #include "app.h"
+#include "context.h"
 #include "overlay_style.h"
 #include "process.h"
 #include "rewrite.h"
@@ -78,6 +79,10 @@ App::App(Config c) : config_(std::move(c)), desktop_(config_) {
             {"seconds", 0},
             {"context", ""},
             {"context_note", ""}};
+  state_["target_note"] = "";
+  state_["review_token"] = "";
+  state_["preferred_raw"] = false;
+  state_["retry_result"] = false;
 }
 App::~App() {
   cancel_ = true;
@@ -104,6 +109,14 @@ void App::updateLocked(const Json &patch) {
     state_["context_note"] = "";
     rewrite_request_.reset();
     manual_confirmation_ = false;
+    reviewed_guard_ = Json();
+    review_token_.clear();
+    state_["review_token"] = "";
+    state_["target_note"] = "";
+    preferred_raw_ = false;
+    state_["preferred_raw"] = false;
+    state_["retry_result"] = false;
+    reviewed_text_.clear();
   }
 }
 void App::update(const Json &patch) {
@@ -202,7 +215,25 @@ void App::start(bool cmd) {
       snapshot().value("retry_available", false))
     throw std::runtime_error("请先提交或取消上一段结果");
   auto next_target = desktop_.target();
+  // Bind the editor at the user's start action, before any asynchronous audio
+  // startup. A later focus change must not become the implicit destination.
+  Json next_guard = desktop_.inputTarget(next_target);
+  if (cmd) {
+    if (next_guard.value("protected", false))
+      throw std::runtime_error("密码输入框不能复制选区或使用文本修改指令");
+    if (!next_guard.value("reliable", false))
+      throw std::runtime_error("无法核验编辑控件；未复制选区或发送模型请求");
+    auto ranges = next_guard.value("selections", Json::array());
+    if (ranges.size() != 1 || ranges[0][0] == ranges[0][1])
+      throw std::runtime_error("请先选择一段非空文字再触发指令模式");
+  }
   auto next_selected = cmd ? desktop_.selection(next_target) : "";
+  if (cmd &&
+      !EquivalentInputTarget(next_guard, desktop_.inputTarget(next_target)))
+    throw std::runtime_error("编辑位置已变化；请重新选择文字再触发指令模式");
+  auto next_watch = std::make_unique<InputWatch>(next_target.pid, next_guard);
+  target_watch_ = std::move(next_watch);
+  capture_changed_ = false;
   target_ = next_target;
   selected_ = next_selected;
   focusEvents();
@@ -215,6 +246,11 @@ void App::start(bool cmd) {
     version = ++session_version_;
     rewrite_request_.reset();
     manual_confirmation_ = false;
+    origin_guard_ = next_guard;
+    reviewed_guard_ = Json();
+    review_token_.clear();
+    preferred_raw_ = false;
+    reviewed_text_.clear();
     cancel_ = false;
   }
   level_ = 0;
@@ -230,6 +266,10 @@ void App::start(bool cmd) {
           {"command_mode", cmd},
           {"seconds", 0},
           {"context", ""},
+          {"review_token", ""},
+          {"target_note", ""},
+          {"preferred_raw", false},
+          {"retry_result", false},
           {"context_note", contextual ? "读取当前输入框前文…" : ""}});
   if (worker_.joinable())
     worker_.join();
@@ -240,23 +280,50 @@ void App::start(bool cmd) {
       // cannot discard the beginning of a held-key utterance.
       audio_.start(config_.data.value("audio_source", std::string()));
       auto start = std::chrono::steady_clock::now();
+      auto guard = origin_guard_;
+      auto capture_guard = desktop_.inputTarget(target);
+      {
+        std::lock_guard lock(mutex_);
+        if (version != session_version_ || cancel_)
+          throw std::runtime_error("已取消");
+        origin_guard_ = guard;
+      }
       asr_->begin(&cancel_);
       updateSession(version, {{"phase", "recording"}, {"text", ""}});
       std::string history;
-      bool protected_field = false;
-      if (contextual) {
+      bool protected_field = guard.value("protected", false);
+      protected_field =
+          protected_field || capture_guard.value("protected", false);
+      bool verified_field = !protected_field && !target_watch_->changed() &&
+                            EquivalentInputTarget(guard, capture_guard);
+      if (!verified_field)
+        updateSession(
+            version,
+            {{"context_note",
+              protected_field ? "密码输入框 · 不读取、复制或发送文字处理请求"
+                              : "无法核验输入位置 · 不发送文字处理请求"}});
+      if (contextual && verified_field) {
         auto context = desktop_.context(target);
         protected_field = context.value("protected", false);
-        history = context.value("text", std::string());
-        std::string note = protected_field ? "密码输入框 · 不读取或发送前文"
-                           : !context.value("available", false)
-                               ? "未读到输入框前文"
-                           : history.empty() ? "当前输入框没有前文"
-                                             : "参考光标前文";
+        // Context is allowed only from the same verified control/version.
+        verified_field =
+            !protected_field &&
+            EquivalentInputTarget(guard, desktop_.inputTarget(target));
+        if (verified_field)
+          history = context.value("text", std::string());
+        std::string note =
+            protected_field   ? "密码输入框 · 不读取或发送前文"
+            : !verified_field ? "编辑位置已变化 · 不发送文字处理请求"
+            : !context.value("available", false) ? "未读到输入框前文"
+            : history.empty()                    ? "当前输入框没有前文"
+                                                 : "参考光标前文";
         updateSession(version, {{"context", history}, {"context_note", note}});
       }
       if (protected_field && cmd)
         throw std::runtime_error("密码输入框不能使用文本修改指令");
+      if (!verified_field && cmd)
+        throw std::runtime_error(
+            "编辑位置无法核验或已变化；未发送文本修改请求");
       if (cancel_)
         throw std::runtime_error("已取消");
       size_t count = 0;
@@ -333,12 +400,38 @@ void App::start(bool cmd) {
           updateSession(version,
                         {{"phase", "idle"}, {"text", ""}, {"raw", ""}});
         else if (result.text.empty())
-          update(
+          updateSession(
+              version,
               {{"phase", "idle"}, {"text", "未检测到可识别语音"}, {"raw", ""}});
         else {
           TextResult output{result.text, result.warning};
           updateSession(version, {{"raw", result.text}, {"text", result.text}});
-          if (!protected_field && (cmd || scene != "raw" || !history.empty())) {
+          // Do not send speech captured after a move into a protected or
+          // unidentified control. The local guard never becomes cloud context.
+          bool request_allowed = false;
+          bool privacy_protected = protected_field;
+          try {
+            auto current = desktop_.inputTarget(target);
+            privacy_protected =
+                privacy_protected || current.value("protected", false);
+            request_allowed = verified_field && !target_watch_->changed() &&
+                              EquivalentInputTarget(guard, current);
+          } catch (const std::exception &) {
+            request_allowed = false;
+          }
+          if (!request_allowed) {
+            capture_changed_ = true;
+            updateSession(
+                version, {{"context_note",
+                           privacy_protected
+                               ? "密码输入框 · 不读取、复制或发送文字处理请求"
+                               : "位置已变化或无法核验 · 未发送文字处理请求"}});
+            if (cmd) {
+              output.text.clear();
+              output.error = "编辑位置已变化；选区指令未发送，请取消后重新选择";
+            }
+          }
+          if (request_allowed && (cmd || scene != "raw" || !history.empty())) {
             TextRequest request{
                 result.text,    scene == "raw" ? "correct" : scene,
                 selected,       history,
@@ -362,10 +455,21 @@ void App::start(bool cmd) {
                               {"text", ""},
                               {"error", cancel_ ? "" : e.what()}});
     }
+    target_watch_.reset();
     finishSession(version);
   });
 }
 void App::retry() {
+  if (busy_)
+    throw std::runtime_error("正在处理本次文字，请稍候");
+  auto before = snapshot();
+  if (!before.value("retry_available", false) ||
+      (before.at("phase") != "ready" && before.at("phase") != "error"))
+    throw std::runtime_error("没有可重试的本次文字，请先录音");
+  // Privacy checks are local metadata; the retained request is never rebuilt.
+  auto current = desktop_.inputTarget(target_);
+  if (current.value("protected", false) || !current.value("reliable", false))
+    throw std::runtime_error("当前位置受保护或无法核验；未重试发送本次文字");
   TextRequest request;
   uint64_t version;
   {
@@ -379,9 +483,18 @@ void App::retry() {
     request = *rewrite_request_;
     version = session_version_;
     manual_confirmation_ = true;
+    review_token_.clear();
+    reviewed_guard_ = Json();
+    preferred_raw_ = false;
+    reviewed_text_.clear();
     cancel_ = false;
     busy_ = true;
-    updateLocked({{"phase", "retrying"}, {"error", ""}});
+    updateLocked({{"phase", "retrying"},
+                  {"error", ""},
+                  {"review_token", ""},
+                  {"target_note", ""},
+                  {"preferred_raw", false}});
+    state_["retry_result"] = true;
   }
   if (worker_.joinable())
     worker_.join();
@@ -404,8 +517,35 @@ void App::commit(bool raw) {
     throw std::runtime_error("没有待提交的结果");
   if (raw && state.at("command_mode").get<bool>())
     throw std::runtime_error("指令模式的识别原文是指令，不能用于替换选区");
+  preferred_raw_ = raw;
+  review_token_.clear();
+  reviewed_guard_ = Json();
+  reviewed_text_.clear();
+  update({{"preferred_raw", raw}, {"review_token", ""}, {"target_note", ""}});
   auto text = state.at(raw ? "raw" : "text").get<std::string>();
-  desktop_.paste(target_, text, selected_);
+  if (!state.at("command_mode").get<bool>() &&
+      origin_guard_.value("selections", Json::array()).size() > 0)
+    throw std::runtime_error("普通听写不能覆盖选区；请取消选区后核对当前位置");
+  if (capture_changed_)
+    throw std::runtime_error("录音期间编辑位置曾变化或无法核验；请核对当前位置"
+                             "后确认，指令模式须取消重录");
+  deliver(text, origin_guard_);
+}
+void App::deliver(const std::string &text, const Json &guard) {
+  try {
+    desktop_.paste(target_, text, guard);
+  } catch (const PasteUncertain &error) {
+    delivered_ = true;
+    {
+      std::lock_guard lock(mutex_);
+      ++session_version_;
+    }
+    update({{"phase", "idle"},
+            {"text", text},
+            {"raw", ""},
+            {"error", error.what()}});
+    return;
+  }
   delivered_ = true;
   {
     std::lock_guard lock(mutex_);
@@ -417,6 +557,65 @@ void App::commit(bool raw) {
           {"error", ""},
           {"context", ""},
           {"context_note", ""}});
+}
+void App::review() {
+  auto state = snapshot();
+  if (busy_ || delivered_ || state.at("phase") != "ready")
+    throw std::runtime_error("没有可确认的本次结果");
+  if (state.at("command_mode").get<bool>())
+    throw std::runtime_error(
+        "指令替换绑定原控件和原选区，请恢复原选区后确认修改");
+  auto guard = desktop_.inputTarget(target_);
+  if (guard.value("protected", false))
+    throw std::runtime_error("密码输入框不能接收本次结果");
+  if (!guard.value("reliable", false))
+    throw std::runtime_error("无法核验当前位置；可复制结果后自行粘贴");
+  if (!guard.value("selections", Json::array()).empty())
+    throw std::runtime_error(
+        "当前位置有选区；普通听写不能覆盖选区，请先取消选区");
+  auto uuid = g_uuid_string_random();
+  review_token_ = uuid;
+  g_free(uuid);
+  reviewed_guard_ = guard;
+  reviewed_text_ = state.at(preferred_raw_ ? "raw" : "text").get<std::string>();
+  reviewed_version_ = session_version_;
+  manual_confirmation_ = true;
+  update({{"review_token", review_token_},
+          {"target_note", std::string(preferred_raw_ ? "将插入识别原文。"
+                                                     : "将插入处理结果。") +
+                              "已核对当前输入框，光标在第 " +
+                              std::to_string(guard.at("caret").get<int>()) +
+                              " 个字符后，无选区；确认后插入"}});
+}
+void App::confirm(const std::string &token) {
+  auto state = snapshot();
+  if (busy_ || delivered_ || state.at("phase") != "ready" ||
+      state.at("command_mode").get<bool>() || token.empty() ||
+      token != review_token_ || reviewed_version_ != session_version_)
+    throw std::runtime_error("当前位置确认已失效，请重新核对");
+  try {
+    deliver(reviewed_text_, reviewed_guard_);
+  } catch (...) {
+    review_token_.clear();
+    reviewed_guard_ = Json();
+    update({{"review_token", ""}, {"target_note", "位置再次变化，请重新核对"}});
+    throw;
+  }
+}
+void App::copyResult() {
+  auto state = snapshot();
+  if (busy_ || delivered_ || state.at("phase") != "ready")
+    throw std::runtime_error("没有可复制的结果");
+  desktop_.copy(state.at(preferred_raw_ ? "raw" : "text").get<std::string>());
+  delivered_ = true;
+  {
+    std::lock_guard lock(mutex_);
+    ++session_version_;
+  }
+  update({{"phase", "idle"},
+          {"text", "结果已复制，请自行选择位置粘贴"},
+          {"raw", ""},
+          {"error", ""}});
 }
 Json App::command(const std::string &cmd, const std::string &arg) {
   try {
@@ -457,18 +656,28 @@ Json App::command(const std::string &cmd, const std::string &arg) {
       delivered_ = true;
       ++session_version_;
       rewrite_request_.reset();
+      review_token_.clear();
+      reviewed_guard_ = Json();
       updateLocked({{"phase", busy_ ? "cancelling" : "idle"},
                     {"text", ""},
                     {"raw", ""},
                     {"error", ""},
                     {"context", ""},
-                    {"context_note", ""}});
+                    {"context_note", ""},
+                    {"review_token", ""},
+                    {"target_note", ""}});
     } else if (cmd == "retry")
       retry();
     else if (cmd == "commit")
       commit(false);
     else if (cmd == "raw")
       commit(true);
+    else if (cmd == "review")
+      review();
+    else if (cmd == "confirm")
+      confirm(arg);
+    else if (cmd == "copy")
+      copyResult();
     else if (cmd == "backend") {
       if (arg != "fun" && arg != "x-asr")
         throw std::runtime_error("Backend must be fun or x-asr");
@@ -559,7 +768,7 @@ void App::ui() {
       auto reply = command("commit");
       if (!reply.value("ok", false))
         focus_changed_ = true;
-    } else if (focus_changed_)
+    } else if (focus_changed_ && state.at("error").get<std::string>().empty())
       update({{"error", "录音期间窗口已变化；请回到原窗口后点击提交"}});
     state = snapshot();
     phase = state.at("phase");
@@ -662,7 +871,11 @@ void App::ui() {
   else if (phase == "retrying")
     hint = "复用本次原文和前文，无需重新录音";
   else if (ready)
-    hint = state.value("manual_confirmation", false)
+    hint = !state.value("review_token", std::string()).empty()
+               ? "检查位置后确认插入"
+           : state.value("preferred_raw", false)
+               ? "已选择识别原文，核对位置后插入"
+           : state.value("retry_result", false)
                ? (command_mode ? "重试结果需确认后替换选中文字"
                                : "重试结果需确认后插入")
            : command_mode ? "确认后替换选中文字"
@@ -684,6 +897,9 @@ void App::ui() {
   gtk_widget_set_tooltip_text(warning_,
                               error.empty() ? nullptr : error.c_str());
   gtk_widget_set_visible(warning_, !error.empty());
+  auto target_note = state.value("target_note", std::string());
+  gtk_label_set_text(GTK_LABEL(position_), target_note.c_str());
+  gtk_widget_set_visible(position_, !target_note.empty());
   if (recording) {
     std::move(meter_history_.begin() + 1, meter_history_.end(),
               meter_history_.begin());
@@ -694,6 +910,18 @@ void App::ui() {
   gtk_widget_set_visible(meter_, recording);
   gtk_widget_set_visible(commit_button_, ready);
   gtk_widget_set_sensitive(commit_button_, !busy_);
+  gtk_widget_set_visible(review_button_, ready && !command_mode);
+  gtk_widget_set_sensitive(review_button_, !busy_);
+  auto token = state.value("review_token", std::string());
+  gtk_button_set_label(GTK_BUTTON(review_button_),
+                       token.empty() ? "核对当前位置" : "确认插入当前位置");
+  g_object_set_data_full(G_OBJECT(review_button_), "review-token",
+                         g_strdup(token.c_str()), g_free);
+  gtk_widget_set_visible(copy_button_, ready);
+  gtk_widget_set_sensitive(copy_button_, !busy_);
+  gtk_button_set_label(GTK_BUTTON(copy_button_),
+                       state.value("preferred_raw", false) ? "复制原文"
+                                                           : "复制结果");
   gtk_widget_set_visible(
       retry_button_, state.value("retry_available", false) &&
                          (ready || phase == "error" || phase == "retrying"));
@@ -844,6 +1072,12 @@ void App::run() {
   gtk_label_set_xalign(GTK_LABEL(warning_), 0);
   gtk_label_set_max_width_chars(GTK_LABEL(warning_), 40);
   gtk_box_append(GTK_BOX(box), warning_);
+  position_ = gtk_label_new("");
+  gtk_widget_add_css_class(position_, "voice-context");
+  gtk_label_set_wrap(GTK_LABEL(position_), true);
+  gtk_label_set_max_width_chars(GTK_LABEL(position_), 40);
+  gtk_label_set_xalign(GTK_LABEL(position_), 0);
+  gtk_box_append(GTK_BOX(box), position_);
   auto divider = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
   gtk_widget_add_css_class(divider, "voice-divider");
   gtk_box_append(GTK_BOX(box), divider);
@@ -883,6 +1117,26 @@ void App::run() {
         stop_button_ = button;
     }
   }
+  auto position_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+  gtk_box_append(GTK_BOX(box), position_row);
+  review_button_ = gtk_button_new_with_label("核对当前位置");
+  g_signal_connect(review_button_, "clicked",
+                   G_CALLBACK(+[](GtkButton *b, gpointer data) {
+                     auto self = static_cast<App *>(data);
+                     auto token = static_cast<const char *>(
+                         g_object_get_data(G_OBJECT(b), "review-token"));
+                     self->command(token && *token ? "confirm" : "review",
+                                   token ? token : "");
+                   }),
+                   this);
+  gtk_box_append(GTK_BOX(position_row), review_button_);
+  copy_button_ = gtk_button_new_with_label("复制结果");
+  g_signal_connect(copy_button_, "clicked",
+                   G_CALLBACK(+[](GtkButton *, gpointer data) {
+                     static_cast<App *>(data)->command("copy");
+                   }),
+                   this);
+  gtk_box_append(GTK_BOX(position_row), copy_button_);
   loop_ = g_main_loop_new(nullptr, false);
   busy_ = true;
   worker_ = std::thread([this] {

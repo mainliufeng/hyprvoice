@@ -48,7 +48,6 @@ std::string Rewrite(const Config &c, const std::string &text,
       "保留专名是保留其正确名称，并非保留识别错误的中文音译。"
       "例如前文是服务使用 Kubernetes，本次转录是库伯内特斯需要重启，"
       "应返回 Kubernetes需要重启。若本次说服务器不用重启，不能硬替换成专名。"
-      "除错词与标点外尽量保留本次措辞，不添加多余助词。"
       "普通听写只返回本次 transcript 处理后的新增文字，不重复、修改或续写前文；"
       "保留代词，不擅自展开指代。选区修改只返回 selected_text 的替换结果。";
   Json user = {{"transcript", text},

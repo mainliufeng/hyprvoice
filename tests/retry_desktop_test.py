@@ -9,6 +9,7 @@ import hashlib
 import http.server
 import json
 import os
+import signal
 import subprocess
 import sys
 import threading
@@ -109,10 +110,10 @@ def focus(editor):
     time.sleep(.15)
 
 
-def editor(text, name, password=False):
+def editor(text, name, password=False, two=False, readonly=False):
     path = runtime / (name + '.txt')
     p = spawn([str(repo / 'build/test_editor'), str(path), text] +
-              (['password'] if password else []), name)
+              (['password'] if password else ['two'] if two else ['readonly'] if readonly else []), name)
     wait(lambda: any(v['pid'] == p.pid for v in json.loads(run('hyprctl', 'clients', '-j'))))
     focus(p)
     key('ctrl End')
@@ -200,7 +201,9 @@ def ports():
 
 
 def begin(mode='start'):
+    started = time.monotonic()
     assert command(mode)[0] == 0
+    result.setdefault('start_command_ms', []).append(round((time.monotonic()-started)*1000, 2))
     source, target = wait(ports, seconds=3)
     run('pw-link', source, target)
     phase('recording')
@@ -278,6 +281,7 @@ for line in sys.stdin:
     keyboard = spawn([str(repo / 'build/test_keyboard')], 'keyboard')
     wait(lambda: 'READY' in (evidence / 'keyboard.log').read_text())
     first, first_path = editor('Public synthetic history. ', 'first-editor')
+    (evidence/'initial-target.json').write_text(run(str(repo/'build/hyprvoice'), 'read-target', str(first.pid)))
     raw = '合成原文：不会支付2400元'
     processed = '合成结果：不会支付2400元。'
 
@@ -289,6 +293,7 @@ for line in sys.stdin:
     index = plan('failure', gate, output=processed)
     begin()
     original = finish()
+    (evidence/'initial-state.json').write_text(json.dumps(original, ensure_ascii=False))
     check('initial-failure-retains-raw-and-retry', original['raw'] == raw and
           original['text'] == raw and original['retry_available'] and original['error'])
     check('exact-synthetic-context-captured', original['context'] == first_path.read_text())
@@ -341,7 +346,11 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     wrapper.chmod(0o700)
     # PATH is inherited at app launch, so this wrapper is enabled in the next
     # dedicated restore fixture; this first commit exercises genuine restore.
-    click('插入文字')
+    check('same-window-edits-reject-original-target', command('commit')[0] == 1 and
+          first_path.read_text() == changed)
+    click('核对当前位置')
+    wait(lambda: bool(state()['review_token']))
+    click('确认插入当前位置')
     phase('idle')
     wait(lambda: first_path.read_text() == changed + processed)
     check('real-editor-inserted-exactly-once', first_path.read_text() == changed + processed)
@@ -452,6 +461,7 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     check('command-replaces-selection-exactly-once', first_path.read_text() == replacement and command('commit')[0] == 1)
 
     # Protected input never creates a retryable cloud request.
+    config['context']['enabled'] = False
     boot(auto=False)
     secret, secret_path = editor('public-test-password', 'password-editor', password=True)
     set_transcripts(raw)
@@ -461,8 +471,198 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     check('protected-input-context-remains-empty', protected['context'] == '' and '密码' in protected['context_note'])
     check('protected-input-never-retries-or-calls-http', not protected['retry_available'] and
           command('retry')[0] == 1 and len(server.bodies) == index)
+    check('password-original-commit-blocked', command('commit')[0] == 1)
+    check('password-current-position-review-blocked', command('review')[0] == 1)
     assert command('cancel')[0] == 0
     phase('idle')
+    check('password-command-rejected-before-copy', command('command')[0] == 1 and
+          len(server.bodies) == index and state()['phase'] == 'idle')
+    config['context']['enabled'] = True
+
+    # Two real GTK controls in the same window, deliberately equal buffers.
+    # Identify controls independently of text, then honor an explicitly reviewed
+    # insertion destination. Confirming an old review must never accept a move.
+    boot(auto=False)
+    pair, pair_path = editor('abcde', 'two-fields', two=True)
+    check('command-without-selection-is-rejected-before-copy', command('command')[0] == 1)
+    first_guard = json.loads(run(str(repo/'build/hyprvoice'), 'read-target', str(pair.pid)))
+    check('gtk-target-is-reliable-with-local-digest-only', first_guard['reliable'] and
+          'text' not in first_guard and first_guard['characters'] == 5)
+    set_transcripts(raw)
+    plan('success', output=processed)
+    begin(); finish()
+    key('ctrl Tab')
+    key('ctrl End')
+    second_guard = json.loads(run(str(repo/'build/hyprvoice'), 'read-target', str(pair.pid)))
+    check('same-window-control-identity-differs', first_guard['control'] != second_guard['control'])
+    check('same-text-other-control-blocked', command('commit')[0] == 1 and
+          pair_path.read_text() == 'abcde' and Path(str(pair_path)+'.second').read_text() == 'abcde')
+    click('核对当前位置')
+    old_token = wait(lambda: state()['review_token'])
+    key('key Left')
+    check('review-token-does-not-follow-new-caret', command('confirm', old_token)[0] == 1 and
+          not state()['review_token'] and Path(str(pair_path)+'.second').read_text() == 'abcde')
+    click('核对当前位置')
+    wait(lambda: bool(state()['review_token']))
+    label('确认插入当前位置')
+    photo('review-current-position')
+    click('确认插入当前位置')
+    phase('idle')
+    wait(lambda: Path(str(pair_path)+'.second').read_text() == 'abcd'+processed+'e')
+    check('explicit-confirm-inserts-at-reviewed-caret-once', pair_path.read_text() == 'abcde' and
+          command('confirm', old_token)[0] == 1 and command('commit')[0] == 1)
+
+    # Equal-length edits anywhere and newly selected text are not accepted.
+    focus(pair)
+    key('ctrl Home'); key('ctrl a'); key('type abcde'); key('ctrl End')
+    set_transcripts(raw); plan('failure')
+    begin(); finish()
+    key('ctrl Home'); key('key Delete'); key('type z'); key('ctrl End')
+    check('equal-length-buffer-edit-blocked', command('commit')[0] == 1)
+    key('ctrl a')
+    check('new-selection-cannot-be-silently-replaced', command('review')[0] == 1 and
+          command('commit')[0] == 1)
+    assert command('cancel')[0] == 0
+    phase('idle')
+    # The user explicitly chooses raw after a caret move. Its review token
+    # must keep that choice rather than silently reverting to the processed text.
+    key('ctrl End')
+    set_transcripts(raw); plan('success', output=processed)
+    begin(); finish()
+    before = Path(str(pair_path)+'.second').read_text()
+    key('key Left')
+    check('raw-choice-after-move-retained', command('raw')[0] == 1 and state()['preferred_raw'])
+    click('核对当前位置')
+    wait(lambda: bool(state()['review_token']))
+    check('review-explicitly-names-original-text', '识别原文' in state()['target_note'])
+    click('确认插入当前位置')
+    phase('idle')
+    wait(lambda: Path(str(pair_path)+'.second').read_text() == before[:-1]+raw+before[-1:])
+    check('raw-choice-delivered-at-reviewed-position-once', command('raw')[0] == 1)
+    key('ctrl End')
+    config['context']['enabled'] = False
+    boot(auto=False)
+    set_transcripts(raw)
+    index = len(server.bodies)
+    begin()
+    key('ctrl Tab')
+    password_guard = json.loads(run(str(repo/'build/hyprvoice'), 'read-target', str(pair.pid)))
+    check('same-window-password-is-protected-without-text', password_guard['protected'] and
+          not password_guard['reliable'] and 'text' not in password_guard)
+    protected = finish()
+    check('moving-into-password-during-capture-sends-no-http', len(server.bodies) == index and
+          not protected['retry_available'] and protected['text'] == raw)
+    check('moving-into-password-cannot-confirm-insertion', command('review')[0] == 1 and
+          command('commit')[0] == 1)
+    assert command('cancel')[0] == 0
+    phase('idle')
+    config['context']['enabled'] = True
+    # Observe leaving for a password field and returning to the exact original
+    # control/caret/buffer. End snapshots alone would miss this transition.
+    key('ctrl Tab'); key('ctrl Tab'); key('ctrl End')
+    boot(auto=False)
+    set_transcripts(raw)
+    index = len(server.bodies)
+    origin = json.loads(run(str(repo/'build/hyprvoice'), 'read-target', str(pair.pid)))
+    begin()
+    key('ctrl Tab')
+    key('ctrl Tab'); key('ctrl Tab')
+    returned = json.loads(run(str(repo/'build/hyprvoice'), 'read-target', str(pair.pid)))
+    same = all(origin[k] == returned[k] for k in ('control','caret','characters','digest','selections'))
+    complete = finish()
+    check('password-roundtrip-start-end-snapshots-identical', same)
+    check('observed-password-roundtrip-blocks-cloud', len(server.bodies) == index and
+          not complete['retry_available'] and complete['text'] == raw)
+    check('observed-roundtrip-needs-explicit-new-position-review', command('commit')[0] == 1)
+    assert command('cancel')[0] == 0
+    phase('idle')
+
+    # Preserve normal successful automatic delivery for an unchanged reliable
+    # control, and consume uncertain send rather than offer a dangerous resend.
+    boot(auto=True)
+    key('ctrl End')
+    before = Path(str(pair_path)+'.second').read_text()
+    set_transcripts(raw); plan('success', output=processed)
+    begin(); finish('idle')
+    wait(lambda: Path(str(pair_path)+'.second').read_text() == before+processed)
+    check('unchanged-gtk-target-still-auto-inserts-once', command('commit')[0] == 1)
+
+    uncertain_bin = runtime/'uncertain-bin'
+    uncertain_bin.mkdir()
+    wrapper = uncertain_bin/'hyprctl'
+    wrapper.write_text("#!/usr/bin/python3\nimport subprocess,sys\nr=subprocess.run(['/usr/bin/hyprctl',*sys.argv[1:]])\nraise SystemExit(1 if len(sys.argv)>3 and sys.argv[1:3]==['dispatch','sendshortcut'] and ', V,' in sys.argv[3] else r.returncode)\n")
+    wrapper.chmod(0o700)
+    env['PATH'] = str(uncertain_bin)+':'+original_path
+    boot(auto=False)
+    key('ctrl End')
+    before = Path(str(pair_path)+'.second').read_text()
+    set_transcripts(raw); plan('success', output=processed)
+    begin(); finish()
+    assert command('commit')[0] == 0
+    uncertain = phase('idle')
+    wait(lambda: Path(str(pair_path)+'.second').read_text() == before+processed)
+    check('uncertain-send-consumes-result-and-rejects-resend', '发送状态未知' in uncertain['error'] and
+          command('commit')[0] == 1 and command('retry')[0] == 1)
+    env['PATH'] = original_path
+    boot(auto=False)
+    twins, twins_path = editor('abcde', 'command-twin-fields', two=True)
+    key('ctrl a')
+    set_transcripts(instruction); plan('success', output='replacement')
+    begin('command'); finish()
+    key('ctrl Tab'); key('ctrl a')
+    check('command-identical-selection-other-control-blocked', command('commit')[0] == 1 and
+          twins_path.read_text() == 'abcde' and Path(str(twins_path)+'.second').read_text() == 'abcde')
+    check('command-cannot-retarget-by-position-review', command('review')[0] == 1)
+    key('ctrl Tab'); key('ctrl Tab'); key('ctrl a')
+    assert command('commit')[0] == 0
+    phase('idle')
+    wait(lambda: twins_path.read_text() == 'replacement')
+    check('command-original-control-and-selection-restore-once', command('commit')[0] == 1 and
+          Path(str(twins_path)+'.second').read_text() == 'abcde')
+
+    key('ctrl End')
+    boot(auto=False)
+    set_transcripts(raw)
+    index = len(server.bodies)
+    begin()
+    lines = run('ps', '-o', 'pid=,args=', '--ppid', str(app.pid)).splitlines()
+    watchers = [int(line.split()[0]) for line in lines if ' watch-target ' in line]
+    check('capture-has-single-private-guard-watcher', len(watchers) == 1)
+    os.kill(watchers[0], signal.SIGTERM)
+    time.sleep(.10)
+    complete = finish()
+    check('dead-watch-helper-blocks-cloud-and-auto-submit', len(server.bodies) == index and
+          not complete['retry_available'] and complete['text'] == raw and command('commit')[0] == 1)
+    assert command('cancel')[0] == 0
+    phase('idle')
+
+    # A stalled observer that recovers must remain unsafe for this capture.
+    set_transcripts(raw)
+    index = len(server.bodies)
+    begin()
+    lines = run('ps', '-o', 'pid=,args=', '--ppid', str(app.pid)).splitlines()
+    watcher = next(int(line.split()[0]) for line in lines if ' watch-target ' in line)
+    os.kill(watcher, signal.SIGSTOP)
+    time.sleep(1.75)
+    os.kill(watcher, signal.SIGCONT)
+    time.sleep(.35)
+    complete = finish()
+    check('recovered-watch-heartbeat-gap-remains-blocked', len(server.bodies) == index and
+          not complete['retry_available'] and command('commit')[0] == 1)
+    assert command('cancel')[0] == 0
+    phase('idle')
+
+    readonly, readonly_path = editor('public-readonly-data', 'readonly-editor', readonly=True)
+    boot(auto=True)
+    set_transcripts(raw)
+    index = len(server.bodies)
+    begin(); complete = finish()
+    check('unsupported-control-is-not-claimed-safe', len(server.bodies) == index and
+          not complete['retry_available'] and command('commit')[0] == 1 and command('review')[0] == 1)
+    click('复制结果')
+    phase('idle')
+    check('explicit-copy-is-local-and-consumes-result', run('/usr/bin/wl-paste','--no-newline') == raw and
+          readonly_path.read_text() == 'public-readonly-data' and command('copy')[0] == 1)
     check('no-unplanned-http-requests', server.unexpected == 0)
     result['http_requests'] = len(server.bodies)
     result['request_sha256'] = [hashlib.sha256(b).hexdigest() for b in server.bodies]

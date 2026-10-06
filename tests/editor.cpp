@@ -34,9 +34,14 @@ int main(int argc, char **argv) {
   auto view = password ? gtk_password_entry_new() : gtk_text_view_new();
   if (!password)
     gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(view), GTK_WRAP_WORD_CHAR);
+  if (argc > 3 && std::string(argv[3]) == "readonly")
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(view), false);
   gtk_widget_set_vexpand(view, true);
   gtk_box_append(GTK_BOX(box), view);
   Editor e{view, argv[1]};
+  gtk_accessible_update_property(
+      GTK_ACCESSIBLE(view), GTK_ACCESSIBLE_PROPERTY_LABEL, "first field", -1);
+  Editor second{nullptr, std::string(argv[1]) + ".second"};
   if (password) {
     if (argc > 2)
       gtk_editable_set_text(GTK_EDITABLE(view), argv[2]);
@@ -45,6 +50,23 @@ int main(int argc, char **argv) {
     g_signal_connect(buffer, "changed", G_CALLBACK(changed), &e);
     if (argc > 2)
       gtk_text_buffer_set_text(buffer, argv[2], -1);
+  }
+  if (argc > 3 && std::string(argv[3]) == "two") {
+    second.view = gtk_text_view_new();
+    gtk_widget_set_vexpand(second.view, true);
+    gtk_accessible_update_property(GTK_ACCESSIBLE(second.view),
+                                   GTK_ACCESSIBLE_PROPERTY_LABEL,
+                                   "second field", -1);
+    gtk_box_append(GTK_BOX(box), second.view);
+    auto buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(second.view));
+    g_signal_connect(buffer, "changed", G_CALLBACK(changed), &second);
+    gtk_text_buffer_set_text(buffer, argc > 2 ? argv[2] : "", -1);
+    auto secret = gtk_password_entry_new();
+    gtk_accessible_update_property(GTK_ACCESSIBLE(secret),
+                                   GTK_ACCESSIBLE_PROPERTY_LABEL,
+                                   "password field", -1);
+    gtk_editable_set_text(GTK_EDITABLE(secret), "public-test-password");
+    gtk_box_append(GTK_BOX(box), secret);
   }
   gtk_widget_grab_focus(view);
   gtk_window_present(GTK_WINDOW(window));

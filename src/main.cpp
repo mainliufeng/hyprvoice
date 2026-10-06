@@ -12,13 +12,32 @@ int main(int argc, char **argv) {
           << "hyprvoice init | serve | doctor | transcribe WAV | replay "
              "MANIFEST\n"
           << "hyprvoice start | stop | toggle | press | release | command | "
-             "cancel | retry | commit | raw | status | scene NAME | backend "
+             "cancel | retry | commit | raw | review | confirm TOKEN | copy | "
+             "status | scene NAME | backend "
              "fun|x-asr "
              "| quit\n"
           << "HYPRVOICE_CONFIG overrides ~/.config/hyprvoice/config.json\n";
       return 0;
     }
     std::string cmd = argv[1];
+    if (cmd == "watch-target") {
+      rlimit limit{0, 0};
+      setrlimit(RLIMIT_CORE, &limit);
+      if (argc != 5)
+        throw std::runtime_error(
+            "Expected application PID and control identity");
+      WatchInputTarget(std::stoi(argv[2]),
+                       {{"bus", argv[3]}, {"path", argv[4]}});
+      return 0;
+    }
+    if (cmd == "read-target") {
+      rlimit limit{0, 0};
+      setrlimit(RLIMIT_CORE, &limit);
+      if (argc != 3)
+        throw std::runtime_error("Expected application PID");
+      std::cout << ReadInputTarget(std::stoi(argv[2])).dump() << std::endl;
+      return 0;
+    }
     if (cmd == "read-context") {
       rlimit limit{0, 0};
       setrlimit(RLIMIT_CORE, &limit);

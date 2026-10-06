@@ -1,4 +1,5 @@
 #include "desktop.h"
+#include "context.h"
 #include "process.h"
 #include <chrono>
 #include <regex>
@@ -38,6 +39,15 @@ Json Desktop::context(const Target &t) {
   requireTarget(t);
   if (reply.code)
     return {{"available", false}, {"protected", false}, {"text", ""}};
+  return Json::parse(reply.out);
+}
+Json Desktop::inputTarget(const Target &t) {
+  requireTarget(t);
+  auto reply =
+      Run({"/proc/self/exe", "read-target", std::to_string(t.pid)}, "", 1500);
+  requireTarget(t);
+  if (reply.code)
+    return {{"available", false}, {"reliable", false}, {"protected", false}};
   return Json::parse(reply.out);
 }
 void Desktop::requireTarget(const Target &t) {
@@ -121,6 +131,15 @@ std::string Desktop::selection(const Target &t) {
     throw std::runtime_error(
         "终端选区不代表可替换的编辑区域；请在编辑器中使用指令模式");
   requireTarget(t);
+  auto guard = inputTarget(t);
+  if (guard.value("protected", false))
+    throw std::runtime_error("密码输入框不能复制选区或使用文本修改指令");
+  if (!guard.value("reliable", false))
+    throw std::runtime_error(
+        "无法核验编辑控件；未复制选区，请在支持的编辑器中使用指令模式");
+  auto ranges = guard.value("selections", Json::array());
+  if (ranges.size() != 1 || ranges[0][0] == ranges[0][1])
+    throw std::runtime_error("请先选择一段非空文字再触发指令模式");
   auto previous = clipboard();
   auto uuid = g_uuid_string_random();
   std::string marker = "hyprvoice-selection-" + std::string(uuid);
@@ -132,6 +151,8 @@ std::string Desktop::selection(const Target &t) {
       setClipboard(*previous);
   };
   try {
+    if (!EquivalentInputTarget(guard, inputTarget(t)))
+      throw std::runtime_error("编辑位置已变化；未复制选区");
     shortcut(t, "C");
     std::optional<std::string> selected;
     auto until =
@@ -149,12 +170,21 @@ std::string Desktop::selection(const Target &t) {
       restore();
       throw std::runtime_error("未读到选中文字；请先选择文字再触发指令模式");
     }
+    char *digest = g_compute_checksum_for_string(
+        G_CHECKSUM_SHA256, selected->data(), selected->size());
+    bool exact = digest && guard.at("selection_digests").size() == 1 &&
+                 guard.at("selection_digests")[0] == digest;
+    g_free(digest);
+    if (!exact)
+      throw std::runtime_error("复制文字与已核验选区不符；未发送模型请求");
     // Copy replaced our marker. Restore plain text only while no other
     // application/user operation has replaced that selection clipboard.
     auto value = clipboard();
     if (previous && value && *value == *selected)
       setClipboard(*previous);
     requireTarget(t);
+    if (!EquivalentInputTarget(guard, inputTarget(t)))
+      throw std::runtime_error("编辑位置已变化；未使用选区内容");
     return *selected;
   } catch (...) {
     restore();
@@ -162,15 +192,31 @@ std::string Desktop::selection(const Target &t) {
   }
 }
 void Desktop::paste(const Target &t, const std::string &text,
-                    const std::string &selected) {
+                    const Json &guard) {
   if (text.empty())
     throw std::runtime_error("Nothing to commit");
   requireTarget(t);
-  if (!selected.empty() && selection(t) != selected)
-    throw std::runtime_error("选区内容已变化；未替换，结果已保留");
+  auto verify = [&] {
+    auto current = inputTarget(t);
+    if (current.value("protected", false))
+      throw std::runtime_error("密码输入框不能接收本次结果；结果已保留");
+    if (!EquivalentInputTarget(guard, current))
+      throw std::runtime_error(
+          "编辑控件、光标、选区或文字已变化，或无法核验；未发送，结果已保留");
+  };
+  verify();
   auto previous = clipboard();
   setClipboard(text);
-  shortcut(t, "V");
+  // Clipboard readiness may take time. Verify again immediately before send.
+  verify();
+  try {
+    shortcut(t, "V");
+  } catch (const std::exception &) {
+    // Dispatch has no application acknowledgement; do not offer a resend if
+    // transport failure could have happened after the compositor received it.
+    throw PasteUncertain(
+        "粘贴发送状态未知；请检查输入框，本次结果不能再次自动提交");
+  }
   // Paste has no application acknowledgement. Default: leave output on the
   // clipboard. Optional delayed restore is explicitly best-effort.
   if (config_.data.value("clipboard_restore", false) && previous) {
