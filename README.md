@@ -89,6 +89,7 @@ Hyprland 重启后应从该会话重新导入环境；也可在 Hyprland 自动�
 Lua 配置使用 `config/hyprvoice.lua` 的绑定；仍使用 hyprlang 时参考 `config/hyprvoice.conf`。二者选一，根据自己的配置合并。
 [Hyprland 官方绑定文档](https://wiki.hypr.land/Configuring/Basics/Binds/)。
 快捷键不写在 hyprvoice 自己的配置里：每条绑定只是调用一条下面的 CLI 命令，所以可以换成任意按键；“轻按切换＋按住说话”就是同一个键的 `press` 加一条 `bindr release`。两个示例文件等价，改完执行 `hyprctl reload`，不需要重启服务。
+悬浮窗使用“录音快捷键／指令快捷键”的通用动作提示，不自动读取外部绑定或假定实际按键是 F8/F9。自定义场景在悬浮窗中直接显示 `prompts` 的键名，内置场景仍显示中文标签；场景名须非空，提示词须为字符串。
 
 | 按键示例 | 动作 |
 |---|---|

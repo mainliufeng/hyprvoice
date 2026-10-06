@@ -2,6 +2,7 @@
 #include "overlay_style.h"
 #include "process.h"
 #include "rewrite.h"
+#include "ui_text.h"
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -488,14 +489,9 @@ void App::ui() {
   const bool processing = phase == "loading" || phase == "starting" ||
                           phase == "finalizing" || phase == "rewriting" ||
                           phase == "cancelling";
-  static const std::map<std::string, std::string> scenes = {
-      {"raw", "听写"},
-      {"correct", "纠错"},
-      {"format", "整理"},
-      {"translate", "翻译"}};
   const auto scene = state.at("scene").get<std::string>();
   const auto mode =
-      command_mode ? std::string("修改选中文字") : scenes.at(scene);
+      command_mode ? std::string("修改选中文字") : SceneLabel(scene);
   gtk_label_set_text(
       GTK_LABEL(title_),
       (names.at(phase) + (scene == "raw" && !command_mode ? "" : " · " + mode))
@@ -569,8 +565,7 @@ void App::ui() {
   auto error = state.at("error").get<std::string>();
   std::string hint;
   if (recording)
-    hint = command_mode ? "松开 F9 结束指令"
-                        : (pressed_ ? "松开 F8 结束录音" : "再按 F8 结束录音");
+    hint = RecordingHint(command_mode, pressed_);
   else if (ready)
     hint = command_mode ? "确认后替换选中文字" : "检查后插入文字";
   else

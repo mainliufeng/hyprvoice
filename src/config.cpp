@@ -102,7 +102,20 @@ Config::Config(const std::filesystem::path &p) : data(DefaultConfig()) {
   int context_limit = data.at("context").value("max_chars", 1024);
   if (context_limit < 1 || context_limit > 2048)
     throw std::runtime_error("context.max_chars must be 1..2048");
+  if (!data.contains("prompts") || !data.at("prompts").is_object())
+    throw std::runtime_error("prompts must be an object of scene prompts");
+  for (auto &[name, prompt] : data.at("prompts").items()) {
+    if (name.empty() || name.find('\0') != std::string::npos)
+      throw std::runtime_error(
+          "Prompt scene names must be non-empty and contain no NUL");
+    if (!prompt.is_string())
+      throw std::runtime_error("Prompt values must be strings");
+  }
+  if (data.contains("scene") && !data.at("scene").is_string())
+    throw std::runtime_error("scene must be a string");
   auto scene = data.value("scene", std::string("raw"));
+  if (scene.empty() || scene.find('\0') != std::string::npos)
+    throw std::runtime_error("scene must be non-empty and contain no NUL");
   if (scene != "raw" && !data.at("prompts").contains(scene))
     throw std::runtime_error("Unknown scene: " + scene);
 }
