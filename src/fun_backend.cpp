@@ -126,8 +126,38 @@ Json FunBackend::receive(int timeout_ms, const std::atomic<bool> *cancelled) {
   throw std::runtime_error("Fun recognition timed out; no text was inserted");
 }
 void FunBackend::prepare(const std::atomic<bool> *cancelled) {
-  if (pid_ > 0)
-    return;
+  if (cancelled && *cancelled)
+    throw std::runtime_error("已取消");
+  if (pid_ > 0) {
+    // A cached PID does not prove the resident worker survived the idle gap.
+    // Reap an exited child before starting another session; do not wait until
+    // that session's audio has been recorded to discover the broken worker.
+    int status = 0;
+    pid_t exited;
+    do {
+      exited = waitpid(pid_, &status, WNOHANG);
+    } while (exited < 0 && errno == EINTR);
+    if (exited == pid_ || (exited < 0 && errno == ECHILD)) {
+      pid_ = -1; // Already reaped: never send a signal to a stale/reused PID.
+      stop();
+    } else if (exited < 0) {
+      throw std::runtime_error("Cannot check Fun worker state");
+    } else {
+      pollfd p{socket_, POLLIN, 0};
+      int ready;
+      do {
+        ready = poll(&p, 1, 0);
+      } while (ready < 0 && errno == EINTR);
+      if (ready < 0)
+        throw std::runtime_error("Fun worker communication failed");
+      if (socket_ >= 0 && ready == 0)
+        return;
+      // A closed channel or unsolicited idle reply cannot belong to the next
+      // request. Discard it and initialize a fresh worker, without resending
+      // any previous recording or accepting stale recognition text.
+      stop();
+    }
+  }
   int pair[2];
   if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, pair) < 0)
     throw std::runtime_error("Cannot create Fun worker socket");

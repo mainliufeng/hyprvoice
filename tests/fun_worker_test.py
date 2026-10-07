@@ -82,6 +82,43 @@ class WorkerContract(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("broken test model", result.stderr)
 
+    def test_idle_worker_exit_recovers_before_next_session(self):
+        # replay keeps one production Asr instance for every manifest entry.
+        # A short-lived helper sends the first reply only after the worker PID
+        # has exited. This makes the between-session crash deterministic,
+        # without relying on scheduler timing or a sleep before the next begin.
+        self.program('''
+            import os
+            from pathlib import Path
+            root = Path(sys.argv[1])
+            starts = root / 'starts'
+            count = int(starts.read_text()) + 1 if starts.exists() else 1
+            starts.write_text(str(count))
+            print('{"ready":true}', flush=True)
+            for line in sys.stdin:
+                if count == 1:
+                    worker_pid = os.getpid()
+                    child = os.fork()
+                    if child:
+                        os._exit(3)
+                    while os.getppid() == worker_pid:
+                        time.sleep(0.001)
+                    print(json.dumps({'text': 'synthetic response', 'speech': True}), flush=True)
+                    os._exit(0)
+                print(json.dumps({'text': 'synthetic response', 'speech': True}), flush=True)
+        ''')
+        manifest = self.root / "manifest.jsonl"
+        manifest.write_text("".join(json.dumps({"id": index, "audio": str(self.audio)}) + "\n"
+                                    for index in range(3)))
+        result = subprocess.run([str(BINARY), "replay", str(manifest)], env=self.env,
+                                capture_output=True, text=True, timeout=12)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        replies = [json.loads(line) for line in result.stdout.splitlines()]
+        self.assertEqual([reply["text"] for reply in replies], ["synthetic response"] * 3)
+        self.assertEqual((self.root / "starts").read_text(), "2",
+                         "one recovery spawn, then reuse the healthy worker")
+        self.assertEqual(list(self.root.glob("hyprvoice-fun-*")), [], "temporary recording leaked")
+
 
 if __name__ == "__main__":
     unittest.main()
