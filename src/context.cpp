@@ -1,8 +1,10 @@
 #include "context.h"
+#include "browser_text.h"
 #include <algorithm>
 #include <atspi/atspi.h>
 #include <chrono>
 #include <iostream>
+#include <map>
 #include <string_view>
 #include <vector>
 namespace hv {
@@ -108,6 +110,7 @@ struct TargetQuery {
   std::chrono::steady_clock::time_point until =
       std::chrono::steady_clock::now() + std::chrono::milliseconds(1050);
   std::vector<FocusedNode> focused;
+  std::map<std::string, int> browser_routes;
   ~TargetQuery() {
     for (auto &entry : focused)
       g_object_unref(entry.node);
@@ -120,6 +123,170 @@ struct TargetQuery {
     }
     return true;
   }
+  // Chromium also exposes focused objects in hidden native windows. Query
+  // focus metadata server-side so long chat documents do not exhaust a full
+  // tree walk, then require ancestry in an active frame and a web document.
+  // No names, URLs, document text or password values are fetched here.
+  bool browserRoute(AtspiAccessible *node, AtspiAccessible *app,
+                    std::vector<int> &route, bool &is_protected,
+                    bool *native_focus = nullptr) {
+    auto root = ATSPI_OBJECT(app);
+    if (!root->app || !root->app->bus_name || !root->path)
+      return false;
+    auto current = static_cast<AtspiAccessible *>(g_object_ref(node));
+    bool document = false, active_frame = false, reached_root = false;
+    for (int depth = 0; current && depth <= 32 && complete; ++depth) {
+      if (!room(depth))
+        break;
+      atspi_accessible_clear_cache_single(current);
+      auto object = ATSPI_OBJECT(current);
+      if (!object->app || !object->app->bus_name || !object->path ||
+          !root->app || !root->app->bus_name ||
+          std::string_view(object->app->bus_name) != root->app->bus_name)
+        break;
+      auto key = std::string(object->app->bus_name) + object->path;
+      auto [entry, inserted] = browser_routes.try_emplace(key, serial + 1);
+      if (inserted)
+        ++serial;
+      route.push_back(entry->second);
+      GError *error = nullptr;
+      auto role = atspi_accessible_get_role(current, &error);
+      auto states = atspi_accessible_get_state_set(current);
+      if (error || !states) {
+        fail("browser-ancestry");
+        g_clear_error(&error);
+        if (states)
+          g_object_unref(states);
+        break;
+      }
+      is_protected = is_protected || role == ATSPI_ROLE_PASSWORD_TEXT;
+      document = document || role == ATSPI_ROLE_DOCUMENT_WEB;
+      if (role == ATSPI_ROLE_FRAME) {
+        bool active = atspi_state_set_contains(states, ATSPI_STATE_ACTIVE) &&
+                      !atspi_state_set_contains(states, ATSPI_STATE_DEFUNCT);
+        g_object_unref(states);
+        // An inactive frame is never a path to the current web input.
+        if (!active)
+          break;
+        active_frame = true;
+      } else
+        g_object_unref(states);
+      if (std::string_view(object->path) == root->path) {
+        reached_root = true;
+        break;
+      }
+      auto parent = atspi_accessible_get_parent(current, &error);
+      g_object_unref(current);
+      current = parent;
+      if (error) {
+        fail("browser-parent");
+        g_clear_error(&error);
+      }
+    }
+    if (current)
+      g_object_unref(current);
+    std::reverse(route.begin(), route.end());
+    if (native_focus)
+      *native_focus = complete && reached_root && active_frame && !document;
+    return complete && reached_root && document && active_frame;
+  }
+  void browser(AtspiAccessible *app) {
+    // A normal Chromium launch builds web accessibility lazily. This standard
+    // metadata request signals an assistive client; no browser flag, global
+    // accessibility setting, restart or document value is required.
+    GError *error = nullptr;
+    auto attributes = atspi_accessible_get_attributes(app, &error);
+    if (attributes)
+      g_hash_table_unref(attributes);
+    if (error) {
+      fail("browser-metadata");
+      g_clear_error(&error);
+      return;
+    }
+    auto collection = atspi_accessible_get_collection_iface(app);
+    if (!collection) {
+      fail("browser-collection");
+      return;
+    }
+    auto states = atspi_state_set_new(nullptr);
+    atspi_state_set_add(states, ATSPI_STATE_FOCUSED);
+    auto rule = atspi_match_rule_new(
+        states, ATSPI_Collection_MATCH_ALL, nullptr, ATSPI_Collection_MATCH_ALL,
+        nullptr, ATSPI_Collection_MATCH_ALL, nullptr,
+        ATSPI_Collection_MATCH_ALL, false);
+    for (int attempt = 0; attempt < 6; ++attempt) {
+      auto matches = atspi_collection_get_matches(
+          collection, rule, ATSPI_Collection_SORT_ORDER_CANONICAL, 65, true,
+          &error);
+      if (error || !matches || matches->len >= 65)
+        fail("browser-focus");
+      g_clear_error(&error);
+      if (matches) {
+        for (guint i = 0; i < matches->len; ++i) {
+          auto node = g_array_index(matches, AtspiAccessible *, i);
+          if (!node)
+            fail("browser-focus-node");
+          else if (complete) {
+            std::vector<int> route;
+            bool protected_node = false;
+            bool native = false;
+            bool web = browserRoute(node, app, route, protected_node, &native);
+            if (web || native) {
+              auto role = atspi_accessible_get_role(node, &error);
+              auto current_states = atspi_accessible_get_state_set(node);
+              if (error || !current_states)
+                fail("browser-focus-state");
+              else if (atspi_state_set_contains(current_states,
+                                                ATSPI_STATE_FOCUSED)) {
+                bool editable = atspi_state_set_contains(current_states,
+                                                         ATSPI_STATE_EDITABLE);
+                // Chromium may retain web focus while its address bar has
+                // keyboard focus. Any active native editor makes the web
+                // target ambiguous; never paste based on that retained focus.
+                if (native && editable)
+                  fail("browser-native-focus");
+                if (web) {
+                  protected_field = protected_field || protected_node;
+                  focused.push_back(
+                      {static_cast<AtspiAccessible *>(g_object_ref(node)),
+                       route, role,
+                       static_cast<bool>(atspi_state_set_contains(
+                           current_states, ATSPI_STATE_EDITABLE)),
+                       static_cast<bool>(atspi_state_set_contains(
+                           current_states, ATSPI_STATE_DEFUNCT))});
+                }
+              }
+              if (current_states)
+                g_object_unref(current_states);
+              g_clear_error(&error);
+            }
+          }
+          if (node)
+            g_object_unref(node);
+        }
+        g_array_free(matches, true);
+      }
+      bool editable =
+          std::any_of(focused.begin(), focused.end(), [](const auto &node) {
+            return node.editable && !node.defunct &&
+                   (node.role == ATSPI_ROLE_ENTRY ||
+                    node.role == ATSPI_ROLE_TEXT);
+          });
+      if (!complete || protected_field || editable || attempt == 5 ||
+          std::chrono::steady_clock::now() >= until)
+        break;
+      // The first focus query may see only a lazily created document shell.
+      // Re-query metadata within the same deadline, retaining no stale nodes.
+      for (auto &entry : focused)
+        g_object_unref(entry.node);
+      focused.clear();
+      g_usleep(20000);
+    }
+    g_object_unref(rule);
+    g_object_unref(states);
+    g_object_unref(collection);
+  }
+
   void walk(AtspiAccessible *node, std::vector<int> route = {},
             bool protected_ancestor = false) {
     if (!node || !room(route.size())) {
@@ -175,8 +342,25 @@ struct TargetQuery {
   }
 };
 
+std::vector<const FocusedNode *> FocusedLeaves(const TargetQuery &query) {
+  std::vector<const FocusedNode *> leaves;
+  for (const auto &entry : query.focused) {
+    bool ancestor = false;
+    for (const auto &other : query.focused)
+      if (entry.route.size() < other.route.size() &&
+          std::equal(entry.route.begin(), entry.route.end(),
+                     other.route.begin()))
+        ancestor = true;
+    if (!ancestor)
+      leaves.push_back(&entry);
+  }
+  return leaves;
+}
+
 bool ReadTargetText(AtspiAccessible *node, AtspiText *text, Json &snapshot,
-                    bool &protected_field) {
+                    bool &protected_field, bool browser = false,
+                    std::chrono::steady_clock::time_point until = {},
+                    std::string *content = nullptr) {
   GError *error = nullptr;
   atspi_accessible_clear_cache_single(node);
   auto role = atspi_accessible_get_role(node, &error);
@@ -194,6 +378,8 @@ bool ReadTargetText(AtspiAccessible *node, AtspiText *text, Json &snapshot,
     g_clear_error(&error);
     return false;
   }
+  if (browser)
+    return ReadBrowserText(node, snapshot, protected_field, content, until);
   auto metadata = [&]() -> Json {
     int characters = atspi_text_get_character_count(text, &error);
     int caret = error ? -1 : atspi_text_get_caret_offset(text, &error);
@@ -257,7 +443,7 @@ bool ReadTargetText(AtspiAccessible *node, AtspiText *text, Json &snapshot,
 bool ValidTarget(const Json &target) {
   if (!target.is_object() || target.at("reliable") != true ||
       target.at("available") != true || target.at("protected") != false ||
-      target.at("toolkit") != "gtk")
+      (target.at("toolkit") != "gtk" && target.at("toolkit") != "chromium"))
     return false;
   const auto &control = target.at("control");
   if (!control.is_object() || !control.at("bus").is_string() ||
@@ -280,6 +466,13 @@ bool ValidTarget(const Json &target) {
   if (digest.size() != 64 ||
       digest.find_first_not_of("0123456789abcdef") != std::string::npos)
     return false;
+  if (target.at("toolkit") == "chromium") {
+    const auto &version =
+        target.at("editor_digest").get_ref<const std::string &>();
+    if (version.size() != 64 ||
+        version.find_first_not_of("0123456789abcdef") != std::string::npos)
+      return false;
+  }
   for (auto &range : target.at("selections")) {
     if (!range.is_array() || range.size() != 2 ||
         !range[0].is_number_integer() || !range[1].is_number_integer())
@@ -311,6 +504,31 @@ struct TargetWatch {
           << Json{{"changed", true}, {"protected", protected_field}}.dump()
           << std::endl;
   }
+  bool withinOriginal(AtspiAccessible *source) {
+    auto node = static_cast<AtspiAccessible *>(g_object_ref(source));
+    GError *error = nullptr;
+    bool inside = false;
+    for (int depth = 0; node && depth <= 32 && !error; ++depth) {
+      atspi_accessible_clear_cache_single(node);
+      auto object = ATSPI_OBJECT(node);
+      if (!object->app || !object->app->bus_name || !object->path ||
+          bus != object->app->bus_name)
+        break;
+      if (path == object->path) {
+        inside = true;
+        break;
+      }
+      auto parent = atspi_accessible_get_parent(node, &error);
+      g_object_unref(node);
+      node = parent;
+    }
+    if (node)
+      g_object_unref(node);
+    if (error)
+      mark();
+    g_clear_error(&error);
+    return inside;
+  }
   void event(AtspiEvent *event) {
     if (!event || !event->source || !event->type)
       return;
@@ -323,7 +541,7 @@ struct TargetWatch {
     if (type.starts_with("object:text-changed") ||
         type.starts_with("object:text-caret-moved") ||
         type.starts_with("object:text-selection-changed")) {
-      if (original)
+      if (original || withinOriginal(event->source))
         mark();
       return;
     }
@@ -394,8 +612,67 @@ Json ReadInputContext(int pid, int max_chars) {
       auto app = atspi_accessible_get_child_at_index(desktop, i, nullptr);
       if (app) {
         if (atspi_accessible_get_process_id(app, nullptr) ==
-            static_cast<guint>(pid))
-          q.walk(app);
+            static_cast<guint>(pid)) {
+          GError *toolkit_error = nullptr;
+          char *toolkit =
+              atspi_accessible_get_toolkit_name(app, &toolkit_error);
+          char *lower = toolkit ? g_ascii_strdown(toolkit, -1) : nullptr;
+          bool browser = lower && std::string_view(lower) == "chromium";
+          bool known = !toolkit_error && lower;
+          g_free(lower);
+          g_free(toolkit);
+          g_clear_error(&toolkit_error);
+          if (!known) {
+            // A failed toolkit query must not fall back to a generic tree
+            // walk which could select a hidden browser window's context.
+          } else if (!browser)
+            q.walk(app);
+          else {
+            // Use the same focused web control as the local guard, never a
+            // hidden browser window, address bar or unrelated chat history.
+            TargetQuery query;
+            query.until = q.until;
+            query.browser(app);
+            q.result["protected"] = query.protected_field;
+            auto leaves = FocusedLeaves(query);
+            if (query.complete && !query.protected_field &&
+                leaves.size() == 1) {
+              auto node = leaves.front()->node;
+              auto text = atspi_accessible_get_text_iface(node);
+              Json before, after;
+              bool protected_field = false;
+              GError *error = nullptr;
+              std::string full;
+              if (text && ReadTargetText(node, text, before, protected_field,
+                                         true, query.until, &full)) {
+                int caret = before.at("caret").get<int>();
+                for (const auto &range : before.at("selections"))
+                  caret = std::min(caret, range[0].get<int>());
+                const char *start = g_utf8_offset_to_pointer(
+                    full.c_str(), std::max(0, caret - q.max_chars));
+                const char *end = g_utf8_offset_to_pointer(full.c_str(), caret);
+                std::string value(start, end);
+                std::vector<int> route;
+                bool stable =
+                    !error &&
+                    ReadTargetText(node, text, after, protected_field, true,
+                                   query.until) &&
+                    before == after &&
+                    query.browserRoute(node, app, route, protected_field) &&
+                    route == leaves.front()->route && !protected_field;
+                if (stable)
+                  q.result = {{"available", true},
+                              {"protected", false},
+                              {"text", value},
+                              {"caret", caret}};
+              }
+              q.result["protected"] = protected_field;
+              g_clear_error(&error);
+              if (text)
+                g_object_unref(text);
+            }
+          }
+        }
         g_object_unref(app);
       }
       if (q.result.value("available", false) ||
@@ -416,17 +693,23 @@ bool EquivalentInputTarget(const Json &first, const Json &second) {
                             "characters", "digest", "selection_digests"})
       if (first.at(key) != second.at(key))
         return false;
+    if (first.at("toolkit") == "chromium" &&
+        first.at("editor_digest") != second.at("editor_digest"))
+      return false;
     return true;
   } catch (const Json::exception &) {
     return false;
   }
 }
 
-Json ReadInputTarget(int pid) {
+static Json ReadInputTargetOnce(int pid,
+                                std::chrono::steady_clock::time_point until,
+                                bool &saw_browser) {
   auto result = UnknownTarget();
   if (pid <= 0)
     return result;
   TargetQuery query;
+  query.until = until;
   atspi_set_timeout(80, 150);
   if (atspi_init() != 0) {
     result["reason"] = "incomplete";
@@ -450,8 +733,19 @@ Json ReadInputTarget(int pid) {
       auto app = atspi_accessible_get_child_at_index(desktop, i, &error);
       if (!error && app) {
         auto process = atspi_accessible_get_process_id(app, &error);
-        if (!error && process == static_cast<guint>(pid))
-          query.walk(app);
+        if (!error && process == static_cast<guint>(pid)) {
+          char *toolkit = atspi_accessible_get_toolkit_name(app, &error);
+          char *lower = toolkit ? g_ascii_strdown(toolkit, -1) : nullptr;
+          bool browser =
+              !error && lower && std::string_view(lower) == "chromium";
+          saw_browser = saw_browser || browser;
+          g_free(lower);
+          g_free(toolkit);
+          if (browser)
+            query.browser(app);
+          else if (!error)
+            query.walk(app);
+        }
       }
       if (error || !app)
         query.fail(app ? "app-pid" : "desktop-child");
@@ -462,17 +756,7 @@ Json ReadInputTarget(int pid) {
     g_object_unref(desktop);
   }
   result["protected"] = query.protected_field;
-  std::vector<const FocusedNode *> leaves;
-  for (const auto &entry : query.focused) {
-    bool ancestor = false;
-    for (const auto &other : query.focused)
-      if (entry.route.size() < other.route.size() &&
-          std::equal(entry.route.begin(), entry.route.end(),
-                     other.route.begin()))
-        ancestor = true;
-    if (!ancestor)
-      leaves.push_back(&entry);
-  }
+  auto leaves = FocusedLeaves(query);
   if (query.complete && !query.protected_field && leaves.size() == 1) {
     const auto &entry = *leaves.front();
     GError *error = nullptr;
@@ -482,8 +766,6 @@ Json ReadInputTarget(int pid) {
     char *toolkit = !error && application
                         ? atspi_accessible_get_toolkit_name(application, &error)
                         : nullptr;
-    if (application)
-      g_object_unref(application);
     if (!error && toolkit) {
       char *lower = g_ascii_strdown(toolkit, -1);
       result["toolkit"] = lower;
@@ -498,7 +780,8 @@ Json ReadInputTarget(int pid) {
       query.protected_field = true;
     bool eligible =
         !error && !query.protected_field && current_role == entry.role &&
-        result.at("toolkit") == "gtk" && entry.editable && !entry.defunct &&
+        (result.at("toolkit") == "gtk" || result.at("toolkit") == "chromium") &&
+        entry.editable && !entry.defunct &&
         (entry.role == ATSPI_ROLE_TEXT || entry.role == ATSPI_ROLE_ENTRY);
     g_clear_error(&error);
     auto object = ATSPI_OBJECT(entry.node);
@@ -512,11 +795,20 @@ Json ReadInputTarget(int pid) {
       Json first, second;
       bool read =
           text &&
-          ReadTargetText(entry.node, text, first, query.protected_field) &&
+          ReadTargetText(entry.node, text, first, query.protected_field,
+                         result.at("toolkit") == "chromium", query.until) &&
           std::chrono::steady_clock::now() < query.until &&
-          ReadTargetText(entry.node, text, second, query.protected_field);
+          ReadTargetText(entry.node, text, second, query.protected_field,
+                         result.at("toolkit") == "chromium", query.until);
       bool stable = read && first == second &&
                     std::chrono::steady_clock::now() < query.until;
+      if (stable && result.at("toolkit") == "chromium") {
+        std::vector<int> route;
+        stable = application &&
+                 query.browserRoute(entry.node, application, route,
+                                    query.protected_field) &&
+                 route == entry.route;
+      }
       result["reason"] = read ? "unstable" : "text-read";
       atspi_accessible_clear_cache_single(entry.node);
       auto role = atspi_accessible_get_role(entry.node, &error);
@@ -540,6 +832,8 @@ Json ReadInputTarget(int pid) {
         g_object_unref(text);
       g_clear_error(&error);
     }
+    if (application)
+      g_object_unref(application);
   }
   result["protected"] = query.protected_field;
   if (query.protected_field)
@@ -550,6 +844,24 @@ Json ReadInputTarget(int pid) {
   } else if (leaves.size() > 1)
     result["reason"] = "multiple-focus";
   atspi_exit();
+  return result;
+}
+
+Json ReadInputTarget(int pid) {
+  auto until =
+      std::chrono::steady_clock::now() + std::chrono::milliseconds(1050);
+  Json result = UnknownTarget();
+  for (int attempt = 0; attempt < 3; ++attempt) {
+    bool browser = false;
+    result = ReadInputTargetOnce(pid, until, browser);
+    if (!browser || result.value("reliable", false) ||
+        result.value("protected", false) ||
+        std::chrono::steady_clock::now() >= until)
+      break;
+    // Enabling Chromium's lazy web tree can replace its AT-SPI registration.
+    // Re-enumerate the same PID rather than trusting the earlier bus object.
+    g_usleep(20000);
+  }
   return result;
 }
 

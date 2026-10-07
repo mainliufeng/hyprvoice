@@ -26,6 +26,27 @@ int main() {
     const auto original = target();
     check(hv::EquivalentInputTarget(original, original),
           "stable editable target must match");
+    auto browser = original;
+    browser["toolkit"] = "chromium";
+    browser["editor_digest"] = std::string(64, 'c');
+    check(hv::EquivalentInputTarget(browser, browser),
+          "stable verified Chromium target must match");
+    auto browser_changed = browser;
+    browser_changed["digest"] = std::string(64, 'b');
+    check(!hv::EquivalentInputTarget(browser, browser_changed),
+          "browser equal-length edits must not match");
+    browser_changed = browser;
+    browser_changed["editor_digest"] = std::string(64, 'd');
+    check(!hv::EquivalentInputTarget(browser, browser_changed),
+          "browser embedded paragraph changes must not match");
+    browser_changed = browser;
+    browser_changed.erase("editor_digest");
+    check(!hv::EquivalentInputTarget(browser_changed, browser_changed),
+          "browser guard without embedded editor version must fail closed");
+    browser_changed = browser;
+    browser_changed["toolkit"] = "unknown";
+    check(!hv::EquivalentInputTarget(browser_changed, browser_changed),
+          "unverified toolkit must not match even identical snapshots");
     for (const auto &patch :
          {hv::Json{{"available", false}}, hv::Json{{"reliable", false}},
           hv::Json{{"protected", true}}, hv::Json{{"toolkit", "chromium"}},

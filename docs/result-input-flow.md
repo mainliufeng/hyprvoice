@@ -12,4 +12,4 @@
 
 内部 `review`／`confirm` 协议继续存在。UI 的 `insert-current` 在用户主动点击“输入”时，取得当前安全控件快照并紧接着确认；后续 `Desktop::paste` 的同窗口、控件、光标、选区、内容及剪贴板准备后的复验全部保留。自动输入和指令替换仍绑定原始目标，不使用该手动重定向路径。最终检查至快捷键发送依旧不是跨进程原子事务，没有应用接收回执，不能宣称绝对无竞争。
 
-隔离验收复用 `tests/retry_desktop_test.py` 的私有 GTK／AT-SPI／零样本 PipeWire／loopback HTTP 夹具，附加流程见 `tests/result_actions_cases.py`。没有新增测试专用生产命令、读取真实麦克风或发送真实用户数据。Chrome／kitty 当前仍走复制粘贴回退，不能将界面简化说成自动输入支持增加。
+隔离验收复用 `tests/retry_desktop_test.py` 的私有 GTK／AT-SPI／零样本 PipeWire／loopback HTTP 夹具，附加流程见 `tests/result_actions_cases.py`。没有新增测试专用生产命令、读取真实麦克风或发送真实用户数据。后续 Chromium 网页输入兼容见 [browser-input.md](browser-input.md)。kitty 保留复制粘贴回退。

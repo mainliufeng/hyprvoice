@@ -86,10 +86,12 @@ int main() {
       else if (line.starts_with("key "))
         k.key(xkb_keysym_from_name(line.substr(4).c_str(),
                                    XKB_KEYSYM_CASE_INSENSITIVE));
-      else if (line.starts_with("ctrl ")) {
-        auto mod = xkb_keymap_mod_get_index(k.map, XKB_MOD_NAME_CTRL);
+      else if (line.starts_with("ctrl ") || line.starts_with("shift ")) {
+        bool shift = line.starts_with("shift ");
+        auto mod = xkb_keymap_mod_get_index(
+            k.map, shift ? XKB_MOD_NAME_SHIFT : XKB_MOD_NAME_CTRL);
         zwp_virtual_keyboard_v1_modifiers(k.keyboard, 1u << mod, 0, 0, 0);
-        k.key(xkb_keysym_from_name(line.substr(5).c_str(),
+        k.key(xkb_keysym_from_name(line.substr(shift ? 6 : 5).c_str(),
                                    XKB_KEYSYM_CASE_INSENSITIVE));
         zwp_virtual_keyboard_v1_modifiers(k.keyboard, 0, 0, 0, 0);
       } else if (line == "quit")
