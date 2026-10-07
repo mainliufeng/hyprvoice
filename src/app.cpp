@@ -22,6 +22,11 @@
 #include <sys/un.h>
 #include <unistd.h>
 namespace hv {
+static std::string InsertionStatus(const Json &guard) {
+  return guard.value("protected", false) ? "protected"
+         : guard.value("reliable", false) ? "available"
+                                          : "unknown";
+}
 static sockaddr_un Address(const std::string &path) {
   sockaddr_un a{};
   a.sun_family = AF_UNIX;
@@ -86,6 +91,7 @@ App::App(Config c) : config_(std::move(c)), desktop_(config_) {
   state_["retry_result"] = false;
   state_["model_ready"] = false;
   state_["settings_note"] = "";
+  state_["insertion_status"] = "unknown";
 }
 App::~App() {
   settings_cancel_ = true;
@@ -240,6 +246,7 @@ void App::start(bool cmd) {
     throw std::runtime_error("编辑位置已变化；请重新选择文字再触发指令模式");
   auto next_watch = std::make_unique<InputWatch>(next_target.pid, next_guard);
   target_watch_ = std::move(next_watch);
+  copy_notice_until_ = 0;
   capture_changed_ = false;
   target_ = next_target;
   selected_ = next_selected;
@@ -266,7 +273,8 @@ void App::start(bool cmd) {
   auto scene = scene_, selected = selected_;
   auto target = target_;
   bool contextual = config_.data.at("context").value("enabled", false);
-  update({{"phase", "starting"},
+  update({{"insertion_status", InsertionStatus(next_guard)},
+          {"phase", "starting"},
           {"text", "正在连接麦克风…"},
           {"raw", ""},
           {"error", ""},
@@ -417,8 +425,10 @@ void App::start(bool cmd) {
           // unidentified control. The local guard never becomes cloud context.
           bool request_allowed = false;
           bool privacy_protected = protected_field;
+          std::string insertion_status = "unknown";
           try {
             auto current = desktop_.inputTarget(target);
+            insertion_status = InsertionStatus(current);
             privacy_protected =
                 privacy_protected || current.value("protected", false);
             request_allowed = verified_field && !target_watch_->changed() &&
@@ -450,7 +460,8 @@ void App::start(bool cmd) {
           }
           updateSession(
               version,
-              {{"phase", cmd && output.text.empty() ? "error" : "ready"},
+              {{"insertion_status", insertion_status},
+               {"phase", cmd && output.text.empty() ? "error" : "ready"},
                {"text", output.text},
                {"error", output.error}});
         }
@@ -515,6 +526,26 @@ void App::retry() {
          {"error", output.error}});
     finishSession(version);
   });
+}
+void App::selectText(bool raw) {
+  auto state = snapshot();
+  if (busy_ || delivered_ || state.at("phase") != "ready" ||
+      state.at("command_mode").get<bool>())
+    throw std::runtime_error("没有可切换显示的听写文字");
+  preferred_raw_ = raw;
+  manual_confirmation_ = true;
+  review_token_.clear();
+  reviewed_guard_ = Json();
+  reviewed_text_.clear();
+  update({{"preferred_raw", raw}, {"review_token", ""}, {"target_note", ""}});
+}
+void App::insertCurrent() {
+  // An explicit click means input at the user's current caret in the original
+  // window. Bind and recheck it inside this action; never ask the user to manage
+  // guard tokens. Selection, password, window and final paste checks still apply.
+  review();
+  const auto token = review_token_;
+  confirm(token);
 }
 void App::commit(bool raw) {
   if (busy_)
@@ -590,9 +621,7 @@ void App::review() {
   update({{"review_token", review_token_},
           {"target_note", std::string(preferred_raw_ ? "将插入识别原文。"
                                                      : "将插入处理结果。") +
-                              "已核对当前输入框，光标在第 " +
-                              std::to_string(guard.at("caret").get<int>()) +
-                              " 个字符后，无选区；确认后插入"}});
+                              "输入位置已确认，尚未插入；点击“插入到此处”完成。"}});
 }
 void App::confirm(const std::string &token) {
   auto state = snapshot();
@@ -613,16 +642,21 @@ void App::copyResult() {
   auto state = snapshot();
   if (busy_ || delivered_ || state.at("phase") != "ready")
     throw std::runtime_error("没有可复制的结果");
-  desktop_.copy(state.at(preferred_raw_ ? "raw" : "text").get<std::string>());
+  try {
+    desktop_.copy(state.at(preferred_raw_ ? "raw" : "text").get<std::string>());
+  } catch (const std::exception &) {
+    throw std::runtime_error("复制失败，文字仍保留，请重试复制。");
+  }
   delivered_ = true;
   {
     std::lock_guard lock(mutex_);
     ++session_version_;
   }
   update({{"phase", "idle"},
-          {"text", "结果已复制，请自行选择位置粘贴"},
+          {"text", "文字已复制到剪贴板"},
           {"raw", ""},
           {"error", ""}});
+  copy_notice_until_ = g_get_monotonic_time() + 5000000;
 }
 Json App::settingsValues() const {
   return {{"asr", {{"backend", config_.data.at("asr").at("backend")}}},
@@ -791,6 +825,7 @@ Json App::command(const std::string &cmd, const std::string &arg) {
         stop_ = true;
       pressed_ = false;
     } else if (cmd == "cancel") {
+      copy_notice_until_ = 0;
       if (settings_saving_) {
         settings_cancel_ = true;
         return {{"ok", true}, {"saving", true}};
@@ -818,6 +853,12 @@ Json App::command(const std::string &cmd, const std::string &arg) {
       commit(false);
     else if (cmd == "raw")
       commit(true);
+    else if (cmd == "select-text") {
+      if (arg != "raw" && arg != "processed")
+        throw std::runtime_error("请选择识别文字或处理后文字");
+      selectText(arg == "raw");
+    } else if (cmd == "insert-current")
+      insertCurrent();
     else if (cmd == "review")
       review();
     else if (cmd == "confirm")
@@ -853,8 +894,23 @@ Json App::command(const std::string &cmd, const std::string &arg) {
         (settings_panel_ && settings_panel_->visible() && delivered_)) {
       if (!busy_)
         update({{"settings_note", e.what()}});
-    } else if (!busy_)
+    } else if (!busy_) {
+      if (cmd == "commit" || cmd == "insert-current" || cmd == "raw" ||
+          cmd == "review" || cmd == "confirm") {
+        // Only local guard metadata determines the fallback. Paste protection
+        // and the text/context sent to a model are unchanged.
+        if (!delivered_) {
+          try {
+            if (desktop_.target().address == target_.address)
+              update({{"insertion_status",
+                       InsertionStatus(desktop_.inputTarget(target_))}});
+          } catch (const std::exception &) {
+            update({{"insertion_status", "unknown"}});
+          }
+        }
+      }
       update({{"error", e.what()}});
+    }
     return {{"ok", false}, {"error", e.what()}};
   }
 }
@@ -907,23 +963,26 @@ void App::ui() {
       {"starting", "连接麦克风"},
       {"recording", "正在听"},
       {"finalizing", "正在识别"},
-      {"rewriting", "正在整理"},
-      {"retrying", "正在重试文字处理"},
-      {"ready", "待确认"},
-      {"error", "需要处理"},
+      {"rewriting", "正在处理"},
+      {"retrying", "正在重试"},
+      {"ready", "请检查文字"},
+      {"error", "没有完成"},
       {"cancelling", "取消中"}};
   const bool recording = phase == "recording", ready = phase == "ready";
   const bool command_mode = state.at("command_mode").get<bool>();
+  const bool copied_notice =
+      phase == "idle" && g_get_monotonic_time() < copy_notice_until_;
+  const bool copy_only = ready &&
+                         state.value("insertion_status", "unknown") != "available";
+  const auto primary_action = copy_only ? "copy"
+                              : command_mode ? "commit"
+                                             : "insert-current";
   const bool processing = phase == "loading" || phase == "starting" ||
                           phase == "finalizing" || phase == "rewriting" ||
                           phase == "retrying" || phase == "cancelling";
-  const auto scene = state.at("scene").get<std::string>();
-  const auto mode =
-      command_mode ? std::string("修改选中文字") : SceneLabel(scene);
   gtk_label_set_text(
       GTK_LABEL(title_),
-      (names.at(phase) + (scene == "raw" && !command_mode ? "" : " · " + mode))
-          .c_str());
+      (copied_notice ? "已复制" : copy_only ? "文字已保留" : names.at(phase)).c_str());
   int seconds = static_cast<int>(state.at("seconds").get<double>());
   std::ostringstream elapsed;
   elapsed << std::setfill('0') << std::setw(2) << seconds / 60 << ':'
@@ -933,6 +992,8 @@ void App::ui() {
   gtk_spinner_set_spinning(GTK_SPINNER(spinner_), processing);
   gtk_widget_set_visible(spinner_, processing);
   auto text = state.at("text").get<std::string>();
+  if (ready && state.value("preferred_raw", false))
+    text = state.at("raw").get<std::string>();
   if (phase == "starting" || phase == "idle" || phase == "loading")
     recording_text_.clear();
   if (recording && !text.empty() && state.at("backend") == "x-asr")
@@ -941,17 +1002,6 @@ void App::ui() {
     text = recording_text_;
   if (phase == "loading" || phase == "starting")
     text.clear();
-  auto previous = state.value("context", std::string());
-  auto context_note = state.value("context_note", std::string());
-  // Show a small tail of the exact context used; never interpret it as markup.
-  if (g_utf8_strlen(previous.c_str(), -1) > 96)
-    previous =
-        "…" + std::string(g_utf8_offset_to_pointer(
-                  previous.c_str(), g_utf8_strlen(previous.c_str(), -1) - 96));
-  auto context_display =
-      (previous.empty() ? context_note : "参考前文  " + previous);
-  gtk_label_set_text(GTK_LABEL(context_), context_display.c_str());
-  gtk_widget_set_visible(context_, !context_note.empty());
   const bool placeholder = text.empty();
   if (placeholder) {
     if (recording)
@@ -961,8 +1011,8 @@ void App::ui() {
       text = "正在准备语音输入…";
     else if (phase == "error")
       text = state.value("retry_available", false)
-                 ? "可重试本次文字处理，或取消。"
-                 : "这次没有完成，请检查配置后重新录音。";
+                 ? "这次没有完成，请再试一次。"
+                 : "这次没有完成，请重新说一遍。";
     else
       text = "正在识别这段语音…";
   }
@@ -997,17 +1047,16 @@ void App::ui() {
   if (recording)
     hint = RecordingHint(command_mode, pressed_);
   else if (phase == "retrying")
-    hint = "复用本次原文和前文，无需重新录音";
+    hint = "不用再说一遍";
+  else if (copied_notice || copy_only) {
+    bool terminal = false;
+    for (const auto &app : config_.data.at("terminal_classes"))
+      terminal |= app == target_.app;
+    hint = terminal ? "点回输入框，按 Ctrl+Shift+V 粘贴"
+                    : "点回输入框，按 Ctrl+V 粘贴";
+  }
   else if (ready)
-    hint = !state.value("review_token", std::string()).empty()
-               ? "检查位置后确认插入"
-           : state.value("preferred_raw", false)
-               ? "已选择识别原文，核对位置后插入"
-           : state.value("retry_result", false)
-               ? (command_mode ? "重试结果需确认后替换选中文字"
-                               : "重试结果需确认后插入")
-           : command_mode ? "确认后替换选中文字"
-                          : "检查后插入文字";
+    hint = "";
   else
     hint = phase == "error" ? "本次内容不会自动输入"
            : (config_.data.value("auto_commit", true) && !command_mode &&
@@ -1017,17 +1066,28 @@ void App::ui() {
   gtk_label_set_text(GTK_LABEL(hint_), hint.c_str());
   auto warning = error;
   if (error.starts_with("语音检测未确认讲话"))
-    warning = "语音检测未确认，请检查文字后再插入。";
-  else if (error.starts_with("文本处理"))
-    warning = command_mode ? "文字处理未完成，选中的原文已保留。"
-                           : "文字处理未完成，已保留识别原文供确认。";
+    warning = "这段话可能听错了，请检查一下。";
+  else if (error.find("文本处理") != std::string::npos)
+    warning = command_mode ? "这次没改成功，选中的文字还在。请再试一次。"
+                           : "这段文字没改好，已保留你说的内容。可以直接输入或再试一次。";
+  else if (error.starts_with("复制失败"))
+    warning = "没能复制，文字还在这里。请再点一次“复制”。";
+  else if (ready && !error.empty())
+    warning = command_mode ? "文字还没替换。请回到刚才选中文字的地方，或复制后粘贴。"
+                           : "文字还没输入。请点回原来的输入框后再试，或复制后粘贴。";
+  else if (!error.empty())
+    warning = "这次没有输入文字。请重试，或检查语音输入设置。";
+  if (copy_only) {
+    const auto explanation = "这里暂时不能直接输入。请点击“复制”，再到输入框粘贴。";
+    warning = error.starts_with("语音检测未确认讲话") ||
+                      error.starts_with("复制失败")
+                  ? warning + "\n" + explanation
+                  : explanation;
+  }
   gtk_label_set_text(GTK_LABEL(warning_), warning.c_str());
   gtk_widget_set_tooltip_text(warning_,
-                              error.empty() ? nullptr : error.c_str());
-  gtk_widget_set_visible(warning_, !error.empty());
-  auto target_note = state.value("target_note", std::string());
-  gtk_label_set_text(GTK_LABEL(position_), target_note.c_str());
-  gtk_widget_set_visible(position_, !target_note.empty());
+                              warning.empty() ? nullptr : warning.c_str());
+  gtk_widget_set_visible(warning_, !warning.empty());
   if (recording) {
     std::move(meter_history_.begin() + 1, meter_history_.end(),
               meter_history_.begin());
@@ -1038,36 +1098,43 @@ void App::ui() {
   gtk_widget_set_visible(meter_, recording);
   gtk_widget_set_visible(commit_button_, ready);
   gtk_widget_set_sensitive(commit_button_, !busy_);
-  gtk_widget_set_visible(review_button_, ready && !command_mode);
-  gtk_widget_set_sensitive(review_button_, !busy_);
-  auto token = state.value("review_token", std::string());
-  gtk_button_set_label(GTK_BUTTON(review_button_),
-                       token.empty() ? "核对当前位置" : "确认插入当前位置");
-  g_object_set_data_full(G_OBJECT(review_button_), "review-token",
-                         g_strdup(token.c_str()), g_free);
-  gtk_widget_set_visible(copy_button_, ready);
+  g_object_set_data_full(G_OBJECT(commit_button_), "command",
+                         g_strdup(primary_action), g_free);
+  gtk_widget_set_visible(copy_button_, ready && !copy_only);
   gtk_widget_set_sensitive(copy_button_, !busy_);
-  gtk_button_set_label(GTK_BUTTON(copy_button_),
-                       state.value("preferred_raw", false) ? "复制原文"
-                                                           : "复制结果");
+  gtk_button_set_label(GTK_BUTTON(copy_button_), "复制");
   gtk_widget_set_visible(
       retry_button_, state.value("retry_available", false) &&
-                         (ready || phase == "error" || phase == "retrying"));
+                         ((ready && error.find("文本处理") != std::string::npos) ||
+                          phase == "error" || phase == "retrying"));
   gtk_widget_set_sensitive(retry_button_, !busy_);
   gtk_button_set_label(GTK_BUTTON(retry_button_),
-                       phase == "retrying" ? "重试中…" : "重试文字处理");
+                       phase == "retrying" ? "正在重试…" : "再试一次");
   gtk_widget_set_tooltip_text(
-      retry_button_, "复用本次原转录、场景、选区和前文；结果需手动确认");
+      retry_button_, "重新处理这段文字，不用再说一遍");
   gtk_button_set_label(GTK_BUTTON(commit_button_),
-                       command_mode ? "确认修改" : "插入文字");
+                       copy_only ? "复制"
+                       : command_mode ? "替换选中文字"
+                                      : "输入");
+  gtk_widget_set_tooltip_text(commit_button_,
+                              copy_only ? "只复制到剪贴板，不会自动输入"
+                                             : "把上面的文字输入到光标处");
+  gtk_button_set_label(GTK_BUTTON(raw_button_),
+                       state.value("preferred_raw", false) ? "恢复修改"
+                                                           : "撤销修改");
+  g_object_set_data_full(G_OBJECT(raw_button_), "command-arg",
+                         g_strdup(state.value("preferred_raw", false)
+                                      ? "processed" : "raw"), g_free);
+  gtk_widget_set_tooltip_text(raw_button_, "只改变上面的文字，不会立即输入");
   gtk_widget_set_visible(
       raw_button_, ready && !command_mode &&
-                       (state.at("text") != state.at("raw") || !error.empty()));
+                       state.at("text") != state.at("raw"));
   gtk_widget_set_sensitive(raw_button_, !busy_);
   gtk_widget_set_visible(stop_button_, recording);
   gtk_widget_set_tooltip_text(cancel_button_,
-                              phase == "error" ? "关闭" : "取消本次语音");
-  gtk_widget_set_visible(window_, phase != "idle" || !error.empty());
+                              phase == "error" || phase == "idle" ? "关闭"
+                                                                    : "取消本次语音");
+  gtk_widget_set_visible(window_, phase != "idle" || !error.empty() || copied_notice);
 }
 void App::run() {
   gtk_init();
@@ -1166,14 +1233,6 @@ void App::run() {
                    }),
                    this);
   gtk_box_append(GTK_BOX(header), cancel_button_);
-  context_ = gtk_label_new("");
-  gtk_widget_add_css_class(context_, "voice-context");
-  gtk_label_set_wrap(GTK_LABEL(context_), true);
-  gtk_label_set_xalign(GTK_LABEL(context_), 0);
-  gtk_label_set_max_width_chars(GTK_LABEL(context_), 40);
-  gtk_label_set_lines(GTK_LABEL(context_), 2);
-  gtk_label_set_ellipsize(GTK_LABEL(context_), PANGO_ELLIPSIZE_END);
-  gtk_box_append(GTK_BOX(box), context_);
   scroll_ = gtk_scrolled_window_new();
   gtk_widget_add_css_class(scroll_, "voice-scroll");
   gtk_scrolled_window_set_overlay_scrolling(GTK_SCROLLED_WINDOW(scroll_),
@@ -1200,12 +1259,6 @@ void App::run() {
   gtk_label_set_xalign(GTK_LABEL(warning_), 0);
   gtk_label_set_max_width_chars(GTK_LABEL(warning_), 40);
   gtk_box_append(GTK_BOX(box), warning_);
-  position_ = gtk_label_new("");
-  gtk_widget_add_css_class(position_, "voice-context");
-  gtk_label_set_wrap(GTK_LABEL(position_), true);
-  gtk_label_set_max_width_chars(GTK_LABEL(position_), 40);
-  gtk_label_set_xalign(GTK_LABEL(position_), 0);
-  gtk_box_append(GTK_BOX(box), position_);
   auto divider = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
   gtk_widget_add_css_class(divider, "voice-divider");
   gtk_box_append(GTK_BOX(box), divider);
@@ -1219,24 +1272,30 @@ void App::run() {
   gtk_widget_set_hexpand(hint_, true);
   gtk_box_append(GTK_BOX(row), hint_);
   for (auto [label, cmd] : std::vector<std::pair<const char *, const char *>>{
-           {"使用原文", "raw"},
-           {"重试文字处理", "retry"},
+           {"撤销修改", "select-text"},
+           {"再试一次", "retry"},
            {"结束录音", "stop"},
-           {"插入文字", "commit"}}) {
+           {"复制", "copy"},
+           {"输入", "commit"}}) {
     auto button = gtk_button_new_with_label(label);
     g_object_set_data_full(G_OBJECT(button), "command", g_strdup(cmd), g_free);
     g_signal_connect(button, "clicked",
                      G_CALLBACK(+[](GtkButton *b, gpointer data) {
                        auto self = static_cast<App *>(data);
+                       auto arg = static_cast<const char *>(
+                           g_object_get_data(G_OBJECT(b), "command-arg"));
                        self->command(static_cast<char *>(
-                           g_object_get_data(G_OBJECT(b), "command")));
+                           g_object_get_data(G_OBJECT(b), "command")),
+                           arg ? arg : "");
                      }),
                      this);
     gtk_box_append(GTK_BOX(row), button);
-    if (std::string(cmd) == "raw")
+    if (std::string(cmd) == "select-text")
       raw_button_ = button;
     else if (std::string(cmd) == "retry")
       retry_button_ = button;
+    else if (std::string(cmd) == "copy")
+      copy_button_ = button;
     else {
       gtk_widget_add_css_class(button, "primary");
       if (std::string(cmd) == "commit")
@@ -1245,26 +1304,6 @@ void App::run() {
         stop_button_ = button;
     }
   }
-  auto position_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-  gtk_box_append(GTK_BOX(box), position_row);
-  review_button_ = gtk_button_new_with_label("核对当前位置");
-  g_signal_connect(review_button_, "clicked",
-                   G_CALLBACK(+[](GtkButton *b, gpointer data) {
-                     auto self = static_cast<App *>(data);
-                     auto token = static_cast<const char *>(
-                         g_object_get_data(G_OBJECT(b), "review-token"));
-                     self->command(token && *token ? "confirm" : "review",
-                                   token ? token : "");
-                   }),
-                   this);
-  gtk_box_append(GTK_BOX(position_row), review_button_);
-  copy_button_ = gtk_button_new_with_label("复制结果");
-  g_signal_connect(copy_button_, "clicked",
-                   G_CALLBACK(+[](GtkButton *, gpointer data) {
-                     static_cast<App *>(data)->command("copy");
-                   }),
-                   this);
-  gtk_box_append(GTK_BOX(position_row), copy_button_);
   loop_ = g_main_loop_new(nullptr, false);
   busy_ = true;
   worker_ = std::thread([this] {

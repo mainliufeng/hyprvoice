@@ -44,7 +44,7 @@ private:
   std::atomic<bool> busy_ = false, stop_ = false, cancel_ = false;
   std::atomic<float> level_ = 0;
   bool delivered_ = true, focus_changed_ = false, pressed_ = false;
-  gint64 pressed_at_ = 0;
+  gint64 pressed_at_ = 0, copy_notice_until_ = 0;
   Target target_;
   std::string selected_, scene_;
   // A pending request keeps target_/selected_ fixed until commit or cancel.
@@ -58,15 +58,14 @@ private:
   bool preferred_raw_ = false;
   std::string reviewed_text_;
   std::unique_ptr<InputWatch> target_watch_;
-  bool capture_changed_ = false;
+  std::atomic<bool> capture_changed_ = false;
   GtkWidget *window_ = nullptr, *title_ = nullptr, *text_ = nullptr,
             *hint_ = nullptr, *meter_ = nullptr, *raw_button_ = nullptr,
             *commit_button_ = nullptr, *stop_button_ = nullptr,
             *retry_button_ = nullptr, *cancel_button_ = nullptr,
-            *review_button_ = nullptr, *copy_button_ = nullptr,
+            *copy_button_ = nullptr,
             *mode_ = nullptr, *duration_ = nullptr, *spinner_ = nullptr,
-            *icon_ = nullptr, *context_ = nullptr, *warning_ = nullptr,
-            *scroll_ = nullptr, *position_ = nullptr;
+            *icon_ = nullptr, *warning_ = nullptr, *scroll_ = nullptr;
   std::array<float, 21> meter_history_{};
   std::string display_text_, display_phase_, recording_text_;
   GMainLoop *loop_ = nullptr;
@@ -78,6 +77,8 @@ private:
   void finishSettings();
   void start(bool command);
   void commit(bool raw);
+  void selectText(bool raw);
+  void insertCurrent();
   void deliver(const std::string &text, const Json &guard);
   void review();
   void confirm(const std::string &token);

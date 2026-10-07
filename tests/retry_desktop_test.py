@@ -294,6 +294,14 @@ for line in sys.stdin:
     raw = '合成原文：不会支付2400元'
     processed = '合成结果：不会支付2400元。'
 
+    # Reuse the isolated production App fixture for the result-button flow.
+    if os.environ.get('HYPRVOICE_RESULT_ACTIONS_QA'):
+        from result_actions_cases import run as run_result_actions
+        run_result_actions(globals(), os.environ['HYPRVOICE_RESULT_ACTIONS_QA'])
+        result['http_requests'] = len(server.bodies)
+        result['binary_sha256'] = hashlib.sha256((repo/'build/hyprvoice').read_bytes()).hexdigest()
+        raise SystemExit(0)
+
     # Default auto_commit must not apply to a retry. Change actual editor history
     # after capture to verify that the retry never re-reads it.
     boot(restore=True)
@@ -306,14 +314,14 @@ for line in sys.stdin:
     check('initial-failure-retains-raw-and-retry', original['raw'] == raw and
           original['text'] == raw and original['retry_available'] and original['error'])
     check('exact-synthetic-context-captured', original['context'] == first_path.read_text())
-    label('使用原文')
+    label('这段文字没改好，已保留你说的内容。可以直接输入或再试一次。')
     key('type changed')
     changed = first_path.read_text()
-    click('重试文字处理')
+    click('再试一次')
     phase('retrying')
-    label('正在重试文字处理 · 纠错')
-    widgets = label('重试中…')['widgets']
-    check('retry-button-disabled-inflight', any(w['name'] == '重试中…' and
+    label('正在重试')
+    widgets = label('正在重试…')['widgets']
+    check('retry-button-disabled-inflight', any(w['name'] == '正在重试…' and
           not w['sensitive'] for w in widgets))
     photo('retry-in-progress')
     check('duplicate-retry-rejected', command('retry')[0] == 1)
@@ -329,10 +337,10 @@ for line in sys.stdin:
           complete['manual_confirmation'] and not complete['error'])
     time.sleep(.3)
     check('retry-never-auto-inserts', first_path.read_text() == changed)
-    label('重试结果需确认后插入')
+    label('输入')
     photo('retry-ready')
     other, other_path = editor('Public unrelated editor.', 'other-editor')
-    click('插入文字')
+    assert command('commit')[0] == 1
     wait(lambda: '目标窗口已变化' in state()['error'])
     check('wrong-window-commit-rejected', state()['phase'] == 'ready' and
           first_path.read_text() == changed and other_path.read_text() == 'Public unrelated editor.')
@@ -357,9 +365,9 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     # dedicated restore fixture; this first commit exercises genuine restore.
     check('same-window-edits-reject-original-target', command('commit')[0] == 1 and
           first_path.read_text() == changed)
-    click('核对当前位置')
+    assert command('review')[0] == 0
     wait(lambda: bool(state()['review_token']))
-    click('确认插入当前位置')
+    assert command('confirm', state()['review_token'])[0] == 0
     phase('idle')
     wait(lambda: first_path.read_text() == changed + processed)
     check('real-editor-inserted-exactly-once', first_path.read_text() == changed + processed)
@@ -390,16 +398,16 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     set_transcripts(raw)
     index = plan('failure', 'empty')
     begin(); finish()
-    click('重试文字处理')
+    click('再试一次')
     # GTK Action.DoAction queues the callback. Wait for the new retry result,
     # not the initial ready state, which already contains raw and an error.
     failed = wait(lambda: s if (s := state())['phase'] == 'ready' and not s['busy']
                   and s['retry_result'] and s['manual_confirmation'] else None)
     check('empty-retry-keeps-original', failed['text'] == raw and failed['raw'] == raw and
           '没有返回文字' in failed['error'] and len(server.bodies) == index + 2)
-    label('使用原文')
+    label('这段文字没改好，已保留你说的内容。可以直接输入或再试一次。')
     before = first_path.read_text()
-    click('使用原文')
+    click('输入')
     phase('idle')
     wait(lambda: first_path.read_text() == before + raw)
     check('raw-fallback-inserted-once', first_path.read_text() == before + raw and command('raw')[0] == 1)
@@ -420,7 +428,7 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     gate = threading.Event()
     index = plan('failure', gate, 'failure')
     begin(); finish()
-    click('重试文字处理')
+    click('再试一次')
     phase('retrying')
     wait(lambda: len(server.bodies) == index + 2)
     click('取消本次语音')
@@ -459,16 +467,16 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     check('command-failure-never-offers-spoken-instruction', failed['text'] == '' and
           failed['raw'] == instruction and failed['retry_available'] and command('raw')[0] == 1)
     widgets = accessible()['widgets']
-    check('command-has-no-raw-button', not any(w['name'] == '使用原文' and w['showing'] for w in widgets))
+    check('command-has-no-raw-button', not any(w['name'] == '撤销修改' and w['showing'] for w in widgets))
     key('key Left')
-    click('重试文字处理')
+    click('再试一次')
     ready = phase('ready')
     check('command-retry-request-byte-identical', server.bodies[index] == server.bodies[index + 1])
     check('command-retry-success-is-replacement', ready['text'] == replacement and ready['manual_confirmation'])
-    label('重试结果需确认后替换选中文字')
+    label('替换选中文字')
     check('changed-selection-commit-rejected', command('commit')[0] == 1 and first_path.read_text() == selected)
     key('ctrl a')
-    click('确认修改')
+    click('替换选中文字')
     phase('idle')
     wait(lambda: first_path.read_text() == replacement)
     check('command-replaces-selection-exactly-once', first_path.read_text() == replacement and command('commit')[0] == 1)
@@ -510,16 +518,16 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     check('same-window-control-identity-differs', first_guard['control'] != second_guard['control'])
     check('same-text-other-control-blocked', command('commit')[0] == 1 and
           pair_path.read_text() == 'abcde' and Path(str(pair_path)+'.second').read_text() == 'abcde')
-    click('核对当前位置')
+    assert command('review')[0] == 0
     old_token = wait(lambda: state()['review_token'])
     key('key Left')
     check('review-token-does-not-follow-new-caret', command('confirm', old_token)[0] == 1 and
           not state()['review_token'] and Path(str(pair_path)+'.second').read_text() == 'abcde')
-    click('核对当前位置')
+    assert command('review')[0] == 0
     wait(lambda: bool(state()['review_token']))
-    label('确认插入当前位置')
+    label('输入')
     photo('review-current-position')
-    click('确认插入当前位置')
+    assert command('confirm', state()['review_token'])[0] == 0
     phase('idle')
     wait(lambda: Path(str(pair_path)+'.second').read_text() == 'abcd'+processed+'e')
     check('explicit-confirm-inserts-at-reviewed-caret-once', pair_path.read_text() == 'abcde' and
@@ -545,10 +553,10 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     before = Path(str(pair_path)+'.second').read_text()
     key('key Left')
     check('raw-choice-after-move-retained', command('raw')[0] == 1 and state()['preferred_raw'])
-    click('核对当前位置')
+    assert command('review')[0] == 0
     wait(lambda: bool(state()['review_token']))
     check('review-explicitly-names-original-text', '识别原文' in state()['target_note'])
-    click('确认插入当前位置')
+    assert command('confirm', state()['review_token'])[0] == 0
     phase('idle')
     wait(lambda: Path(str(pair_path)+'.second').read_text() == before[:-1]+raw+before[-1:])
     check('raw-choice-delivered-at-reviewed-position-once', command('raw')[0] == 1)
@@ -672,7 +680,7 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     begin(); complete = finish()
     check('unsupported-control-is-not-claimed-safe', len(server.bodies) == index and
           not complete['retry_available'] and command('commit')[0] == 1 and command('review')[0] == 1)
-    click('复制结果')
+    click('复制')
     phase('idle')
     check('explicit-copy-is-local-and-consumes-result', run('/usr/bin/wl-paste','--no-newline') == raw and
           readonly_path.read_text() == 'public-readonly-data' and command('copy')[0] == 1)
