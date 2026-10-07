@@ -1,5 +1,8 @@
 # Hyprvoice
 
+当前版本 **0.2.0**（2026-10-07）；更新内容及验证范围见 [版本说明](docs/release-notes.md)。
+项目网站：<https://hyprvoice.liufeng.me>。运行 `hyprvoice --version` 查看程序版本。
+
 独立的 Hyprland 语音输入工具。保留现有 Fcitx 拼音，用快捷键录音，通过悬浮条预览，最终粘贴到应用。
 构建与运行不依赖 `voice-input`、Fcitx 开发库或 `vinput-registry`。本地模型文件可复用现有下载。旧项目移植的辅助代码已移除，独立实现范围见 [实现说明](docs/independent-implementation.md)。
 本仓库原先位于 Mobius 单仓库的 `apps/hyprvoice/`，拆分时把该路径的提交历史一并迁移过来；GPL-3.0，见 [LICENSE](LICENSE) 与 [NOTICE](NOTICE)。
@@ -14,7 +17,7 @@
 - 非抢焦点的 GTK4 layer-shell 悬浮条；普通应用 Ctrl+C/V，配置中的终端 Ctrl+Shift+C/V。
 
 实时文字显示在悬浮条，最终一次上屏。没有输入框内预编辑。可选的 [前文辅助](docs/context.md) 通过无障碍接口读取当前输入框的光标前文，覆盖范围取决于应用。
-同一窗口内移动光标无法可靠检测；如果录音时需要编辑，关闭 `auto_commit`，完成后明确选择插入位置。
+可核验的编辑器会检查同窗口控件、光标、选区和内容变化；无法提供编辑器信息的应用只核验原窗口，不能检测该窗口内光标或控件变化。如果录音时需要编辑，关闭 `auto_commit`，完成后明确选择插入位置。
 指令模式始终需要确认，不会将识别出的指令原文当成替换文字。LLM 失败时普通听写保留原文，指令模式不修改选区。
 
 剪贴板只处理 UTF-8 文本。默认将结果留在剪贴板；`clipboard_restore` 的延迟恢复是尽力而为，应用粘贴没有完成回执。
@@ -104,7 +107,7 @@ Lua 配置使用 `config/hyprvoice.lua` 的绑定；仍使用 hyprlang 时参考
 
 语音结果界面操作见 [结果界面](docs/result-input-flow.md)，Chromium 网页输入支持见 [浏览器输入](docs/browser-input.md)。同窗口控件、光标、选区和内容保护，以及 CLI 位置确认协议见 [目标保护说明](docs/target-protection.md)。默认纠错／整理的保真边界与合成用例见 [策略验证](docs/fidelity-verification.md)。
 
-CLI 同样支持 `start stop toggle press release command cancel retry commit raw review confirm TOKEN copy status scene NAME backend fun|x-asr quit`。空闲时用 `hyprvoice settings` 打开轻量设置窗口，用 `hyprvoice diagnose` 做不录音、不联网的本地诊断；详见 [设置与诊断](docs/settings-and-diagnostics.md)。本轮尚未安装，获准后的切换及回退见 [迭代切换方案](docs/iteration-installation-rollback-plan.md)。
+CLI 同样支持 `start stop toggle press release command cancel retry commit raw review confirm TOKEN copy status scene NAME backend fun|x-asr quit`。空闲时用 `hyprvoice settings` 打开轻量设置窗口，用 `hyprvoice diagnose` 做不录音、不联网的本地诊断；详见 [设置与诊断](docs/settings-and-diagnostics.md)。更新前保留当前程序和配置，切换及回退步骤见 [迭代切换方案](docs/iteration-installation-rollback-plan.md)。
 运行 `doctor` 后还应核对麦克风静音状态；程序不自动取消你的麦克风静音，也不修改默认音频设备。
 
 替换旧语音工具时停用旧 Vinput 插件和旧语音后台，保留 Fcitx 拼音。验证新工具在你的日常应用中可用后再切换，避免两套快捷键同时录音。

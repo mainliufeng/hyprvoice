@@ -7,6 +7,10 @@
 int main(int argc, char **argv) {
   using namespace hv;
   try {
+    if (argc == 2 && std::string(argv[1]) == "--version") {
+      std::cout << "hyprvoice " << HYPRVOICE_VERSION << '\n';
+      return 0;
+    }
     if (argc < 2 || std::string(argv[1]) == "--help") {
       std::cout
           << "hyprvoice init | serve | doctor | transcribe WAV | replay "
@@ -18,6 +22,7 @@ int main(int argc, char **argv) {
              "| settings | settings-status | diagnose\n"
           << "hyprvoice settings-save JSON | settings-previous | "
              "settings-cancel | quit\n"
+          << "hyprvoice --version\n"
           << "HYPRVOICE_CONFIG overrides ~/.config/hyprvoice/config.json\n";
       return 0;
     }
