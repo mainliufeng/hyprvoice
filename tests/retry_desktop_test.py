@@ -611,7 +611,7 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     uncertain_bin = runtime/'uncertain-bin'
     uncertain_bin.mkdir()
     wrapper = uncertain_bin/'hyprctl'
-    wrapper.write_text("#!/usr/bin/python3\nimport subprocess,sys\nr=subprocess.run(['/usr/bin/hyprctl',*sys.argv[1:]])\nraise SystemExit(1 if len(sys.argv)>3 and sys.argv[1:3]==['dispatch','sendshortcut'] and ', V,' in sys.argv[3] else r.returncode)\n")
+    wrapper.write_text("#!/usr/bin/python3\nimport subprocess,sys\nr=subprocess.run(['/usr/bin/hyprctl',*sys.argv[1:]])\npaste=len(sys.argv)>2 and sys.argv[1]=='dispatch' and ((sys.argv[2]=='sendshortcut' and len(sys.argv)>3 and ', V,' in sys.argv[3]) or (sys.argv[2].startswith('hl.dsp.send_shortcut(') and 'key=\"V\"' in sys.argv[2]))\nraise SystemExit(1 if paste else r.returncode)\n")
     wrapper.chmod(0o700)
     env['PATH'] = str(uncertain_bin)+':'+original_path
     boot(auto=False)
@@ -620,10 +620,19 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     set_transcripts(raw); plan('success', output=processed)
     begin(); finish()
     assert command('commit')[0] == 0
-    uncertain = phase('idle')
+    uncertain = phase('delivery-uncertain')
     wait(lambda: Path(str(pair_path)+'.second').read_text() == before+processed)
-    check('uncertain-send-consumes-result-and-rejects-resend', '发送状态未知' in uncertain['error'] and
-          command('commit')[0] == 1 and command('retry')[0] == 1)
+    check('uncertain-send-keeps-text-and-rejects-resend', '发送状态未知' in uncertain['error'] and
+          uncertain['text']==processed and uncertain['raw']==raw and command('commit')[0]==1 and command('retry')[0]==1)
+    label('请检查输入框')
+    label('文字已识别，但无法确认是否已输入。请先检查输入框，避免重复输入。')
+    label('复制')
+    photo('delivery-uncertain-keeps-result-and-copy')
+    check('uncertain-result-not-idle-or-lost', command('start')[0]==1 and command('insert-current')[0]==1)
+    assert command('copy')[0]==0
+    phase('idle')
+    check('uncertain-result-explicit-copy-once-without-second-input',run('/usr/bin/wl-paste','--no-newline')==processed and
+          Path(str(pair_path)+'.second').read_text()==before+processed and command('copy')[0]==1)
     env['PATH'] = original_path
     boot(auto=False)
     twins, twins_path = editor('abcde', 'command-twin-fields', two=True)

@@ -28,6 +28,7 @@ public:
 private:
   const Config &config_;
   GSubprocess *owner_ = nullptr;
+  std::optional<bool> lua_dispatch_;
   void setClipboard(const std::string &text);
   void shortcut(const Target &target, const std::string &key);
   void requireTarget(const Target &target);

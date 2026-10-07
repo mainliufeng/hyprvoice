@@ -226,6 +226,7 @@ void App::start(bool cmd) {
   if (!asr_)
     throw std::runtime_error("本地模型不可用，请检查配置并重启");
   if (snapshot().value("phase", std::string()) == "ready" ||
+      snapshot().value("phase", std::string()) == "delivery-uncertain" ||
       snapshot().value("retry_available", false))
     throw std::runtime_error("请先提交或取消上一段结果");
   auto next_target = desktop_.target();
@@ -592,9 +593,10 @@ void App::deliver(const std::string &text, const Json &guard) {
       std::lock_guard lock(mutex_);
       ++session_version_;
     }
-    update({{"phase", "idle"},
+    update({{"phase", "delivery-uncertain"},
             {"text", text},
-            {"raw", ""},
+            {"context", ""},
+            {"context_note", ""},
             {"error", error.what()}});
     return;
   }
@@ -654,7 +656,8 @@ void App::confirm(const std::string &token) {
 }
 void App::copyResult() {
   auto state = snapshot();
-  if (busy_ || delivered_ || state.at("phase") != "ready")
+  const bool uncertain = state.at("phase") == "delivery-uncertain";
+  if (busy_ || (!uncertain && (delivered_ || state.at("phase") != "ready")))
     throw std::runtime_error("没有可复制的结果");
   try {
     desktop_.copy(state.at(preferred_raw_ ? "raw" : "text").get<std::string>());
@@ -679,7 +682,7 @@ Json App::settingsValues() const {
           {"context", {{"enabled", config_.data.at("context").at("enabled")}}}};
 }
 void App::requireSettingsIdle() {
-  if (busy_ || !delivered_)
+  if (busy_ || !delivered_ || snapshot().at("phase") == "delivery-uncertain")
     throw std::runtime_error("请先结束、提交或取消本次语音，再打开或保存设置");
 }
 void App::applySettings(const Json &patch) {
@@ -980,15 +983,18 @@ void App::ui() {
       {"rewriting", "正在处理"},
       {"retrying", "正在重试"},
       {"ready", "请检查文字"},
+      {"delivery-uncertain", "请检查输入框"},
       {"error", "没有完成"},
       {"cancelling", "取消中"}};
-  const bool recording = phase == "recording", ready = phase == "ready";
+  const bool uncertain = phase == "delivery-uncertain";
+  const bool recording = phase == "recording",
+             ready = phase == "ready" || uncertain;
   const bool command_mode = state.at("command_mode").get<bool>();
   const bool copied_notice =
       phase == "idle" && g_get_monotonic_time() < copy_notice_until_;
   const auto insertion = state.value("insertion_status", "unknown");
   const bool copy_only =
-      ready && insertion != "available" && insertion != "window";
+      ready && (uncertain || (insertion != "available" && insertion != "window"));
   const auto primary_action = copy_only      ? "copy"
                               : command_mode ? "commit"
                                              : "insert-current";
@@ -997,7 +1003,8 @@ void App::ui() {
                           phase == "retrying" || phase == "cancelling";
   gtk_label_set_text(
       GTK_LABEL(title_),
-      (copied_notice ? "已复制" : copy_only ? "文字已保留" : names.at(phase)).c_str());
+      (copied_notice ? "已复制" : uncertain ? "请检查输入框"
+                               : copy_only ? "文字已保留" : names.at(phase)).c_str());
   int seconds = static_cast<int>(state.at("seconds").get<double>());
   std::ostringstream elapsed;
   elapsed << std::setfill('0') << std::setw(2) << seconds / 60 << ':'
@@ -1080,7 +1087,9 @@ void App::ui() {
                : "完成后可检查并插入";
   gtk_label_set_text(GTK_LABEL(hint_), hint.c_str());
   auto warning = error;
-  if (error.starts_with("语音检测未确认讲话"))
+  if (uncertain)
+    warning = "文字已识别，但无法确认是否已输入。请先检查输入框，避免重复输入。";
+  else if (error.starts_with("语音检测未确认讲话"))
     warning = "这段话可能听错了，请检查一下。";
   else if (error.find("文本处理") != std::string::npos)
     warning = command_mode ? "这次没改成功，选中的文字还在。请再试一次。"
@@ -1089,10 +1098,10 @@ void App::ui() {
     warning = "没能复制，文字还在这里。请再点一次“复制”。";
   else if (ready && !error.empty())
     warning = command_mode ? "文字还没替换。请回到刚才选中文字的地方，或复制后粘贴。"
-                           : "文字还没输入。请点回原来的输入框后再试，或复制后粘贴。";
+                           : "文字已识别，但还没送进输入框。请点回原来的输入框，再点“输入”。";
   else if (!error.empty())
     warning = "这次没有输入文字。请重试，或检查语音输入设置。";
-  if (copy_only) {
+  if (copy_only && !uncertain) {
     const auto explanation = "这里暂时不能直接输入。请点击“复制”，再到输入框粘贴。";
     warning = error.starts_with("语音检测未确认讲话") ||
                       error.starts_with("复制失败")
@@ -1142,7 +1151,7 @@ void App::ui() {
                                       ? "processed" : "raw"), g_free);
   gtk_widget_set_tooltip_text(raw_button_, "只改变上面的文字，不会立即输入");
   gtk_widget_set_visible(
-      raw_button_, ready && !command_mode &&
+      raw_button_, ready && !uncertain && !command_mode &&
                        state.at("text") != state.at("raw"));
   gtk_widget_set_sensitive(raw_button_, !busy_);
   gtk_widget_set_visible(stop_button_, recording);

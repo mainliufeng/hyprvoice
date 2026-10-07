@@ -13,3 +13,5 @@
 仍需真人验收真实 ChatGPT 页面。Firefox/Gecko 的完整编辑控件核验未在此变更中支持。普通听写可在缺少无障碍注册的 Chrome／Electron 窗口直接输入，使用原窗口检查，不读取前文或发送文字处理请求；该兼容路径不能核验窗口内的光标／选区变化。粘贴前检查与跨进程快捷键发送不是原子事务，也没有应用接收回执；原本可靠的编辑器在录音期间失去核验能力时保留文字，不自动降为窗口兼容路径。
 
 无元数据回归：`tests/window_input_cases.py` 由同一私有桌面测试入口运行。`HYPRVOICE_WINDOW_QA=1` 使用 Chrome，`HYPRVOICE_WINDOW_QA=electron` 使用 Electron 42／XWayland；目标应用使用另一个私有 D-Bus／AT-SPI 总线，断言没有可靠控件信息，再验证自动输入、真实 GTK“输入”按钮、Unicode／多行内容、零表单提交、一次消费和窗口往返保护。`HYPRVOICE_GHOSTTY_QA=1` 使用私有 Ghostty 运行固定 Python 接收器，绝不启动 shell 或执行粘贴内容。
+
+Hyprland 命令兼容：粘贴前只读查询 `seat capabilities`，Lua 方言使用 `hl.dsp.send_shortcut({mods,key,window})`，标准 Hyprland 保留 `sendshortcut`。命令仍经 PATH 中的 `hyprctl`，不修改／绕过会话包装程序，目标地址使用原窗口，Ctrl+V／Ctrl+Shift+V 与剪贴板就绪及最终窗口检查保持不变。派发返回非成功回复也不能当作已发送。

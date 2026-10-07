@@ -65,8 +65,38 @@ bool Desktop::terminal(const Target &t) {
 void Desktop::shortcut(const Target &t, const std::string &key) {
   requireTarget(t);
   std::string mods = terminal(t) ? "CTRL SHIFT" : "CTRL";
-  Checked({"hyprctl", "dispatch", "sendshortcut",
-           mods + ", " + key + ", address:" + t.address});
+  if (!lua_dispatch_) {
+    auto caps = Run({"hyprctl", "-j", "seat", "capabilities"});
+    bool lua = false;
+    if (!caps.code) {
+      auto value = Json::parse(caps.out, nullptr, false);
+      if (value.is_object())
+        lua = value.value("dialect", std::string()) == "lua";
+    }
+    lua_dispatch_ = lua;
+  }
+  std::vector<std::string> args{"hyprctl", "dispatch"};
+  if (*lua_dispatch_)
+    args.push_back("hl.dsp.send_shortcut({mods=" + Json(mods).dump() +
+                   ",key=" + Json(key).dump() +
+                   ",window=" + Json("address:" + t.address).dump() + "})");
+  else {
+    args.push_back("sendshortcut");
+    args.push_back(mods + ", " + key + ", address:" + t.address);
+  }
+  // Capability negotiation is read-only. Failures before this final check
+  // have sent no key and must keep a normally retryable pending result.
+  requireTarget(t);
+  try {
+    auto reply = Checked(args);
+    if (reply.find_first_not_of(" \t\r\n") == std::string::npos ||
+        !reply.starts_with("ok"))
+      throw std::runtime_error("Shortcut dispatcher did not acknowledge");
+  } catch (const std::exception &) {
+    if (key == "V")
+      throw PasteUncertain("粘贴发送状态未知；请检查输入框，避免重复输入");
+    throw;
+  }
 }
 std::optional<std::string> Desktop::clipboard() {
   auto r = Run({"wl-paste", "--no-newline", "--type", "text"}, "", 800);
@@ -216,14 +246,7 @@ void Desktop::paste(const Target &t, const std::string &text, const Json &guard,
   setClipboard(text);
   // Clipboard readiness may take time. Verify again immediately before send.
   verify();
-  try {
-    shortcut(t, "V");
-  } catch (const std::exception &) {
-    // Dispatch has no application acknowledgement; do not offer a resend if
-    // transport failure could have happened after the compositor received it.
-    throw PasteUncertain(
-        "粘贴发送状态未知；请检查输入框，本次结果不能再次自动提交");
-  }
+  shortcut(t, "V");
   // Paste has no application acknowledgement. Default: leave output on the
   // clipboard. Optional delayed restore is explicitly best-effort.
   if (config_.data.value("clipboard_restore", false) && previous) {

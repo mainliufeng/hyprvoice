@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 
 repo = Path(__file__).resolve().parent.parent
-candidate=repo/'build/hyprvoice'
+candidate=Path(os.environ.get('HYPRVOICE_QA_BINARY',str(repo/'build/hyprvoice')))
 runtime, evidence = map(Path, sys.argv[1:])
 env = dict(os.environ)
 assert runtime.resolve() != Path(f'/run/user/{os.getuid()}')
@@ -363,45 +363,46 @@ app.whenReady().then(()=>{
     wait(browser_client,seconds=25)
     focus(browser)
     time.sleep(1)
-    cases=repo/'tests'/('window_input_cases.py' if env.get('HYPRVOICE_WINDOW_QA') else 'browser_input_cases.py')
+    cases=repo/'tests'/('paste_before_cases.py' if env.get('HYPRVOICE_PASTE_BEFORE_QA') else 'window_input_cases.py' if env.get('HYPRVOICE_WINDOW_QA') else 'browser_input_cases.py')
     exec(compile(cases.read_text(), str(cases), 'exec'), globals())
-    # A terminal runs a fixed Python program, never a shell or user history.
-    terminal_program=runtime/'terminal_receiver.py'
-    terminal_ready=runtime/'terminal-ready'
-    terminal_input=runtime/'terminal-input'
-    terminal_program.write_text("import os,pathlib,sys,termios,tty\np=pathlib.Path(sys.argv[1]);p.write_bytes(b'')\ntty.setraw(sys.stdin.fileno())\nprint('Public synthetic terminal receiver',flush=True)\npathlib.Path(sys.argv[2]).write_text(str(os.getpid()))\nwhile True:\n b=os.read(sys.stdin.fileno(),4096)\n if not b: break\n with p.open('ab') as f: f.write(b)\n")
-    if env.get('HYPRVOICE_GHOSTTY_QA'):
-        terminal=spawn(['/usr/bin/ghostty','--gtk-single-instance=false',
-                        '--shell-integration=none','--confirm-close-surface=false',
-                        '--working-directory='+str(runtime),'-e',
-                        '/usr/bin/python3','-I','-u',str(terminal_program),str(terminal_input),str(terminal_ready)],'terminal')
-    else:
-        terminal=spawn(['/usr/bin/kitty','--config','NONE','--directory',str(runtime),
-                        '--class','kitty','--title','HV-QA Terminal Receiver',
-                        '/usr/bin/python3','-I','-u',str(terminal_program),str(terminal_input),str(terminal_ready)],'terminal')
-    wait(lambda:terminal_ready.is_file(),seconds=15)
-    wait(lambda:any(c['pid']==terminal.pid for c in json.loads(run('hyprctl','clients','-j'))))
-    focus(terminal)
-    guard=json.loads(run(str(candidate),'read-target',str(terminal.pid)))
-    (evidence/'target-terminal.json').write_text(json.dumps(guard,indent=2))
-    check('terminal-fixed-program-no-initial-input',terminal_input.read_bytes()==b'')
-    check('terminal-target-not-claimed-reliable',not guard['reliable'] and 'text' not in guard)
-    check('terminal-command-rejected-before-copy',command('command')[0]==1 and terminal_input.read_bytes()==b'')
-    boot(auto=True)
-    raw='Public synthetic terminal dictation. 中文🙂'
-    set_transcripts(raw); index=len(server.bodies)
-    begin(); complete=finish('idle')
-    wait(lambda: terminal_input.read_text()==raw)
-    check('terminal-automatic-input-without-editor-metadata',terminal_input.read_text()==raw)
-    check('terminal-no-http-no-context',len(server.bodies)==index and complete['context']=='')
-    check('terminal-result-consumed-exactly-once',command('commit')[0]==1 and command('insert-current')[0]==1)
-    boot(auto=False)
-    manual=' Manual public text.'
-    set_transcripts(manual);begin();complete=finish()
-    label('输入');click('输入');phase('idle')
-    wait(lambda:terminal_input.read_text()==raw+manual)
-    check('terminal-one-click-input-without-copy',command('insert-current')[0]==1 and terminal_input.read_text()==raw+manual)
-    result['terminal_version']=run('/usr/bin/ghostty','+version').strip() if env.get('HYPRVOICE_GHOSTTY_QA') else run('/usr/bin/kitty','--version').strip()
+    if not env.get('HYPRVOICE_PASTE_BEFORE_QA'):
+        # A terminal runs a fixed Python program, never a shell or user history.
+        terminal_program=runtime/'terminal_receiver.py'
+        terminal_ready=runtime/'terminal-ready'
+        terminal_input=runtime/'terminal-input'
+        terminal_program.write_text("import os,pathlib,sys,termios,tty\np=pathlib.Path(sys.argv[1]);p.write_bytes(b'')\ntty.setraw(sys.stdin.fileno())\nprint('Public synthetic terminal receiver',flush=True)\npathlib.Path(sys.argv[2]).write_text(str(os.getpid()))\nwhile True:\n b=os.read(sys.stdin.fileno(),4096)\n if not b: break\n with p.open('ab') as f: f.write(b)\n")
+        if env.get('HYPRVOICE_GHOSTTY_QA'):
+            terminal=spawn(['/usr/bin/ghostty','--gtk-single-instance=false',
+                            '--shell-integration=none','--confirm-close-surface=false',
+                            '--working-directory='+str(runtime),'-e',
+                            '/usr/bin/python3','-I','-u',str(terminal_program),str(terminal_input),str(terminal_ready)],'terminal')
+        else:
+            terminal=spawn(['/usr/bin/kitty','--config','NONE','--directory',str(runtime),
+                            '--class','kitty','--title','HV-QA Terminal Receiver',
+                            '/usr/bin/python3','-I','-u',str(terminal_program),str(terminal_input),str(terminal_ready)],'terminal')
+        wait(lambda:terminal_ready.is_file(),seconds=15)
+        wait(lambda:any(c['pid']==terminal.pid for c in json.loads(run('hyprctl','clients','-j'))))
+        focus(terminal)
+        guard=json.loads(run(str(candidate),'read-target',str(terminal.pid)))
+        (evidence/'target-terminal.json').write_text(json.dumps(guard,indent=2))
+        check('terminal-fixed-program-no-initial-input',terminal_input.read_bytes()==b'')
+        check('terminal-target-not-claimed-reliable',not guard['reliable'] and 'text' not in guard)
+        check('terminal-command-rejected-before-copy',command('command')[0]==1 and terminal_input.read_bytes()==b'')
+        boot(auto=True)
+        raw='Public synthetic terminal dictation. 中文🙂'
+        set_transcripts(raw); index=len(server.bodies)
+        begin(); complete=finish('idle')
+        wait(lambda: terminal_input.read_text()==raw)
+        check('terminal-automatic-input-without-editor-metadata',terminal_input.read_text()==raw)
+        check('terminal-no-http-no-context',len(server.bodies)==index and complete['context']=='')
+        check('terminal-result-consumed-exactly-once',command('commit')[0]==1 and command('insert-current')[0]==1)
+        boot(auto=False)
+        manual=' Manual public text.'
+        set_transcripts(manual);begin();complete=finish()
+        label('输入');click('输入');phase('idle')
+        wait(lambda:terminal_input.read_text()==raw+manual)
+        check('terminal-one-click-input-without-copy',command('insert-current')[0]==1 and terminal_input.read_text()==raw+manual)
+        result['terminal_version']=run('/usr/bin/ghostty','+version').strip() if env.get('HYPRVOICE_GHOSTTY_QA') else run('/usr/bin/kitty','--version').strip()
     check('no-unplanned-http-requests',not server.plan and server.unexpected==0)
     result['http_requests']=len(server.bodies)
     result['browser_version']=(subprocess.check_output(['/usr/lib/electron42/electron','-e','process.stdout.write(process.versions.electron)'],env=dict(env,ELECTRON_RUN_AS_NODE='1'),text=True).strip() if env.get('HYPRVOICE_WINDOW_QA')=='electron' else run('/usr/bin/google-chrome-stable','--version').strip())
