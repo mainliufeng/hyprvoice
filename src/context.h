@@ -7,6 +7,9 @@ Json ReadInputContext(int pid, int max_chars);
 // Unknown, protected, ambiguous or unstable targets are never reliable.
 Json ReadInputTarget(int pid);
 bool EquivalentInputTarget(const Json &first, const Json &second);
+// Ordinary dictation can use the original window when editor metadata is
+// unavailable. This does not authorise context reads or selection replacement.
+bool WindowOnlyInputTarget(const Json &target);
 // Emits one ready JSON line, then sticky changed/protected lines. This helper
 // intentionally stays alive until its parent terminates it, even if setup
 // fails.

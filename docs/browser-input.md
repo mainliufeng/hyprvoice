@@ -10,4 +10,6 @@
 
 隔离验证：`tests/browser_desktop_test.py` / `tests/browser_input_cases.py` 使用新 Chromium profile、公开本地 HTML、1200 个合成聊天历史节点、私有会话与 AT-SPI、独立 Hyprland、零样本 PipeWire 和 loopback HTTP。`tests/private_a11y_locator.py` 仅向私有测试会话公布其 AT-SPI 地址。模拟识别只返回固定公开文本，不读取真实麦克风、不复用日常浏览器 profile、不调用外部模型，也不打开 DevTools。测试观测真实 paste/input/submit 事件及公开测试框内容，验证一次插入和不自动发送。
 
-仍需真人验收真实 ChatGPT 页面。Firefox/Gecko 未在此变更中支持；第三方编辑器缺少可信无障碍树时保留复制回退。粘贴前检查与跨进程快捷键发送不是原子事务，也没有应用接收回执；无法核验时保留文字并拒绝自动输入。
+仍需真人验收真实 ChatGPT 页面。Firefox/Gecko 的完整编辑控件核验未在此变更中支持。普通听写可在缺少无障碍注册的 Chrome／Electron 窗口直接输入，使用原窗口检查，不读取前文或发送文字处理请求；该兼容路径不能核验窗口内的光标／选区变化。粘贴前检查与跨进程快捷键发送不是原子事务，也没有应用接收回执；原本可靠的编辑器在录音期间失去核验能力时保留文字，不自动降为窗口兼容路径。
+
+无元数据回归：`tests/window_input_cases.py` 由同一私有桌面测试入口运行。`HYPRVOICE_WINDOW_QA=1` 使用 Chrome，`HYPRVOICE_WINDOW_QA=electron` 使用 Electron 42／XWayland；目标应用使用另一个私有 D-Bus／AT-SPI 总线，断言没有可靠控件信息，再验证自动输入、真实 GTK“输入”按钮、Unicode／多行内容、零表单提交、一次消费和窗口往返保护。`HYPRVOICE_GHOSTTY_QA=1` 使用私有 Ghostty 运行固定 Python 接收器，绝不启动 shell 或执行粘贴内容。

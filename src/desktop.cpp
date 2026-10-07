@@ -48,7 +48,9 @@ Json Desktop::inputTarget(const Target &t) {
   requireTarget(t);
   if (reply.code)
     return {{"available", false}, {"reliable", false}, {"protected", false}};
-  return Json::parse(reply.out);
+  auto guard = Json::parse(reply.out);
+  guard["terminal_window"] = terminal(t);
+  return guard;
 }
 void Desktop::requireTarget(const Target &t) {
   if (!matches(t))
@@ -191,8 +193,8 @@ std::string Desktop::selection(const Target &t) {
     throw;
   }
 }
-void Desktop::paste(const Target &t, const std::string &text,
-                    const Json &guard) {
+void Desktop::paste(const Target &t, const std::string &text, const Json &guard,
+                    bool window_only) {
   if (text.empty())
     throw std::runtime_error("Nothing to commit");
   requireTarget(t);
@@ -200,7 +202,12 @@ void Desktop::paste(const Target &t, const std::string &text,
     auto current = inputTarget(t);
     if (current.value("protected", false))
       throw std::runtime_error("密码输入框不能接收本次结果；结果已保留");
-    if (!EquivalentInputTarget(guard, current))
+    const bool window_input =
+        window_only && WindowOnlyInputTarget(guard) &&
+        (WindowOnlyInputTarget(current) ||
+         (current.value("reliable", false) &&
+          current.value("selections", Json::array()).empty()));
+    if (!window_input && !EquivalentInputTarget(guard, current))
       throw std::runtime_error(
           "编辑控件、光标、选区或文字已变化，或无法核验；未发送，结果已保留");
   };

@@ -128,6 +128,29 @@ int main() {
     check(!hv::EquivalentInputTarget(hv::Json::array(), original),
           "invalid top-level snapshot must fail closed");
     auto unknown = hv::ReadInputTarget(0);
+    check(hv::WindowOnlyInputTarget(unknown) &&
+              !hv::EquivalentInputTarget(unknown, unknown),
+          "missing accessibility permits window dictation, not editor proof");
+    auto terminal = unknown;
+    terminal["reason"] = "unsupported-role";
+    terminal["terminal_window"] = true;
+    check(hv::WindowOnlyInputTarget(terminal),
+          "terminal role permits ordinary dictation without editor proof");
+    for (const auto &patch :
+         {hv::Json{{"protected", true}}, hv::Json{{"reliable", true}},
+          hv::Json{{"selections", hv::Json::array({{1, 2}})}},
+          hv::Json{{"reason", "unsupported-role"}},
+          hv::Json{{"reason", "multiple-focus"}},
+          hv::Json{{"reason", "text-read"}}, hv::Json{{"reason", "unstable"}},
+          hv::Json{{"reason", "incomplete"}, {"stage", "browser-native-focus"}},
+          hv::Json{{"control", {{"bus", ":1.42"}, {"path", "/editor"}}}}}) {
+      auto blocked = unknown;
+      blocked.update(patch);
+      check(!hv::WindowOnlyInputTarget(blocked),
+            "unsafe or discovered controls must not become window fallback");
+    }
+    check(!hv::WindowOnlyInputTarget(original),
+          "verified editor cannot silently downgrade to window dictation");
     check(!unknown.at("available").get<bool>() &&
               !unknown.at("reliable").get<bool>() && !unknown.contains("text"),
           "invalid PID must not query accessibility or return input text");

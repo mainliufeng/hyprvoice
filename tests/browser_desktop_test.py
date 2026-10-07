@@ -30,9 +30,9 @@ app = None
 server = None
 
 
-def spawn(argv, name):
+def spawn(argv, name, extra=None):
     log = (evidence / (name + '.log')).open('w')
-    p = subprocess.Popen(argv, env=env, stdin=subprocess.PIPE, stdout=log,
+    p = subprocess.Popen(argv, env=dict(env, **(extra or {})), stdin=subprocess.PIPE, stdout=log,
                          stderr=subprocess.STDOUT)
     children.append((p, log))
     return p
@@ -329,27 +329,56 @@ if(e.key==='F12'){e.preventDefault();document.getElementById('textarea').value='
 if(e.key==='F11'){e.preventDefault();let x=document.getElementById('contenteditable');x.innerHTML=x.innerHTML.replace('Public first','PUBLIC FIRST');choose('contenteditable');return}});
 choose('textarea');
 </script>""")
-    browser = spawn(['/usr/bin/google-chrome-stable', '--user-data-dir='+str(profile),
+    browser_extra = {}
+    if env.get('HYPRVOICE_WINDOW_QA'):
+        browser_extra = {'DBUS_SESSION_BUS_ADDRESS':'unix:path='+str(runtime/'browser-session'),
+                         'AT_SPI_BUS_ADDRESS':'unix:path='+str(runtime/'browser-a11y')}
+        for name in ('browser-session','browser-a11y'):
+            spawn(['/usr/bin/dbus-daemon','--session','--nofork','--nopidfile',
+                   '--address=unix:path='+str(runtime/name)], name)
+            wait(lambda:(runtime/name).is_socket())
+    if env.get('HYPRVOICE_WINDOW_QA') == 'electron':
+        electron_main=runtime/'electron-main.js'
+        electron_main.write_text("""const {app,BrowserWindow,session}=require('electron');
+app.setPath('userData',process.argv[2]);
+app.whenReady().then(()=>{
+ session.defaultSession.webRequest.onBeforeRequest({urls:['http://*/*','https://*/*']},(d,cb)=>cb({cancel:true}));
+ const win=new BrowserWindow({width:1000,height:680,webPreferences:{sandbox:true,nodeIntegration:false,contextIsolation:true}});
+ win.loadFile(process.argv[3]);
+});app.on('window-all-closed',()=>app.quit());""")
+        browser=spawn(['/usr/lib/electron42/electron',str(electron_main),str(profile),str(page),
+                       '--ozone-platform=x11','--disable-background-networking',
+                       '--proxy-server=http://127.0.0.1:9','--proxy-bypass-list=<-loopback>',
+                       '--host-resolver-rules=MAP * ~NOTFOUND'],'browser',browser_extra)
+    else:
+        browser = spawn(['/usr/bin/google-chrome-stable', '--user-data-dir='+str(profile),
                      '--ozone-platform=wayland', '--no-first-run', '--no-default-browser-check',
                      '--disable-background-networking', '--disable-sync', '--disable-extensions',
                      '--disable-component-update', '--disable-domain-reliability', '--disable-dev-shm-usage',
                      '--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=<-loopback>',
                      '--host-resolver-rules=MAP * ~NOTFOUND',
-                     page.as_uri()], 'browser')
+                     page.as_uri()], 'browser', browser_extra)
     def browser_client():
         return next((c for c in json.loads(run('hyprctl','clients','-j')) if c['pid']==browser.pid),None)
     wait(browser_client,seconds=25)
     focus(browser)
     time.sleep(1)
-    exec(compile((repo/'tests/browser_input_cases.py').read_text(), str(repo/'tests/browser_input_cases.py'), 'exec'), globals())
+    cases=repo/'tests'/('window_input_cases.py' if env.get('HYPRVOICE_WINDOW_QA') else 'browser_input_cases.py')
+    exec(compile(cases.read_text(), str(cases), 'exec'), globals())
     # A terminal runs a fixed Python program, never a shell or user history.
     terminal_program=runtime/'terminal_receiver.py'
     terminal_ready=runtime/'terminal-ready'
     terminal_input=runtime/'terminal-input'
     terminal_program.write_text("import os,pathlib,sys,termios,tty\np=pathlib.Path(sys.argv[1]);p.write_bytes(b'')\ntty.setraw(sys.stdin.fileno())\nprint('Public synthetic terminal receiver',flush=True)\npathlib.Path(sys.argv[2]).write_text(str(os.getpid()))\nwhile True:\n b=os.read(sys.stdin.fileno(),4096)\n if not b: break\n with p.open('ab') as f: f.write(b)\n")
-    terminal=spawn(['/usr/bin/kitty','--config','NONE','--directory',str(runtime),
-                    '--class','kitty','--title','HV-QA Terminal Receiver',
-                    '/usr/bin/python3','-I','-u',str(terminal_program),str(terminal_input),str(terminal_ready)],'terminal')
+    if env.get('HYPRVOICE_GHOSTTY_QA'):
+        terminal=spawn(['/usr/bin/ghostty','--gtk-single-instance=false',
+                        '--shell-integration=none','--confirm-close-surface=false',
+                        '--working-directory='+str(runtime),'-e',
+                        '/usr/bin/python3','-I','-u',str(terminal_program),str(terminal_input),str(terminal_ready)],'terminal')
+    else:
+        terminal=spawn(['/usr/bin/kitty','--config','NONE','--directory',str(runtime),
+                        '--class','kitty','--title','HV-QA Terminal Receiver',
+                        '/usr/bin/python3','-I','-u',str(terminal_program),str(terminal_input),str(terminal_ready)],'terminal')
     wait(lambda:terminal_ready.is_file(),seconds=15)
     wait(lambda:any(c['pid']==terminal.pid for c in json.loads(run('hyprctl','clients','-j'))))
     focus(terminal)
@@ -358,22 +387,24 @@ choose('textarea');
     check('terminal-fixed-program-no-initial-input',terminal_input.read_bytes()==b'')
     check('terminal-target-not-claimed-reliable',not guard['reliable'] and 'text' not in guard)
     check('terminal-command-rejected-before-copy',command('command')[0]==1 and terminal_input.read_bytes()==b'')
-    raw='Public synthetic terminal dictation.'
-    set_transcripts(raw)
-    index=len(server.bodies)
-    begin();complete=finish()
-    check('terminal-no-http-and-local-raw-retained',len(server.bodies)==index and
-          complete['raw']==raw and complete['text']==raw and not complete['retry_available'] and complete['context']=='')
-    check('terminal-no-automatic-input',terminal_input.read_bytes()==b'')
-    check('terminal-commit-and-review-rejected',command('commit')[0]==1 and command('review')[0]==1)
-    click('复制');phase('idle')
-    check('terminal-explicit-copy-consumes-result',run('/usr/bin/wl-paste','--no-newline')==raw and
-          command('copy')[0]==1 and command('commit')[0]==1 and command('retry')[0]==1)
-    check('terminal-copy-does-not-insert',terminal_input.read_bytes()==b'')
-    result['terminal_version']=run('/usr/bin/kitty','--version').strip()
+    boot(auto=True)
+    raw='Public synthetic terminal dictation. 中文🙂'
+    set_transcripts(raw); index=len(server.bodies)
+    begin(); complete=finish('idle')
+    wait(lambda: terminal_input.read_text()==raw)
+    check('terminal-automatic-input-without-editor-metadata',terminal_input.read_text()==raw)
+    check('terminal-no-http-no-context',len(server.bodies)==index and complete['context']=='')
+    check('terminal-result-consumed-exactly-once',command('commit')[0]==1 and command('insert-current')[0]==1)
+    boot(auto=False)
+    manual=' Manual public text.'
+    set_transcripts(manual);begin();complete=finish()
+    label('输入');click('输入');phase('idle')
+    wait(lambda:terminal_input.read_text()==raw+manual)
+    check('terminal-one-click-input-without-copy',command('insert-current')[0]==1 and terminal_input.read_text()==raw+manual)
+    result['terminal_version']=run('/usr/bin/ghostty','+version').strip() if env.get('HYPRVOICE_GHOSTTY_QA') else run('/usr/bin/kitty','--version').strip()
     check('no-unplanned-http-requests',not server.plan and server.unexpected==0)
     result['http_requests']=len(server.bodies)
-    result['browser_version']=run('/usr/bin/google-chrome-stable','--version').strip()
+    result['browser_version']=(subprocess.check_output(['/usr/lib/electron42/electron','-e','process.stdout.write(process.versions.electron)'],env=dict(env,ELECTRON_RUN_AS_NODE='1'),text=True).strip() if env.get('HYPRVOICE_WINDOW_QA')=='electron' else run('/usr/bin/google-chrome-stable','--version').strip())
     result['checks_passed']=len(checks)
 finally:
     if server:

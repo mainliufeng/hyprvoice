@@ -41,7 +41,7 @@ def run(namespace, mode):
     def visible_names():
         return {w['name'] for w in f.accessible()['widgets'] if w['showing']}
 
-    # Unsupported input gets a working copy action, no tempting dead insert.
+    # A positively identified read-only input retains a copy action.
     target, path = f.editor('Public unsupported input.', 'unsupported', readonly=True)
     f.boot(auto=True)
     f.set_transcripts(f.raw)
@@ -49,13 +49,13 @@ def run(namespace, mode):
     f.begin(); complete = f.finish()
     f.label('复制')
     names = visible_names()
-    f.check('unknown-input-copy-primary-no-insert-control',
+    f.check('readonly-input-copy-primary-no-insert-control',
             complete['insertion_status'] == 'unknown' and
             not ({'使用原文', '插入文字', '输入', '确认输入位置',
                   '撤销修改'} & names))
-    f.check('unknown-input-explains-manual-paste',
+    f.check('readonly-input-explains-manual-paste',
             '这里暂时不能直接输入。请点击“复制”，再到输入框粘贴。' in names)
-    f.check('unknown-input-keeps-no-http-no-auto-input',
+    f.check('readonly-input-keeps-no-http-no-auto-input',
             len(f.server.bodies) == count and path.read_text() == 'Public unsupported input.')
     f.photo('01-copy-instead-of-blocked-insert')
     f.click('复制'); f.phase('idle')

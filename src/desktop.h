@@ -20,7 +20,8 @@ public:
   Json context(const Target &target);
   Json inputTarget(const Target &target);
   std::string selection(const Target &target);
-  void paste(const Target &target, const std::string &text, const Json &guard);
+  void paste(const Target &target, const std::string &text, const Json &guard,
+             bool window_only = false);
   void copy(const std::string &text) { setClipboard(text); }
   std::optional<std::string> clipboard();
 

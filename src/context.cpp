@@ -702,6 +702,27 @@ bool EquivalentInputTarget(const Json &first, const Json &second) {
   }
 }
 
+bool WindowOnlyInputTarget(const Json &target) {
+  try {
+    if (target.value("protected", false) || target.value("reliable", false) ||
+        !target.value("selections", Json::array()).empty())
+      return false;
+    // Never downgrade a discovered editor with an unreadable/unstable text
+    // snapshot or a positively identified non-editable/native browser control.
+    auto control = target.value("control", Json::object());
+    if (!control.value("bus", std::string()).empty())
+      return false;
+    auto reason = target.value("reason", std::string());
+    const bool terminal = target.value("terminal_window", false) &&
+                          (reason == "unsupported-role" || reason == "toolkit");
+    return (reason.empty() || reason == "zero-focus" || reason == "incomplete" ||
+            terminal) &&
+           target.value("stage", std::string()) != "browser-native-focus";
+  } catch (...) {
+    return false;
+  }
+}
+
 static Json ReadInputTargetOnce(int pid,
                                 std::chrono::steady_clock::time_point until,
                                 bool &saw_browser) {

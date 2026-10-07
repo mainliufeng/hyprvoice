@@ -25,6 +25,7 @@ namespace hv {
 static std::string InsertionStatus(const Json &guard) {
   return guard.value("protected", false) ? "protected"
          : guard.value("reliable", false) ? "available"
+         : WindowOnlyInputTarget(guard)   ? "window"
                                           : "unknown";
 }
 static sockaddr_un Address(const std::string &path) {
@@ -311,6 +312,8 @@ void App::start(bool cmd) {
           protected_field || capture_guard.value("protected", false);
       bool verified_field = !protected_field && !target_watch_->changed() &&
                             EquivalentInputTarget(guard, capture_guard);
+      const bool window_input = !cmd && WindowOnlyInputTarget(guard) &&
+                                WindowOnlyInputTarget(capture_guard);
       if (!verified_field)
         updateSession(
             version,
@@ -424,6 +427,7 @@ void App::start(bool cmd) {
           // Do not send speech captured after a move into a protected or
           // unidentified control. The local guard never becomes cloud context.
           bool request_allowed = false;
+          bool input_allowed = false;
           bool privacy_protected = protected_field;
           std::string insertion_status = "unknown";
           try {
@@ -433,11 +437,18 @@ void App::start(bool cmd) {
                 privacy_protected || current.value("protected", false);
             request_allowed = verified_field && !target_watch_->changed() &&
                               EquivalentInputTarget(guard, current);
+            input_allowed =
+                request_allowed || (window_input && !privacy_protected &&
+                                    WindowOnlyInputTarget(current));
           } catch (const std::exception &) {
             request_allowed = false;
           }
           if (!request_allowed) {
-            capture_changed_ = true;
+            // Missing optional editor metadata is not an observed position
+            // change. Keep model/context checks strict without disabling basic
+            // window-bound dictation. A formerly verified editor cannot fall
+            // back automatically after losing its guard.
+            capture_changed_ = !input_allowed;
             updateSession(
                 version, {{"context_note",
                            privacy_protected
@@ -541,8 +552,9 @@ void App::selectText(bool raw) {
 }
 void App::insertCurrent() {
   // An explicit click means input at the user's current caret in the original
-  // window. Bind and recheck it inside this action; never ask the user to manage
-  // guard tokens. Selection, password, window and final paste checks still apply.
+  // window. Bind and recheck it inside this action; never ask the user to
+  // manage guard tokens. Selection, password, window and final paste checks
+  // still apply.
   review();
   const auto token = review_token_;
   confirm(token);
@@ -571,7 +583,9 @@ void App::commit(bool raw) {
 }
 void App::deliver(const std::string &text, const Json &guard) {
   try {
-    desktop_.paste(target_, text, guard);
+    desktop_.paste(target_, text, guard,
+                   !snapshot().at("command_mode").get<bool>() &&
+                       WindowOnlyInputTarget(guard));
   } catch (const PasteUncertain &error) {
     delivered_ = true;
     {
@@ -606,7 +620,7 @@ void App::review() {
   auto guard = desktop_.inputTarget(target_);
   if (guard.value("protected", false))
     throw std::runtime_error("密码输入框不能接收本次结果");
-  if (!guard.value("reliable", false))
+  if (!guard.value("reliable", false) && !WindowOnlyInputTarget(guard))
     throw std::runtime_error("无法核验当前位置；可复制结果后自行粘贴");
   if (!guard.value("selections", Json::array()).empty())
     throw std::runtime_error(
@@ -972,9 +986,10 @@ void App::ui() {
   const bool command_mode = state.at("command_mode").get<bool>();
   const bool copied_notice =
       phase == "idle" && g_get_monotonic_time() < copy_notice_until_;
-  const bool copy_only = ready &&
-                         state.value("insertion_status", "unknown") != "available";
-  const auto primary_action = copy_only ? "copy"
+  const auto insertion = state.value("insertion_status", "unknown");
+  const bool copy_only =
+      ready && insertion != "available" && insertion != "window";
+  const auto primary_action = copy_only      ? "copy"
                               : command_mode ? "commit"
                                              : "insert-current";
   const bool processing = phase == "loading" || phase == "starting" ||
