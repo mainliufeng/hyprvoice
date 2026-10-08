@@ -223,11 +223,19 @@ Transcript Asr::finish(const std::atomic<bool> *cancelled) {
       utterances.push_back(std::move(text));
     }
     auto refined = AssembleTranscript(utterances);
-    if (!refined.empty() && PreservesTranscriptLength(result.streaming, refined))
-      result.text = std::move(refined);
-    else if (!refined.empty())
-      std::cerr << "Refinement diagnostic: shortened result rejected; "
-                   "preserving streaming result\n";
+    if (!refined.empty()) {
+      if (HasIsolatedLatinChange(result.streaming, refined)) {
+        result.warning = "英文词可能有误，请检查后输入。";
+        std::cerr << "Refinement diagnostic: Latin term disagreement; "
+                     "explicit review required\n";
+      }
+      if (PreservesTranscriptLength(result.streaming, refined)) {
+        result.text = std::move(refined);
+      } else {
+        std::cerr << "Refinement diagnostic: shortened result rejected; "
+                     "preserving streaming result\n";
+      }
+    }
   } catch (const std::exception &e) {
     std::cerr << "Refinement failed; preserving streaming result: " << e.what()
               << '\n';

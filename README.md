@@ -1,6 +1,6 @@
 # Hyprvoice
 
-当前版本 **0.2.0**（2026-10-07）；更新内容及验证范围见 [版本说明](docs/release-notes.md)。
+当前版本 **0.2.1**（2026-10-08）；更新内容及验证范围见 [版本说明](docs/release-notes.md)。
 项目网站：<https://hyprvoice.liufeng.me>。运行 `hyprvoice --version` 查看程序版本。
 
 独立的 Hyprland 语音输入工具。保留现有 Fcitx 拼音，用快捷键录音，通过悬浮条预览，最终粘贴到应用。

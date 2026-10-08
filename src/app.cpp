@@ -1094,6 +1094,9 @@ void App::ui() {
   else if (error.find("文本处理") != std::string::npos)
     warning = command_mode ? "这次没改成功，选中的文字还在。请再试一次。"
                            : "这段文字没改好，已保留你说的内容。可以直接输入或再试一次。";
+  else if (error.starts_with("英文词可能有误"))
+    warning = command_mode ? "英文词可能听错了，请检查后再确认替换。"
+                           : "英文词可能听错了，请检查后再点“输入”。";
   else if (error.starts_with("复制失败"))
     warning = "没能复制，文字还在这里。请再点一次“复制”。";
   else if (ready && !error.empty())
@@ -1101,9 +1104,13 @@ void App::ui() {
                            : "文字已识别，但还没送进输入框。请点回原来的输入框，再点“输入”。";
   else if (!error.empty())
     warning = "这次没有输入文字。请重试，或检查语音输入设置。";
+  if (error.starts_with("英文词可能有误") &&
+      error.find("文本处理") != std::string::npos)
+    warning += "\n英文词可能听错了，请检查一下。";
   if (copy_only && !uncertain) {
     const auto explanation = "这里暂时不能直接输入。请点击“复制”，再到输入框粘贴。";
     warning = error.starts_with("语音检测未确认讲话") ||
+                      error.starts_with("英文词可能有误") ||
                       error.starts_with("复制失败")
                   ? warning + "\n" + explanation
                   : explanation;

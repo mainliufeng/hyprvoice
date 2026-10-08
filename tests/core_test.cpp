@@ -78,6 +78,24 @@ int main() {
           "punctuation changes were treated as missing speech");
     check(hv::PreservesTranscriptLength("一百二十三", "123"),
           "short number normalization was rejected");
+    check(!hv::HasIsolatedLatinChange("请保留OAuth和API", "请保留Oauth和api。"),
+          "Latin capitalization or punctuation required review");
+    check(hv::HasIsolatedLatinChange("请保留Kafka变量", "请保留Kaf变量"),
+          "refinement dropped a letter in a mixed-language term");
+    check(hv::HasIsolatedLatinChange("输入GPU型号", "输入G PU型号"),
+          "refinement split a mixed-language acronym");
+    check(hv::HasIsolatedLatinChange("先检查API然后再检查API", "先检查API然后再检查"),
+          "isolated repeated Latin term loss escaped review");
+    check(!hv::HasIsolatedLatinChange("请用résumé", "请用RÉSUMÉ。"),
+          "Unicode Latin case change was treated as a term change");
+    check(!hv::HasIsolatedLatinChange("I should tests an API", "I should test the API"),
+          "pure English word corrections were blocked by the mixed-language guard");
+    check(!hv::HasIsolatedLatinChange("Hey保证明天能完成。", "没有人能保证明天能完成。"),
+          "stray Latin hypothesis blocked recovery of a missing negation");
+    check(!hv::HasIsolatedLatinChange("外 the words is clear", "外 the words are clear"),
+          "stray Han hypothesis blocked English refinement");
+    check(!hv::HasIsolatedLatinChange("安装SDK需要二步", "安装SD需要三步"),
+          "changed numeric or Chinese content was treated as an isolated term");
     auto r = hv::Run({"cat"}, "中文\n$(not-a-command) `literal`");
     check(r.code == 0 && r.out == "中文\n$(not-a-command) `literal`",
           "process corrupted literal text");
