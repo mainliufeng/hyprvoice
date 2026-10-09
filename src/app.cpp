@@ -209,14 +209,41 @@ void App::focusEvents() {
   while ((p = focus_events_.find('\n')) != std::string::npos) {
     auto line = focus_events_.substr(0, p);
     focus_events_.erase(0, p + 1);
+    if (line.starts_with("activewindowv2>>") ||
+        line.starts_with("seatinputfocus>>") ||
+        line.starts_with("seatpresentation>>") ||
+        line.starts_with("seatworkspace>>"))
+      input_status_refresh_ = true;
     if (!delivered_ && line.starts_with("activewindowv2>>")) {
+      if (!target_.route_token.empty() && target_.seat != "Hyprland")
+        continue;
       auto address = line.substr(16);
       if ("0x" + address != target_.address)
+        focus_changed_ = true;
+    }
+    if (!delivered_ && !target_.route_token.empty()) {
+      const auto prefix = "seatinputfocus>>" + target_.seat + ",";
+      if ((line.starts_with(prefix) &&
+           line.substr(prefix.size()) != target_.route_token) ||
+          ((line.starts_with("seatpresentation>>") ||
+            line.starts_with("seatworkspace>>") ||
+            (target_.seat != "Hyprland" &&
+             line.starts_with("seatinputfocus>>Hyprland,"))) &&
+           !desktop_.matches(target_)))
         focus_changed_ = true;
     }
   }
   if (focus_events_.size() > 65536)
     focus_events_.clear();
+  if (!target_.route_token.empty() && focus_changed_ && busy_) {
+    const auto phase = snapshot().at("phase");
+    if (phase == "starting" || phase == "recording") {
+      // A takeover change can swallow the held F8 release. Finish capture
+      // locally and keep the transcript for review instead of recording on.
+      pressed_ = false;
+      stop_ = true;
+    }
+  }
 }
 void App::start(bool cmd) {
   if (settings_panel_ && settings_panel_->visible())
@@ -619,7 +646,8 @@ void App::review() {
   if (state.at("command_mode").get<bool>())
     throw std::runtime_error(
         "指令替换绑定原控件和原选区，请恢复原选区后确认修改");
-  auto guard = desktop_.inputTarget(target_);
+  auto next_target = desktop_.rebind(target_);
+  auto guard = desktop_.inputTarget(next_target);
   if (guard.value("protected", false))
     throw std::runtime_error("密码输入框不能接收本次结果");
   if (!guard.value("reliable", false) && !WindowOnlyInputTarget(guard))
@@ -627,6 +655,7 @@ void App::review() {
   if (!guard.value("selections", Json::array()).empty())
     throw std::runtime_error(
         "当前位置有选区；普通听写不能覆盖选区，请先取消选区");
+  target_ = next_target;
   auto uuid = g_uuid_string_random();
   review_token_ = uuid;
   g_free(uuid);
@@ -660,7 +689,8 @@ void App::copyResult() {
   if (busy_ || (!uncertain && (delivered_ || state.at("phase") != "ready")))
     throw std::runtime_error("没有可复制的结果");
   try {
-    desktop_.copy(state.at(preferred_raw_ ? "raw" : "text").get<std::string>());
+    desktop_.copy(state.at(preferred_raw_ ? "raw" : "text").get<std::string>(),
+                  target_.seat);
   } catch (const std::exception &) {
     throw std::runtime_error("复制失败，文字仍保留，请重试复制。");
   }
@@ -973,6 +1003,21 @@ void App::ui() {
       update({{"error", "录音期间窗口已变化；请回到原窗口后点击提交"}});
     state = snapshot();
     phase = state.at("phase");
+  }
+  if (!busy_ && !delivered_ && phase == "ready" &&
+      !state.at("command_mode").get<bool>() && !target_.route_token.empty() &&
+      (input_status_refresh_ || display_phase_ != phase)) {
+    // Only refresh the button's availability. The captured token stays stale
+    // until an explicit Input action rebinds the original window and seat.
+    input_status_refresh_ = false;
+    std::string insertion = "unknown";
+    try {
+      insertion =
+          InsertionStatus(desktop_.inputTarget(desktop_.rebind(target_)));
+    } catch (const std::exception &) {
+    }
+    update({{"insertion_status", insertion}});
+    state = snapshot();
   }
   static const std::map<std::string, std::string> names = {
       {"loading", "正在准备"},

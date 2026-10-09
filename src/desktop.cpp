@@ -1,31 +1,68 @@
 #include "desktop.h"
 #include "context.h"
 #include "process.h"
+#include <algorithm>
 #include <chrono>
 #include <regex>
 #include <stdexcept>
 #include <thread>
 namespace hv {
 Desktop::~Desktop() {
-  if (owner_) {
-    g_subprocess_force_exit(owner_);
-    g_subprocess_wait(owner_, nullptr, nullptr);
-    g_object_unref(owner_);
+  for (const auto &[seat, owner] : owners_) {
+    g_subprocess_force_exit(owner);
+    g_subprocess_wait(owner, nullptr, nullptr);
+    g_object_unref(owner);
   }
 }
 Target Desktop::target() {
-  auto j = Json::parse(Checked({"hyprctl", "activewindow", "-j"}));
-  Target t{j.value("address", std::string()), j.value("class", std::string()),
-           j.value("stableId", std::string()), j.value("pid", 0)};
+  if (!seat_input_) {
+    auto reply = Run({"hyprctl", "-j", "seat", "capabilities"});
+    auto caps = Json::parse(reply.out, nullptr, false);
+    bool supported = false;
+    if (!reply.code && caps.is_object()) {
+      auto features = caps.value("features", Json::array());
+      supported = std::find(features.begin(), features.end(),
+                            "human-input-target-v1") != features.end();
+    }
+    seat_input_ = supported;
+  }
+  Json route;
+  if (*seat_input_) {
+    route = Json::parse(Checked({"hyprctl", "-j", "seat", "input-target"}));
+    if (!route.value("allowed", false))
+      throw std::runtime_error(route.value(
+          "reason", std::string("当前桌面不可输入；请先接管并聚焦应用输入框")));
+  }
+  auto j = *seat_input_
+               ? route.at("window")
+               : Json::parse(Checked({"hyprctl", "activewindow", "-j"}));
+  Target t{j.value("address", std::string()),
+           j.value("class", std::string()),
+           j.value("stableId", std::string()),
+           j.value("pid", 0),
+           *seat_input_ ? route.at("seatName").get<std::string>() : "",
+           *seat_input_ ? route.at("token").get<std::string>() : ""};
   if (t.pid <= 0 || !std::regex_match(t.address, std::regex("0x[0-9a-fA-F]+")))
     throw std::runtime_error("No active application window");
   return t;
+}
+Target Desktop::rebind(const Target &previous) {
+  auto current = target();
+  const auto identity = [](const std::string &token) {
+    return token.substr(0, token.find(':'));
+  };
+  if (current.address != previous.address || current.pid != previous.pid ||
+      current.stable != previous.stable || current.seat != previous.seat ||
+      identity(current.route_token) != identity(previous.route_token))
+    throw std::runtime_error("目标窗口或桌面已变化；请回到原输入位置后确认");
+  return current;
 }
 bool Desktop::matches(const Target &t) {
   try {
     auto now = target();
     return now.address == t.address && now.pid == t.pid &&
-           now.stable == t.stable;
+           now.stable == t.stable && now.seat == t.seat &&
+           now.route_token == t.route_token;
   } catch (...) {
     return false;
   }
@@ -75,12 +112,19 @@ void Desktop::shortcut(const Target &t, const std::string &key) {
     }
     lua_dispatch_ = lua;
   }
-  std::vector<std::string> args{"hyprctl", "dispatch"};
-  if (*lua_dispatch_)
+  std::vector<std::string> args{"hyprctl"};
+  if (!t.route_token.empty()) {
+    // hyprctl serializes command arguments into one IPC string.
+    std::replace(mods.begin(), mods.end(), ' ', '+');
+    args.insert(args.end(),
+                {"seat", "input-shortcut", t.route_token, mods, key});
+  } else if (*lua_dispatch_) {
+    args.push_back("dispatch");
     args.push_back("hl.dsp.send_shortcut({mods=" + Json(mods).dump() +
                    ",key=" + Json(key).dump() +
                    ",window=" + Json("address:" + t.address).dump() + "})");
-  else {
+  } else {
+    args.push_back("dispatch");
     args.push_back("sendshortcut");
     args.push_back(mods + ", " + key + ", address:" + t.address);
   }
@@ -98,8 +142,12 @@ void Desktop::shortcut(const Target &t, const std::string &key) {
     throw;
   }
 }
-std::optional<std::string> Desktop::clipboard() {
-  auto r = Run({"wl-paste", "--no-newline", "--type", "text"}, "", 800);
+std::optional<std::string> Desktop::clipboard() { return clipboard(""); }
+std::optional<std::string> Desktop::clipboard(const std::string &seat) {
+  std::vector<std::string> args{"wl-paste", "--no-newline", "--type", "text"};
+  if (!seat.empty())
+    args.insert(args.end(), {"--seat", seat});
+  auto r = Run(args, "", 800);
   if (r.code)
     return std::nullopt;
   if (!g_utf8_validate(r.out.data(), r.out.size(), nullptr) ||
@@ -107,14 +155,21 @@ std::optional<std::string> Desktop::clipboard() {
     return std::nullopt;
   return r.out;
 }
-void Desktop::setClipboard(const std::string &text) {
+void Desktop::setClipboard(const std::string &text, const std::string &seat) {
   if (text.size() > 1024 * 1024 ||
       !g_utf8_validate(text.data(), text.size(), nullptr))
     throw std::runtime_error("Clipboard text is invalid or too large");
   GError *error = nullptr;
-  const char *argv[] = {"wl-copy", "--foreground", "--type",
-                        "text/plain;charset=utf-8", nullptr};
-  auto next = g_subprocess_newv(argv, G_SUBPROCESS_FLAGS_STDIN_PIPE, &error);
+  std::vector<std::string> args{"wl-copy", "--foreground", "--type",
+                                "text/plain;charset=utf-8"};
+  if (!seat.empty())
+    args.insert(args.end(), {"--seat", seat});
+  std::vector<const char *> argv;
+  for (const auto &arg : args)
+    argv.push_back(arg.c_str());
+  argv.push_back(nullptr);
+  auto next =
+      g_subprocess_newv(argv.data(), G_SUBPROCESS_FLAGS_STDIN_PIPE, &error);
   if (!next) {
     std::string msg = error->message;
     g_error_free(error);
@@ -138,7 +193,7 @@ void Desktop::setClipboard(const std::string &text) {
   // sleep as evidence that the application has received the clipboard.
   bool ready = false;
   for (int i = 0; i < 10; ++i) {
-    auto value = clipboard();
+    auto value = clipboard(seat);
     if (value && *value == text) {
       ready = true;
       break;
@@ -151,12 +206,13 @@ void Desktop::setClipboard(const std::string &text) {
     g_object_unref(next);
     throw std::runtime_error("Clipboard ownership could not be established");
   }
-  if (owner_) {
-    g_subprocess_force_exit(owner_);
-    g_subprocess_wait(owner_, nullptr, nullptr);
-    g_object_unref(owner_);
+  auto &owner = owners_[seat.empty() ? "Hyprland" : seat];
+  if (owner) {
+    g_subprocess_force_exit(owner);
+    g_subprocess_wait(owner, nullptr, nullptr);
+    g_object_unref(owner);
   }
-  owner_ = next;
+  owner = next;
 }
 std::string Desktop::selection(const Target &t) {
   if (terminal(t))
@@ -172,15 +228,15 @@ std::string Desktop::selection(const Target &t) {
   auto ranges = guard.value("selections", Json::array());
   if (ranges.size() != 1 || ranges[0][0] == ranges[0][1])
     throw std::runtime_error("请先选择一段非空文字再触发指令模式");
-  auto previous = clipboard();
+  auto previous = clipboard(t.seat);
   auto uuid = g_uuid_string_random();
   std::string marker = "hyprvoice-selection-" + std::string(uuid);
   g_free(uuid);
-  setClipboard(marker);
+  setClipboard(marker, t.seat);
   auto restore = [&] {
-    auto value = clipboard();
+    auto value = clipboard(t.seat);
     if (previous && value && (*value == marker))
-      setClipboard(*previous);
+      setClipboard(*previous, t.seat);
   };
   try {
     if (!EquivalentInputTarget(guard, inputTarget(t)))
@@ -191,7 +247,7 @@ std::string Desktop::selection(const Target &t) {
         std::chrono::steady_clock::now() + std::chrono::milliseconds(1200);
     while (std::chrono::steady_clock::now() < until) {
       requireTarget(t);
-      auto value = clipboard();
+      auto value = clipboard(t.seat);
       if (value && *value != marker) {
         selected = value;
         break;
@@ -211,9 +267,9 @@ std::string Desktop::selection(const Target &t) {
       throw std::runtime_error("复制文字与已核验选区不符；未发送模型请求");
     // Copy replaced our marker. Restore plain text only while no other
     // application/user operation has replaced that selection clipboard.
-    auto value = clipboard();
+    auto value = clipboard(t.seat);
     if (previous && value && *value == *selected)
-      setClipboard(*previous);
+      setClipboard(*previous, t.seat);
     requireTarget(t);
     if (!EquivalentInputTarget(guard, inputTarget(t)))
       throw std::runtime_error("编辑位置已变化；未使用选区内容");
@@ -242,8 +298,8 @@ void Desktop::paste(const Target &t, const std::string &text, const Json &guard,
           "编辑控件、光标、选区或文字已变化，或无法核验；未发送，结果已保留");
   };
   verify();
-  auto previous = clipboard();
-  setClipboard(text);
+  auto previous = clipboard(t.seat);
+  setClipboard(text, t.seat);
   // Clipboard readiness may take time. Verify again immediately before send.
   verify();
   shortcut(t, "V");
@@ -252,9 +308,9 @@ void Desktop::paste(const Target &t, const std::string &text, const Json &guard,
   if (config_.data.value("clipboard_restore", false) && previous) {
     try {
       std::this_thread::sleep_for(std::chrono::milliseconds(700));
-      auto value = clipboard();
+      auto value = clipboard(t.seat);
       if (value && *value == text)
-        setClipboard(*previous);
+        setClipboard(*previous, t.seat);
     } catch (const std::exception &) {
       // The paste request already went out. A best-effort restore failure
       // must not leave this result available for a second insertion.

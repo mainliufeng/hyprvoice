@@ -44,6 +44,7 @@ private:
   std::atomic<bool> busy_ = false, stop_ = false, cancel_ = false;
   std::atomic<float> level_ = 0;
   bool delivered_ = true, focus_changed_ = false, pressed_ = false;
+  bool input_status_refresh_ = true;
   gint64 pressed_at_ = 0, copy_notice_until_ = 0;
   Target target_;
   std::string selected_, scene_;

@@ -143,3 +143,8 @@ hyprvoice replay /绝对路径/manifest.jsonl > results.jsonl
 服务运行时执行 `hyprvoice backend fun`，等 `hyprvoice status` 显示 `phase: idle`、`backend: fun` 后即可使用原来的 F8/F9。切回执行 `hyprvoice backend x-asr`。模型加载成功后保存选择，下次启动仍使用所选后端；失败保留之前的后端。录音或存在待确认结果时拒绝切换。`hyprvoice doctor` 只检查当前所选后端需要的资产。可调项：`fun.threads`（1..64，解码线程）和 `fun.timeout_seconds`（5..600，默认 120，不含首次加载）。
 
 Fun 使用独立 FSMN VAD，结束录音后识别完整语音段；录音时显示时长和音量，**不提供逐字预览**。最终预览、输入框前文、DeepSeek、取消和上屏继续走同一链路。后端失败时显示错误并保留输入框内容，不自动换模型或插入文字。具体安装、参数和真实验收见 [Fun 后端说明](docs/fun-backend.md)。
+
+## Cornice Agent 桌面
+
+Cornice 多 seat 特性分支的 F8 输入路由、只读边界及隔离验证见
+[多 seat 语音输入](docs/cornice-seats.md)。
