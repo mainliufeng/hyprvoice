@@ -22,7 +22,7 @@ Target Desktop::target() {
     if (!reply.code && caps.is_object()) {
       auto features = caps.value("features", Json::array());
       supported = std::find(features.begin(), features.end(),
-                            "human-input-target-v1") != features.end();
+                            "physical-input-target-v1") != features.end();
     }
     seat_input_ = supported;
   }
