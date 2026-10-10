@@ -998,7 +998,8 @@ void App::registerOverlay() {
                 sizeof(address)) < 0)
       throw std::runtime_error("No desktop broker");
     const auto message = Json{{"id", "voice-" + std::to_string(getpid())},
-                              {"method", "register-local-voice"}}
+                              {"method", "register-local-overlay"},
+                              {"params", {{"namespaces", Json::array({"hyprvoice"})}}}}
                              .dump() +
                          "\n";
     if (send(fd, message.data(), message.size(), MSG_NOSIGNAL) !=
@@ -1006,7 +1007,7 @@ void App::registerOverlay() {
       throw std::runtime_error("Registration write failed");
     pollfd response{fd, POLLIN, 0};
     if (poll(&response, 1, 1500) <= 0 ||
-        !Json::parse(Receive(fd)).value("registered", false))
+        !Json::parse(Receive(fd)).value("result", Json::object()).value("registered", false))
       throw std::runtime_error("Registration unavailable");
     overlay_socket_ = fd;
   } catch (...) {
