@@ -24,14 +24,33 @@ Target Desktop::target() {
       supported = std::find(features.begin(), features.end(),
                             "physical-input-target-v1") != features.end();
     }
+    if (!reply.code && caps.is_object()) {
+      auto features = caps.value("features", Json::array());
+      local_editor_ = std::find(features.begin(), features.end(),
+                                "physical-input-target-v2") != features.end();
+    }
     seat_input_ = supported;
   }
   Json route;
   if (*seat_input_) {
-    route = Json::parse(Checked({"hyprctl", "-j", "seat", "input-target"}));
+    route = Json::parse(
+        Checked({"hyprctl", "-j", "seat",
+                 local_editor_ ? "input-target-v2" : "input-target"}));
     if (!route.value("allowed", false))
       throw std::runtime_error(route.value(
           "reason", std::string("当前桌面不可输入；请先接管并聚焦应用输入框")));
+  }
+  if (route.value("kind", std::string()) == "local-editor") {
+    Target t{"",
+             route.at("namespace"),
+             route.at("surfaceId"),
+             route.at("pid"),
+             route.at("seatName"),
+             route.at("token"),
+             "local-editor"};
+    if (t.pid <= 0 || t.stable.empty() || t.route_token.empty())
+      throw std::runtime_error("Invalid local editor identity");
+    return t;
   }
   auto j = *seat_input_
                ? route.at("window")
@@ -51,8 +70,9 @@ Target Desktop::rebind(const Target &previous) {
   const auto identity = [](const std::string &token) {
     return token.substr(0, token.find(':'));
   };
-  if (current.address != previous.address || current.pid != previous.pid ||
-      current.stable != previous.stable || current.seat != previous.seat ||
+  if (current.kind != previous.kind || current.address != previous.address ||
+      current.pid != previous.pid || current.stable != previous.stable ||
+      current.seat != previous.seat ||
       identity(current.route_token) != identity(previous.route_token))
     throw std::runtime_error("目标窗口或桌面已变化；请回到原输入位置后确认");
   return current;
@@ -60,7 +80,7 @@ Target Desktop::rebind(const Target &previous) {
 bool Desktop::matches(const Target &t) {
   try {
     auto now = target();
-    return now.address == t.address && now.pid == t.pid &&
+    return now.kind == t.kind && now.address == t.address && now.pid == t.pid &&
            now.stable == t.stable && now.seat == t.seat &&
            now.route_token == t.route_token;
   } catch (...) {
@@ -69,6 +89,12 @@ bool Desktop::matches(const Target &t) {
 }
 Json Desktop::context(const Target &t) {
   requireTarget(t);
+  if (t.kind == "local-editor") {
+    auto guard = inputTarget(t);
+    return {{"available", guard.value("surroundingAvailable", false)},
+            {"protected", false},
+            {"text", guard.at("text")}};
+  }
   auto reply =
       Run({"/proc/self/exe", "read-context", std::to_string(t.pid),
            std::to_string(config_.data.at("context").value("max_chars", 1024))},
@@ -80,6 +106,25 @@ Json Desktop::context(const Target &t) {
 }
 Json Desktop::inputTarget(const Target &t) {
   requireTarget(t);
+  if (t.kind == "local-editor") {
+    auto route =
+        Json::parse(Checked({"hyprctl", "-j", "seat", "input-target-v2"}));
+    if (!route.value("allowed", false) ||
+        route.value("token", std::string()) != t.route_token ||
+        route.value("kind", std::string()) != t.kind)
+      throw std::runtime_error("本地编辑位置已变化");
+    auto guard = route.at("editor");
+    guard["available"] = true;
+    guard["reliable"] = true;
+    guard["toolkit"] = "wayland";
+    guard["route_token"] = t.route_token;
+    auto a = guard.at("anchor").get<int>(), c = guard.at("cursor").get<int>();
+    guard["selections"] =
+        a == c ? Json::array()
+               : Json::array({Json::array({std::min(a, c), std::max(a, c)})});
+    requireTarget(t);
+    return guard;
+  }
   auto reply =
       Run({"/proc/self/exe", "read-target", std::to_string(t.pid)}, "", 1500);
   requireTarget(t);
@@ -117,7 +162,8 @@ void Desktop::shortcut(const Target &t, const std::string &key) {
     // hyprctl serializes command arguments into one IPC string.
     std::replace(mods.begin(), mods.end(), ' ', '+');
     args.insert(args.end(),
-                {"seat", "input-shortcut", t.route_token, mods, key});
+                {"seat", local_editor_ ? "input-shortcut-v2" : "input-shortcut",
+                 t.route_token, mods, key});
   } else if (*lua_dispatch_) {
     args.push_back("dispatch");
     args.push_back("hl.dsp.send_shortcut({mods=" + Json(mods).dump() +
@@ -215,6 +261,13 @@ void Desktop::setClipboard(const std::string &text, const std::string &seat) {
   owner = next;
 }
 std::string Desktop::selection(const Target &t) {
+  if (t.kind == "local-editor") {
+    auto guard = inputTarget(t);
+    const auto a = guard.at("anchor").get<size_t>(),
+               c = guard.at("cursor").get<size_t>();
+    return guard.at("text").get<std::string>().substr(
+        std::min(a, c), std::max(a, c) - std::min(a, c));
+  }
   if (terminal(t))
     throw std::runtime_error(
         "终端选区不代表可替换的编辑区域；请在编辑器中使用指令模式");

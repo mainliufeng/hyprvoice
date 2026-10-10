@@ -1,4 +1,5 @@
 #include "input_watch.h"
+#include "context.h"
 #include <chrono>
 
 namespace hv {
@@ -72,7 +73,29 @@ InputWatch::InputWatch(int pid, const Json &target) {
   if (!ready_)
     changed_ = true;
 }
+InputWatch::InputWatch(const Json &target, std::function<Json()> read) {
+  reader_ = std::thread([this, target, read = std::move(read)] {
+    while (!stop_) {
+      try {
+        if (!EquivalentInputTarget(target, read()))
+          changed_ = true;
+      } catch (...) {
+        changed_ = true;
+      }
+      heartbeat_ = g_get_monotonic_time();
+      ready_ = true;
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+  });
+  auto until =
+      std::chrono::steady_clock::now() + std::chrono::milliseconds(1200);
+  while (!ready_ && std::chrono::steady_clock::now() < until)
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+  if (!ready_)
+    changed_ = true;
+}
 InputWatch::~InputWatch() {
+  stop_ = true;
   if (process_) {
     g_subprocess_force_exit(process_);
     g_subprocess_wait(process_, nullptr, nullptr);

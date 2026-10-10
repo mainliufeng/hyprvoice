@@ -687,6 +687,35 @@ Json ReadInputContext(int pid, int max_chars) {
 
 bool EquivalentInputTarget(const Json &first, const Json &second) {
   try {
+    if (first.value("toolkit", std::string()) == "wayland" ||
+        second.value("toolkit", std::string()) == "wayland") {
+      for (const auto *value : {&first, &second}) {
+        if (!value->value("available", false) ||
+            !value->value("reliable", false) ||
+            value->value("protected", true) ||
+            value->value("toolkit", std::string()) != "wayland" ||
+            value->value("route_token", std::string()).empty())
+          return false;
+        if (!value->at("cursor").is_number_integer() ||
+            !value->at("anchor").is_number_integer() ||
+            !value->at("revision").is_number_integer() ||
+            value->at("revision").get<uint64_t>() == 0 ||
+            !value->at("surroundingAvailable").is_boolean())
+          return false;
+        const auto &text = value->at("text").get_ref<const std::string &>();
+        if (text.size() > 65536 ||
+            !g_utf8_validate(text.data(), text.size(), nullptr) ||
+            value->at("cursor").get<uint64_t>() > text.size() ||
+            value->at("anchor").get<uint64_t>() > text.size())
+          return false;
+      }
+      for (const char *key :
+           {"toolkit", "route_token", "revision", "surroundingAvailable",
+            "text", "cursor", "anchor"})
+        if (first.at(key) != second.at(key))
+          return false;
+      return true;
+    }
     if (!ValidTarget(first) || !ValidTarget(second))
       return false;
     for (const char *key : {"toolkit", "control", "caret", "selections",
@@ -715,8 +744,8 @@ bool WindowOnlyInputTarget(const Json &target) {
     auto reason = target.value("reason", std::string());
     const bool terminal = target.value("terminal_window", false) &&
                           (reason == "unsupported-role" || reason == "toolkit");
-    return (reason.empty() || reason == "zero-focus" || reason == "incomplete" ||
-            terminal) &&
+    return (reason.empty() || reason == "zero-focus" ||
+            reason == "incomplete" || terminal) &&
            target.value("stage", std::string()) != "browser-native-focus";
   } catch (...) {
     return false;

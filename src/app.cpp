@@ -23,7 +23,7 @@
 #include <unistd.h>
 namespace hv {
 static std::string InsertionStatus(const Json &guard) {
-  return guard.value("protected", false) ? "protected"
+  return guard.value("protected", false)  ? "protected"
          : guard.value("reliable", false) ? "available"
          : WindowOnlyInputTarget(guard)   ? "window"
                                           : "unknown";
@@ -103,6 +103,8 @@ App::~App() {
   settings_panel_.reset();
   if (focus_socket_ >= 0)
     close(focus_socket_);
+  if (overlay_socket_ >= 0)
+    close(overlay_socket_);
   if (socket_ >= 0) {
     close(socket_);
     unlink((RuntimePath() / "control.sock").c_str());
@@ -214,7 +216,8 @@ void App::focusEvents() {
         line.starts_with("seatpresentation>>") ||
         line.starts_with("seatworkspace>>"))
       input_status_refresh_ = true;
-    if (!delivered_ && line.starts_with("activewindowv2>>")) {
+    if (!delivered_ && target_.kind != "local-editor" &&
+        line.starts_with("activewindowv2>>")) {
       if (!target_.route_token.empty() && target_.seat != "Hyprland")
         continue;
       auto address = line.substr(16);
@@ -223,8 +226,7 @@ void App::focusEvents() {
     }
     if (!delivered_ && !target_.route_token.empty()) {
       const auto prefix = "seatinputfocus>>" + target_.seat + ",";
-      if ((line.starts_with(prefix) &&
-           line.substr(prefix.size()) != target_.route_token) ||
+      if ((line.starts_with(prefix) && !desktop_.matches(target_)) ||
           ((line.starts_with("seatpresentation>>") ||
             line.starts_with("seatworkspace>>") ||
             (target_.seat != "Hyprland" &&
@@ -273,7 +275,15 @@ void App::start(bool cmd) {
   if (cmd &&
       !EquivalentInputTarget(next_guard, desktop_.inputTarget(next_target)))
     throw std::runtime_error("编辑位置已变化；请重新选择文字再触发指令模式");
-  auto next_watch = std::make_unique<InputWatch>(next_target.pid, next_guard);
+  auto next_watch =
+      next_target.kind == "local-editor"
+          ? std::make_unique<InputWatch>(next_guard,
+                                         [config = config_, next_target] {
+                                           Desktop isolated(config);
+                                           return isolated.inputTarget(
+                                               next_target);
+                                         })
+          : std::make_unique<InputWatch>(next_target.pid, next_guard);
   target_watch_ = std::move(next_watch);
   copy_notice_until_ = 0;
   capture_changed_ = false;
@@ -663,10 +673,11 @@ void App::review() {
   reviewed_text_ = state.at(preferred_raw_ ? "raw" : "text").get<std::string>();
   reviewed_version_ = session_version_;
   manual_confirmation_ = true;
-  update({{"review_token", review_token_},
-          {"target_note", std::string(preferred_raw_ ? "将插入识别原文。"
-                                                     : "将插入处理结果。") +
-                              "输入位置已确认，尚未插入；点击“插入到此处”完成。"}});
+  update(
+      {{"review_token", review_token_},
+       {"target_note",
+        std::string(preferred_raw_ ? "将插入识别原文。" : "将插入处理结果。") +
+            "输入位置已确认，尚未插入；点击“插入到此处”完成。"}});
 }
 void App::confirm(const std::string &token) {
   auto state = snapshot();
@@ -961,7 +972,49 @@ Json App::command(const std::string &cmd, const std::string &arg) {
     return {{"ok", false}, {"error", e.what()}};
   }
 }
+void App::registerOverlay() {
+  if (overlay_socket_ >= 0) {
+    pollfd state{overlay_socket_, POLLIN | POLLHUP, 0};
+    if (poll(&state, 1, 0) > 0 && (state.revents & (POLLHUP | POLLERR))) {
+      close(overlay_socket_);
+      overlay_socket_ = -1;
+    } else
+      return;
+  }
+  if (g_get_monotonic_time() < overlay_retry_at_)
+    return;
+  overlay_retry_at_ = g_get_monotonic_time() + 1000000;
+  const auto signature = std::getenv("HYPRLAND_INSTANCE_SIGNATURE"),
+             runtime = std::getenv("XDG_RUNTIME_DIR");
+  if (!signature || !runtime)
+    return;
+  int fd = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+  if (fd < 0)
+    return;
+  try {
+    const auto address = Address(std::string(runtime) + "/cornice/" +
+                                 signature + "/desktop.sock");
+    if (connect(fd, reinterpret_cast<const sockaddr *>(&address),
+                sizeof(address)) < 0)
+      throw std::runtime_error("No desktop broker");
+    const auto message = Json{{"id", "voice-" + std::to_string(getpid())},
+                              {"method", "register-local-voice"}}
+                             .dump() +
+                         "\n";
+    if (send(fd, message.data(), message.size(), MSG_NOSIGNAL) !=
+        static_cast<ssize_t>(message.size()))
+      throw std::runtime_error("Registration write failed");
+    pollfd response{fd, POLLIN, 0};
+    if (poll(&response, 1, 1500) <= 0 ||
+        !Json::parse(Receive(fd)).value("registered", false))
+      throw std::runtime_error("Registration unavailable");
+    overlay_socket_ = fd;
+  } catch (...) {
+    close(fd);
+  }
+}
 void App::sockets() {
+  registerOverlay();
   for (int i = 0; i < 8; ++i) {
     int fd = accept4(socket_, nullptr, nullptr, SOCK_CLOEXEC);
     if (fd < 0)
@@ -1039,17 +1092,19 @@ void App::ui() {
       phase == "idle" && g_get_monotonic_time() < copy_notice_until_;
   const auto insertion = state.value("insertion_status", "unknown");
   const bool copy_only =
-      ready && (uncertain || (insertion != "available" && insertion != "window"));
+      ready &&
+      (uncertain || (insertion != "available" && insertion != "window"));
   const auto primary_action = copy_only      ? "copy"
                               : command_mode ? "commit"
                                              : "insert-current";
   const bool processing = phase == "loading" || phase == "starting" ||
                           phase == "finalizing" || phase == "rewriting" ||
                           phase == "retrying" || phase == "cancelling";
-  gtk_label_set_text(
-      GTK_LABEL(title_),
-      (copied_notice ? "已复制" : uncertain ? "请检查输入框"
-                               : copy_only ? "文字已保留" : names.at(phase)).c_str());
+  gtk_label_set_text(GTK_LABEL(title_), (copied_notice ? "已复制"
+                                         : uncertain   ? "请检查输入框"
+                                         : copy_only   ? "文字已保留"
+                                                       : names.at(phase))
+                                            .c_str());
   int seconds = static_cast<int>(state.at("seconds").get<double>());
   std::ostringstream elapsed;
   elapsed << std::setfill('0') << std::setw(2) << seconds / 60 << ':'
@@ -1121,8 +1176,7 @@ void App::ui() {
       terminal |= app == target_.app;
     hint = terminal ? "点回输入框，按 Ctrl+Shift+V 粘贴"
                     : "点回输入框，按 Ctrl+V 粘贴";
-  }
-  else if (ready)
+  } else if (ready)
     hint = "";
   else
     hint = phase == "error" ? "本次内容不会自动输入"
@@ -1133,27 +1187,33 @@ void App::ui() {
   gtk_label_set_text(GTK_LABEL(hint_), hint.c_str());
   auto warning = error;
   if (uncertain)
-    warning = "文字已识别，但无法确认是否已输入。请先检查输入框，避免重复输入。";
+    warning =
+        "文字已识别，但无法确认是否已输入。请先检查输入框，避免重复输入。";
   else if (error.starts_with("语音检测未确认讲话"))
     warning = "这段话可能听错了，请检查一下。";
   else if (error.find("文本处理") != std::string::npos)
-    warning = command_mode ? "这次没改成功，选中的文字还在。请再试一次。"
-                           : "这段文字没改好，已保留你说的内容。可以直接输入或再试一次。";
+    warning =
+        command_mode
+            ? "这次没改成功，选中的文字还在。请再试一次。"
+            : "这段文字没改好，已保留你说的内容。可以直接输入或再试一次。";
   else if (error.starts_with("英文词可能有误"))
     warning = command_mode ? "英文词可能听错了，请检查后再确认替换。"
                            : "英文词可能听错了，请检查后再点“输入”。";
   else if (error.starts_with("复制失败"))
     warning = "没能复制，文字还在这里。请再点一次“复制”。";
   else if (ready && !error.empty())
-    warning = command_mode ? "文字还没替换。请回到刚才选中文字的地方，或复制后粘贴。"
-                           : "文字已识别，但还没送进输入框。请点回原来的输入框，再点“输入”。";
+    warning =
+        command_mode
+            ? "文字还没替换。请回到刚才选中文字的地方，或复制后粘贴。"
+            : "文字已识别，但还没送进输入框。请点回原来的输入框，再点“输入”。";
   else if (!error.empty())
     warning = "这次没有输入文字。请重试，或检查语音输入设置。";
   if (error.starts_with("英文词可能有误") &&
       error.find("文本处理") != std::string::npos)
     warning += "\n英文词可能听错了，请检查一下。";
   if (copy_only && !uncertain) {
-    const auto explanation = "这里暂时不能直接输入。请点击“复制”，再到输入框粘贴。";
+    const auto explanation =
+        "这里暂时不能直接输入。请点击“复制”，再到输入框粘贴。";
     warning = error.starts_with("语音检测未确认讲话") ||
                       error.starts_with("英文词可能有误") ||
                       error.starts_with("复制失败")
@@ -1180,37 +1240,38 @@ void App::ui() {
   gtk_widget_set_sensitive(copy_button_, !busy_);
   gtk_button_set_label(GTK_BUTTON(copy_button_), "复制");
   gtk_widget_set_visible(
-      retry_button_, state.value("retry_available", false) &&
-                         ((ready && error.find("文本处理") != std::string::npos) ||
-                          phase == "error" || phase == "retrying"));
+      retry_button_,
+      state.value("retry_available", false) &&
+          ((ready && error.find("文本处理") != std::string::npos) ||
+           phase == "error" || phase == "retrying"));
   gtk_widget_set_sensitive(retry_button_, !busy_);
   gtk_button_set_label(GTK_BUTTON(retry_button_),
                        phase == "retrying" ? "正在重试…" : "再试一次");
-  gtk_widget_set_tooltip_text(
-      retry_button_, "重新处理这段文字，不用再说一遍");
-  gtk_button_set_label(GTK_BUTTON(commit_button_),
-                       copy_only ? "复制"
-                       : command_mode ? "替换选中文字"
-                                      : "输入");
+  gtk_widget_set_tooltip_text(retry_button_, "重新处理这段文字，不用再说一遍");
+  gtk_button_set_label(GTK_BUTTON(commit_button_), copy_only ? "复制"
+                                                   : command_mode
+                                                       ? "替换选中文字"
+                                                       : "输入");
   gtk_widget_set_tooltip_text(commit_button_,
                               copy_only ? "只复制到剪贴板，不会自动输入"
-                                             : "把上面的文字输入到光标处");
+                                        : "把上面的文字输入到光标处");
   gtk_button_set_label(GTK_BUTTON(raw_button_),
                        state.value("preferred_raw", false) ? "恢复修改"
                                                            : "撤销修改");
-  g_object_set_data_full(G_OBJECT(raw_button_), "command-arg",
-                         g_strdup(state.value("preferred_raw", false)
-                                      ? "processed" : "raw"), g_free);
+  g_object_set_data_full(
+      G_OBJECT(raw_button_), "command-arg",
+      g_strdup(state.value("preferred_raw", false) ? "processed" : "raw"),
+      g_free);
   gtk_widget_set_tooltip_text(raw_button_, "只改变上面的文字，不会立即输入");
-  gtk_widget_set_visible(
-      raw_button_, ready && !uncertain && !command_mode &&
-                       state.at("text") != state.at("raw"));
+  gtk_widget_set_visible(raw_button_, ready && !uncertain && !command_mode &&
+                                          state.at("text") != state.at("raw"));
   gtk_widget_set_sensitive(raw_button_, !busy_);
   gtk_widget_set_visible(stop_button_, recording);
-  gtk_widget_set_tooltip_text(cancel_button_,
-                              phase == "error" || phase == "idle" ? "关闭"
-                                                                    : "取消本次语音");
-  gtk_widget_set_visible(window_, phase != "idle" || !error.empty() || copied_notice);
+  gtk_widget_set_tooltip_text(
+      cancel_button_,
+      phase == "error" || phase == "idle" ? "关闭" : "取消本次语音");
+  gtk_widget_set_visible(window_,
+                         phase != "idle" || !error.empty() || copied_notice);
 }
 void App::run() {
   gtk_init();
@@ -1355,16 +1416,16 @@ void App::run() {
            {"输入", "commit"}}) {
     auto button = gtk_button_new_with_label(label);
     g_object_set_data_full(G_OBJECT(button), "command", g_strdup(cmd), g_free);
-    g_signal_connect(button, "clicked",
-                     G_CALLBACK(+[](GtkButton *b, gpointer data) {
-                       auto self = static_cast<App *>(data);
-                       auto arg = static_cast<const char *>(
-                           g_object_get_data(G_OBJECT(b), "command-arg"));
-                       self->command(static_cast<char *>(
-                           g_object_get_data(G_OBJECT(b), "command")),
-                           arg ? arg : "");
-                     }),
-                     this);
+    g_signal_connect(
+        button, "clicked", G_CALLBACK(+[](GtkButton *b, gpointer data) {
+          auto self = static_cast<App *>(data);
+          auto arg = static_cast<const char *>(
+              g_object_get_data(G_OBJECT(b), "command-arg"));
+          self->command(
+              static_cast<char *>(g_object_get_data(G_OBJECT(b), "command")),
+              arg ? arg : "");
+        }),
+        this);
     gtk_box_append(GTK_BOX(row), button);
     if (std::string(cmd) == "select-text")
       raw_button_ = button;

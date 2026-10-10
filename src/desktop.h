@@ -12,6 +12,7 @@ struct Target {
   std::string address, app, stable;
   int pid = 0;
   std::string seat, route_token;
+  std::string kind = "application";
 };
 class Desktop {
 public:
@@ -35,6 +36,7 @@ private:
   std::unordered_map<std::string, GSubprocess *> owners_;
   std::optional<bool> lua_dispatch_;
   std::optional<bool> seat_input_;
+  bool local_editor_ = false;
   std::optional<std::string> clipboard(const std::string &seat);
   void setClipboard(const std::string &text, const std::string &seat = "");
   void shortcut(const Target &target, const std::string &key);

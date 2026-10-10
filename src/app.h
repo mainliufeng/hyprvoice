@@ -64,13 +64,14 @@ private:
             *hint_ = nullptr, *meter_ = nullptr, *raw_button_ = nullptr,
             *commit_button_ = nullptr, *stop_button_ = nullptr,
             *retry_button_ = nullptr, *cancel_button_ = nullptr,
-            *copy_button_ = nullptr,
-            *mode_ = nullptr, *duration_ = nullptr, *spinner_ = nullptr,
-            *icon_ = nullptr, *warning_ = nullptr, *scroll_ = nullptr;
+            *copy_button_ = nullptr, *mode_ = nullptr, *duration_ = nullptr,
+            *spinner_ = nullptr, *icon_ = nullptr, *warning_ = nullptr,
+            *scroll_ = nullptr;
   std::array<float, 21> meter_history_{};
   std::string display_text_, display_phase_, recording_text_;
   GMainLoop *loop_ = nullptr;
-  int socket_ = -1, lock_ = -1, focus_socket_ = -1;
+  int socket_ = -1, lock_ = -1, focus_socket_ = -1, overlay_socket_ = -1;
+  gint64 overlay_retry_at_ = 0;
   std::string focus_events_;
   Json settingsValues() const;
   void requireSettingsIdle();
@@ -95,6 +96,7 @@ private:
   void finishSession(uint64_t version);
   Json snapshot();
   void bindSocket();
+  void registerOverlay();
 };
 Json SendCommand(const std::string &command, const std::string &arg = "");
 } // namespace hv

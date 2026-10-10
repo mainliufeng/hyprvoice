@@ -88,6 +88,29 @@ int main() {
       check(!hv::EquivalentInputTarget(invalid, invalid),
             "missing or malformed selection digests must fail closed");
     }
+    hv::Json local{{"available", true},
+                   {"reliable", true},
+                   {"protected", false},
+                   {"toolkit", "wayland"},
+                   {"route_token", "physical:2:3"},
+                   {"revision", 4},
+                   {"surroundingAvailable", false},
+                   {"text", ""},
+                   {"cursor", 0},
+                   {"anchor", 0}};
+    check(hv::EquivalentInputTarget(local, local),
+          "empty native editor is guarded without pretending to have readable "
+          "context");
+    for (const auto &patch :
+         {hv::Json{{"revision", 5}}, hv::Json{{"route_token", "physical:3:3"}},
+          hv::Json{{"protected", true}},
+          hv::Json{{"surroundingAvailable", true}}, hv::Json{{"text", "new"}},
+          hv::Json{{"cursor", 0.5}}}) {
+      auto changed = local;
+      changed.update(patch);
+      check(!hv::EquivalentInputTarget(local, changed),
+            "native input movement and unsafe state must not match");
+    }
     // Even two identical malformed snapshots must fail closed, without throws.
     for (const auto &patch :
          {hv::Json{{"reliable", "true"}},

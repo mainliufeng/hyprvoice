@@ -26,9 +26,13 @@ int main(int argc, char **argv) {
           } else {
             std::ifstream input(request.at("path").get<std::string>());
             auto value = hv::Json::parse(input);
-            hv::Target target{value.at("address"), value.at("app"),
-                              value.at("stable"),  value.at("pid"),
-                              value.at("seat"),    value.at("token")};
+            hv::Target target{value.at("address"),
+                              value.at("app"),
+                              value.at("stable"),
+                              value.at("pid"),
+                              value.at("seat"),
+                              value.at("token"),
+                              value.value("kind", std::string("application"))};
             auto guard = value.at("guard");
             if (request.at("action") == "rebind-paste") {
               target = desktop.rebind(target);
@@ -49,21 +53,23 @@ int main(int argc, char **argv) {
       return 2;
     if (action == "capture") {
       const auto target = desktop.target();
-      hv::Json value{{"address", target.address},
-                     {"app", target.app},
-                     {"stable", target.stable},
-                     {"pid", target.pid},
-                     {"seat", target.seat},
-                     {"token", target.route_token},
-                     {"guard", desktop.inputTarget(target)}};
+      hv::Json value{
+          {"address", target.address}, {"app", target.app},
+          {"stable", target.stable},   {"pid", target.pid},
+          {"seat", target.seat},       {"token", target.route_token},
+          {"kind", target.kind},       {"guard", desktop.inputTarget(target)}};
       std::ofstream(argv[3]) << value.dump();
       std::cout << value.dump() << '\n';
     } else if (action == "paste" && argc == 5) {
       std::ifstream input(argv[3]);
       auto value = hv::Json::parse(input);
-      hv::Target target{value.at("address"), value.at("app"),
-                        value.at("stable"),  value.at("pid"),
-                        value.at("seat"),    value.at("token")};
+      hv::Target target{value.at("address"),
+                        value.at("app"),
+                        value.at("stable"),
+                        value.at("pid"),
+                        value.at("seat"),
+                        value.at("token"),
+                        value.value("kind", std::string("application"))};
       desktop.paste(target, argv[4], value.at("guard"), true);
       // Give the target's real clipboard reader time to finish before this
       // probe releases wl-copy ownership; production keeps its daemon alive.
