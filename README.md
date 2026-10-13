@@ -1,6 +1,8 @@
 # Hyprvoice
 
 当前版本 **0.2.1**（2026-10-08）；更新内容及验证范围见 [版本说明](docs/release-notes.md)。
+
+main 新增英文长录音尾句恢复与逐样本退化检查，尚未独立发行；实际收益与限制见 [验证记录](docs/late-tail-verification.md)。
 项目网站：<https://hyprvoice.liufeng.me>。运行 `hyprvoice --version` 查看程序版本。
 
 独立的 Hyprland 语音输入工具。保留现有 Fcitx 拼音，用快捷键录音，通过悬浮条预览，最终粘贴到应用。

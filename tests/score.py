@@ -55,14 +55,33 @@ def evaluate(cases, results):
     return dict(groups)
 
 
+def compare_cases(cases, baseline, results):
+    if cases.keys() != baseline.keys() or cases.keys() != results.keys():
+        raise ValueError('comparison IDs do not match the complete manifest')
+    comparisons = []
+    for case_id, case in cases.items():
+        reference = normalized(case['reference'])
+        before = distance(reference, normalized(baseline[case_id].get('text', '')))
+        after = distance(reference, normalized(results[case_id].get('text', '')))
+        comparisons.append({'id': case_id, 'baseline_edits': before,
+                            'candidate_edits': after, 'delta': after - before,
+                            'new_error': 'error' in results[case_id] and
+                                         'error' not in baseline[case_id]})
+    return comparisons
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('manifest', type=Path)
     parser.add_argument('results', type=Path)
     parser.add_argument('--baseline', type=Path)
+    parser.add_argument('--fail-on-regression', action='store_true',
+                        help='Require a baseline and fail on any per-case edit increase or new error')
     parser.add_argument('--verify-audio', action='store_true')
     parser.add_argument('--output', type=Path)
     args = parser.parse_args()
+    if args.fail_on_regression and not args.baseline:
+        parser.error('--fail-on-regression requires --baseline')
     cases, results = records(args.manifest), records(args.results)
     if args.verify_audio:
         for case in cases.values():
@@ -76,9 +95,14 @@ if __name__ == '__main__':
         report['baseline_summary'] = evaluate(cases, baseline)
         report['changed_cases'] = [key for key in cases if results[key].get('text') != baseline[key].get('text')]
         report['identical_cases'] = len(cases) - len(report['changed_cases'])
+        report['case_comparisons'] = compare_cases(cases, baseline, results)
+        report['regressions'] = [row for row in report['case_comparisons']
+                                 if row['delta'] > 0 or row['new_error']]
     content = json.dumps(report, ensure_ascii=False, indent=2) + '\n'
     if args.output:
         args.output.write_text(content)
     else:
         print(content, end='')
-    raise SystemExit(1 if any('error' in row for row in results.values()) else 0)
+    failed = any('error' in row for row in results.values())
+    failed |= args.fail_on_regression and bool(report.get('regressions'))
+    raise SystemExit(1 if failed else 0)
