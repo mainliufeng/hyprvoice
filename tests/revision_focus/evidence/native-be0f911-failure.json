@@ -1,0 +1,12 @@
+{
+  "reply_error": "目标窗口已变化；结果已保留，请回到原窗口后提交",
+  "phase": "ready",
+  "busy": false,
+  "retained_body": "synthetic agent1 pending body.",
+  "physical_allowed": true,
+  "seat": "agent1",
+  "window_title": "focus-agent1",
+  "window_pid": 445,
+  "route_token_changed": true,
+  "raw_preserved": true
+}

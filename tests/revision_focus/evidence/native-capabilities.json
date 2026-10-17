@@ -1,0 +1,29 @@
+{
+  "protocol": 1,
+  "dialect": "lua",
+  "features": [
+    "seat-input",
+    "seat-identity",
+    "atomic-snapshot",
+    "readonly-workspace",
+    "argb-frame",
+    "input-pause",
+    "lock-scope-v1",
+    "private-output-v1",
+    "management-display-v1",
+    "lock-aware-seat-input",
+    "lock-aware-export-v1",
+    "session-guard-v1",
+    "composed-seat-input",
+    "seat-shell-v1",
+    "native-seat-presentation-v1",
+    "physical-input-target-v1",
+    "physical-input-target-v2",
+    "primary-desktop-v1",
+    "managed-seat-config-v1",
+    "seat-action-context-v1",
+    "owned-seat-action-context-v1",
+    "authorized-seat-snapshot-v1",
+    "desktop-action-routing-v1"
+  ]
+}
