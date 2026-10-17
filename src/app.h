@@ -59,6 +59,8 @@ private:
   uint64_t revision_base_version_ = 0;
   void restoreRevisionLocked(const std::string &error);
   void completeRevision(uint64_t version, const TextResult &output);
+  void completeTextResult(uint64_t version, const std::string &asr_text,
+                          const TextResult &output);
   void undoRevision();
   void editResult(const std::string &arg, bool fromDraft = false);
   void beginEdit();

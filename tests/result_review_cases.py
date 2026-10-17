@@ -130,6 +130,22 @@ def run(namespace):
 
     # Scene processing keeps provenance but never masquerades as ASR candidates.
     f.config['scene'] = 'correct'
+    for retry_output in (refined, '重试得到的文字处理新版。'):
+        f.plan('failure')
+        failed, before = record({'text': refined, 'streaming': stream, 'refined': refined}, auto=False)
+        f.check('failed-processing-retains-real-asr-slots-'+str(retry_output == refined), failed['asr_candidates_active'] and failed['retry_available'])
+        f.plan('success', output=retry_output)
+        f.command('retry'); retried = f.phase('ready')
+        if retry_output == refined:
+            f.check('same-text-retry-does-not-fake-text-change', retried['asr_candidates_active'] and retried['result_source'] == 'asr' and not retried['change_before'])
+        else:
+            f.check('changed-retry-invalidates-asr-slots', not retried['asr_candidates_active'] and retried['result_source'] == 'processed' and retried['change_before'] == refined)
+            stale = choice(retried, 'streaming')
+            f.check('retry-old-candidate-cannot-overwrite-body', f.command('select-candidate', stale)[0] == 1 and f.state()['effective_text'] == retry_output)
+            f.label(retry_output); f.photo('retry-processed-reading')
+            f.command('copy'); f.phase('idle')
+            f.check('retry-copy-matches-displayed-body', f.run('wl-paste', '--no-newline') == retry_output)
+        f.command('discard'); f.phase('idle')
     f.plan('success', output='模型文字润色后的结果。')
     s, before = record({'text': refined, 'streaming': stream, 'refined': refined}, auto=False)
     f.check('processed-diff-is-not-audio-ambiguity', s['result_source'] == 'processed' and not s['asr_candidates_active'] and s['change_before'] == refined and s['asr_streaming'] == stream)

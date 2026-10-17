@@ -639,14 +639,8 @@ void App::start(bool cmd) {
               output = ProcessText(config_, request, cancel_);
             }
           }
-          if (output.text != result.text)
-            updateSession(version, {{"asr_candidates_active", false},
-                                    {"result_source", "processed"},
-                                    {"change_before", result.text}});
-          updateSession(version, {{"insertion_status", insertion_status},
-                                  {"phase", "ready"},
-                                  {"text", output.text},
-                                  {"error", output.error}});
+          updateSession(version, {{"insertion_status", insertion_status}});
+          completeTextResult(version, result.text, output);
         }
       }
     } catch (const std::exception &e) {
@@ -1086,11 +1080,27 @@ void App::retry() {
     if (request.command_mode)
       completeRevision(version, output);
     else
-      updateSession(
-          version,
-          {{"phase", "ready"}, {"text", output.text}, {"error", output.error}});
+      completeTextResult(version, request.raw, output);
     finishSession(version);
   });
+}
+void App::completeTextResult(uint64_t version, const std::string &asr_text,
+                             const TextResult &output) {
+  std::lock_guard lock(mutex_);
+  if (version != session_version_ || cancel_)
+    return;
+  const bool changed = output.text != asr_text;
+  bool actual_choices = false;
+  for (const auto &part : state_.at("asr_parts"))
+    actual_choices |= part.value("selectable", false);
+  // First processing and retry publish the same provenance atomically. A
+  // processed body must never be rendered/replaced through old ASR slots.
+  updateLocked({{"phase", "ready"},
+                {"text", output.text},
+                {"error", output.error},
+                {"asr_candidates_active", !changed && actual_choices},
+                {"result_source", changed ? "processed" : "asr"},
+                {"change_before", changed ? asr_text : ""}});
 }
 void App::selectText(bool raw) {
   auto state = snapshot();
