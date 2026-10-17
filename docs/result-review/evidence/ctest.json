@@ -1,0 +1,9 @@
+{
+  "build_type": "Release",
+  "checks_passed": 13,
+  "all_passed": true,
+  "assertions": "-UNDEBUG on all assert-based unit targets",
+  "production_binary_sha256": "37709bdf4b6cad1a3cd047c1e272f24be676ebfda1949dbc22b026abbfe82612",
+  "source": "3730ecb",
+  "suite": "CTest, local HTTP/worker contracts and C++ units"
+}

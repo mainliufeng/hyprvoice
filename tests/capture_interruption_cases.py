@@ -24,6 +24,8 @@ def run(namespace):
     f.check('copy-excludes-disconnect-warning', f.run('wl-paste', '--no-newline') == expected)
     f.label('已复制')
     f.check('copied-feedback-has-no-stale-recovery-warning', not f.state()['incomplete'] and not f.state()['recognition_warning'])
+    names = {w['name'] for w in f.accessible()['widgets'] if w['showing']}
+    f.check('copied-feedback-does-not-imply-recognizing', '正在准备识别…' not in names and '文字已复制到剪贴板' in names)
     f.photo('recovered-copy-feedback')
     f.focus(f.first)
     f.command('start'); failed = f.phase('error')

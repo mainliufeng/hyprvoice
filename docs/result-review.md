@@ -36,4 +36,4 @@
 - `HV_TEST_SUITE=capture ...`：实际私有 PipeWire 断开，生产 Audio + Fun worker 合约测试；无预览后端恢复、一次解码、禁止自动／模型、纯正文复制、无音频失败。
 - 默认 revision suite 与独立 `tests/revision_focus` 分别验证旧回归、实际指针／键盘、Cornice seat 保护和两个 display 编辑生命周期。公开 WAV 的真实 X-ASR 回放用于同模型保真对比，不把合成模型 HTTP 通过称为真实模型质量验收。
 
-全部桌面测试使用私有 runtime、HOME、bus、PipeWire 与 loopback，未使用日常麦克风、输入框或私人文字。最终 SHA、具体通过项和运行截图随最终验证记录保存；本文件不代替安装或真人体验验收。
+全部桌面测试使用私有 runtime、HOME、bus、PipeWire 与 loopback，未使用日常麦克风、输入框或私人文字。最终 SHA、具体通过项和运行截图见 [验证记录](result-review/verification.md)；本文件不代替安装或真人体验验收。

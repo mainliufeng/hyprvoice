@@ -1,0 +1,21 @@
+{
+  "checks": [
+    "only-private-zero-source",
+    "actual-pipewire-disconnect-recovers-final-result",
+    "one-final-decode-no-preview-backend",
+    "recovery-forces-manual-no-model-no-input",
+    "copy-excludes-disconnect-warning",
+    "copied-feedback-has-no-stale-recovery-warning",
+    "copied-feedback-does-not-imply-recognizing",
+    "startup-failure-without-preview-has-no-fake-result"
+  ],
+  "real_microphone": false,
+  "external_model_calls": false,
+  "start_command_ms": [
+    243.79
+  ],
+  "http_requests": 0,
+  "binary_sha256": "37709bdf4b6cad1a3cd047c1e272f24be676ebfda1949dbc22b026abbfe82612",
+  "checks_passed": 8,
+  "all_test_children_stopped": true
+}

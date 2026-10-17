@@ -1,0 +1,13 @@
+{
+  "source_production_commit": "3730ecb",
+  "archive_head": "3730ecb",
+  "build_type": "Release",
+  "version": "0.3.0",
+  "production_sha256": "37709bdf4b6cad1a3cd047c1e272f24be676ebfda1949dbc22b026abbfe82612",
+  "test_double_app_sha256": "b68c131128c1e12291396b126b357cbf44c2371df11e93d5e8f32f1f30996e4a",
+  "test_double_backends": [
+    "Audio",
+    "Asr"
+  ],
+  "note": "Same production App/GTK in test-only executable. Does not prove real ASR. Production source unchanged by later docs/tests commits."
+}
