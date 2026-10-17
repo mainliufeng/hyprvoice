@@ -1,4 +1,5 @@
 #include "audio.h"
+#include <algorithm>
 #include <chrono>
 #include <spa/param/audio/format-utils.h>
 #include <stdexcept>
@@ -9,6 +10,8 @@ Audio::Audio() {
   events_.version = PW_VERSION_STREAM_EVENTS;
   events_.process = Process;
   events_.state_changed = State;
+  core_events_.version = PW_VERSION_CORE_EVENTS;
+  core_events_.error = CoreError;
 }
 Audio::~Audio() {
   stop();
@@ -33,23 +36,39 @@ void Audio::Process(void *data) {
           static_cast<const char *>(d.data) + ch->offset);
       size_t n = ch->size / 2;
       std::lock_guard lock(self.mutex_);
-      if (self.queue_.size() + n > 16000 * 10) {
-        self.error_ = "Audio processing cannot keep up; recording aborted";
+      const auto available =
+          16000 * 10 - std::min<size_t>(16000 * 10, self.queue_.size());
+      const auto keep = std::min(n, available);
+      for (size_t i = 0; i < keep; ++i)
+        self.queue_.push_back(pcm[i] / 32768.0f);
+      if (keep < n) {
+        // Preserve the still-valid prefix of this buffer as well as the queue.
+        // The dropped remainder is explicitly reported, never claimed
+        // recovered.
+        self.error_ = "Audio processing cannot keep up; recording interrupted";
         self.active_ = false;
-      } else
-        for (size_t i = 0; i < n; ++i)
-          self.queue_.push_back(pcm[i] / 32768.0f);
+      }
     }
   }
   pw_stream_queue_buffer(self.stream_, b);
 }
-void Audio::State(void *data, pw_stream_state, pw_stream_state state,
+void Audio::State(void *data, pw_stream_state old, pw_stream_state state,
                   const char *error) {
   auto &self = *static_cast<Audio *>(data);
   self.state_ = state;
-  if (state == PW_STREAM_STATE_ERROR) {
+  if (state == PW_STREAM_STATE_ERROR ||
+      (state == PW_STREAM_STATE_UNCONNECTED && self.active_ &&
+       (old == PW_STREAM_STATE_PAUSED || old == PW_STREAM_STATE_STREAMING))) {
     std::lock_guard lock(self.mutex_);
-    self.error_ = error ? error : "PipeWire error";
+    self.error_ = error ? error : "PipeWire capture disconnected";
+  }
+}
+void Audio::CoreError(void *data, uint32_t id, int, int result,
+                      const char *message) {
+  auto &self = *static_cast<Audio *>(data);
+  if (id == PW_ID_CORE && result < 0 && self.active_) {
+    std::lock_guard lock(self.mutex_);
+    self.error_ = message ? message : "PipeWire connection lost";
   }
 }
 void Audio::start(const std::string &source) {
@@ -75,6 +94,10 @@ void Audio::start(const std::string &source) {
   if (!stream_) {
     pw_thread_loop_unlock(loop_);
     throw std::runtime_error("Cannot create PipeWire stream");
+  }
+  if (auto core = pw_stream_get_core(stream_)) {
+    pw_core_add_listener(core, &core_listener_, &core_events_, this);
+    listening_core_ = true;
   }
   uint8_t buffer[1024];
   spa_pod_builder builder = SPA_POD_BUILDER_INIT(buffer, sizeof(buffer));
@@ -114,6 +137,10 @@ void Audio::stop() {
   active_ = false;
   if (loop_ && stream_) {
     pw_thread_loop_lock(loop_);
+    if (listening_core_) {
+      spa_hook_remove(&core_listener_);
+      listening_core_ = false;
+    }
     pw_stream_destroy(stream_);
     stream_ = nullptr;
     pw_thread_loop_unlock(loop_);

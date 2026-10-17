@@ -153,7 +153,7 @@ std::string Asr::push(std::span<const float> samples) {
   return current();
 }
 std::string Asr::decodeOffline(const std::vector<float> &samples,
-                              std::vector<TimedToken> *tokens) {
+                               std::vector<TimedToken> *tokens) {
   auto s = SherpaOnnxCreateOfflineStream(offline_);
   if (!s)
     throw std::runtime_error("Cannot create offline stream");
@@ -171,8 +171,8 @@ std::string Asr::decodeOffline(const std::vector<float> &samples,
     tokens->clear();
     if (r && r->timestamps && r->tokens_arr)
       for (int32_t i = 0; i < r->count; ++i)
-        tokens->push_back({r->tokens_arr[i] ? r->tokens_arr[i] : "",
-                           r->timestamps[i]});
+        tokens->push_back(
+            {r->tokens_arr[i] ? r->tokens_arr[i] : "", r->timestamps[i]});
   }
   return text;
 }
@@ -210,9 +210,10 @@ Transcript Asr::finish(const std::atomic<bool> *cancelled) {
   result.streaming = current();
   if (!result.speech) {
     // A negative VAD result is not proof that an existing ASR hypothesis is
-    // empty. Retain it for explicit review, without auto-pasting possible noise.
-    // Padding itself can produce a stray character on pure silence. Use only
-    // the existing hypothesis from real audio, and ignore tiny noise fragments.
+    // empty. Retain it for explicit review, without auto-pasting possible
+    // noise. Padding itself can produce a stray character on pure silence. Use
+    // only the existing hypothesis from real audio, and ignore tiny noise
+    // fragments.
     result.streaming = recorded_hypothesis;
     if (g_utf8_strlen(recorded_hypothesis.c_str(), -1) >= 4) {
       result.text = recorded_hypothesis;
@@ -239,8 +240,8 @@ Transcript Asr::finish(const std::atomic<bool> *cancelled) {
       // only that tail and require stable prefix/critical terms before use.
       if (samples_.size() > 16000 * 30 &&
           job_begin + job.size() == samples_.size()) {
-        auto tail = FindLateSpeechTail(text, tokens, intervals,
-                                        job_begin, job.size());
+        auto tail =
+            FindLateSpeechTail(text, tokens, intervals, job_begin, job.size());
         recovered_speech |= tail.has_value();
         if (tail) {
           if (cancelled && *cancelled)
@@ -269,6 +270,7 @@ Transcript Asr::finish(const std::atomic<bool> *cancelled) {
       if (recovered_speech && result.warning.empty())
         result.warning = "部分文字可能听错了，请检查后输入。";
       if (PreservesTranscriptLength(result.streaming, refined)) {
+        result.refined = refined;
         result.text = std::move(refined);
       } else {
         std::cerr << "Refinement diagnostic: shortened result rejected; "
@@ -282,7 +284,8 @@ Transcript Asr::finish(const std::atomic<bool> *cancelled) {
   cancel();
   std::cerr << "Recognition diagnostic: streaming_chars="
             << g_utf8_strlen(result.streaming.c_str(), -1)
-            << " final_chars=" << g_utf8_strlen(result.text.c_str(), -1) << '\n';
+            << " final_chars=" << g_utf8_strlen(result.text.c_str(), -1)
+            << '\n';
   return result;
 }
 void Asr::cancel() {

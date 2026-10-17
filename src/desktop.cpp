@@ -5,7 +5,9 @@
 #include <chrono>
 #include <regex>
 #include <stdexcept>
+#include <sys/stat.h>
 #include <thread>
+#include <unistd.h>
 namespace hv {
 Desktop::~Desktop() {
   for (const auto &[seat, owner] : owners_) {
@@ -76,6 +78,33 @@ Target Desktop::rebind(const Target &previous) {
       identity(current.route_token) != identity(previous.route_token))
     throw std::runtime_error("目标窗口或桌面已变化；请回到原输入位置后确认");
   return current;
+}
+std::string Desktop::editingDisplay(const Target &t) {
+  if (t.seat.empty() || t.seat == "Hyprland")
+    return "";
+  auto seats = Json::parse(Checked({"hyprctl", "-j", "seat", "list"}));
+  if (seats.is_object() && seats.contains("seats"))
+    seats = seats.at("seats");
+  if (!seats.is_array())
+    throw std::runtime_error("无法读取原桌面的编辑通道；正文仍保留");
+  for (const auto &seat : seats) {
+    if (seat.value("name", seat.value("seatName", std::string())) != t.seat)
+      continue;
+    const auto display = seat.value("display", std::string());
+    if (display.empty() || display.find('/') != std::string::npos ||
+        display == "." || display == "..")
+      break;
+    const auto runtime = std::getenv("XDG_RUNTIME_DIR");
+    if (!runtime)
+      break;
+    struct stat socket{};
+    const auto path = std::string(runtime) + "/" + display;
+    if (lstat(path.c_str(), &socket) == 0 && S_ISSOCK(socket.st_mode) &&
+        socket.st_uid == getuid())
+      return display;
+    break;
+  }
+  throw std::runtime_error("原桌面的编辑通道不可用；正文仍保留，请回到原桌面");
 }
 bool Desktop::matches(const Target &t) {
   try {

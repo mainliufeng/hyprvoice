@@ -18,6 +18,9 @@ private:
   pw_thread_loop *loop_ = nullptr;
   pw_stream *stream_ = nullptr;
   pw_stream_events events_{};
+  pw_core_events core_events_{};
+  spa_hook core_listener_{};
+  bool listening_core_ = false;
   std::mutex mutex_;
   std::vector<float> queue_;
   std::string error_;
@@ -26,5 +29,7 @@ private:
   static void Process(void *self);
   static void State(void *self, pw_stream_state old, pw_stream_state state,
                     const char *error);
+  static void CoreError(void *self, uint32_t id, int seq, int result,
+                        const char *message);
 };
 } // namespace hv

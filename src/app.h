@@ -3,6 +3,7 @@
 #include "audio.h"
 #include "desktop.h"
 #include "input_watch.h"
+#include "result_review.h"
 #include "rewrite.h"
 #include "settings_panel.h"
 #include <array>
@@ -59,7 +60,36 @@ private:
   void restoreRevisionLocked(const std::string &error);
   void completeRevision(uint64_t version, const TextResult &output);
   void undoRevision();
-  void editResult(const std::string &arg);
+  void editResult(const std::string &arg, bool fromDraft = false);
+  void beginEdit();
+  void focusEditor();
+  GtkWidget *secondary_editor_window_ = nullptr, *secondary_editor_ = nullptr;
+  GtkWidget *secondary_editor_note_ = nullptr;
+  GdkDisplay *secondary_editor_display_ = nullptr;
+  std::string secondary_display_name_;
+  void saveEdit();
+  void cancelEdit(bool discard);
+  void setDraft(const std::string &text);
+  void chooseCandidate(const std::string &arg);
+  void recoverResult(uint64_t version, const Transcript &result,
+                     const std::string &preview, const std::string &error);
+  bool draftPendingLocked() const;
+  bool editing_ = false, have_draft_ = false, setting_editor_ = false;
+  bool focus_editor_ = false, compare_result_ = false;
+  uint64_t display_result_revision_ = 0, display_session_id_ = 0;
+  uint64_t draft_session_id_ = 0, draft_base_revision_ = 0;
+  std::string draft_text_, rendered_draft_, rendering_key_;
+  int active_candidate_ = -1;
+  GtkWidget *editor_ = nullptr, *body_stack_ = nullptr, *edit_scroll_ = nullptr,
+            *edit_button_ = nullptr, *voice_button_ = nullptr,
+            *save_button_ = nullptr, *pause_button_ = nullptr,
+            *resume_button_ = nullptr, *discard_draft_button_ = nullptr,
+            *draft_note_ = nullptr, *target_note_ = nullptr,
+            *target_button_ = nullptr, *compare_button_ = nullptr,
+            *candidate_box_ = nullptr, *candidate_scroll_ = nullptr,
+            *candidate_current_ = nullptr, *candidate_alternative_ = nullptr,
+            *candidate_note_ = nullptr, *instruction_ = nullptr,
+            *undo_button_ = nullptr;
 
   bool manual_confirmation_ = false;
   Json origin_guard_, reviewed_guard_;
@@ -70,12 +100,11 @@ private:
   std::unique_ptr<InputWatch> target_watch_;
   std::atomic<bool> capture_changed_ = false;
   GtkWidget *window_ = nullptr, *title_ = nullptr, *text_ = nullptr,
-            *hint_ = nullptr, *meter_ = nullptr, *raw_button_ = nullptr,
-            *commit_button_ = nullptr, *stop_button_ = nullptr,
-            *retry_button_ = nullptr, *cancel_button_ = nullptr,
-            *copy_button_ = nullptr, *mode_ = nullptr, *duration_ = nullptr,
-            *spinner_ = nullptr, *icon_ = nullptr, *warning_ = nullptr,
-            *scroll_ = nullptr;
+            *hint_ = nullptr, *meter_ = nullptr, *commit_button_ = nullptr,
+            *stop_button_ = nullptr, *retry_button_ = nullptr,
+            *cancel_button_ = nullptr, *copy_button_ = nullptr,
+            *mode_ = nullptr, *duration_ = nullptr, *spinner_ = nullptr,
+            *icon_ = nullptr, *warning_ = nullptr, *scroll_ = nullptr;
   std::array<float, 21> meter_history_{};
   std::string display_text_, display_phase_, recording_text_;
   GMainLoop *loop_ = nullptr;

@@ -1,53 +1,36 @@
 #pragma once
-
 namespace hv {
 inline constexpr const char *OverlayStyle = R"css(
-window.hyprvoice {
-  background: transparent; color: #222326;
-  border: none; border-radius: 0; box-shadow: none;
-}
-.voice-panel {
-  background: #fafafa;
-  border: 1px solid #e5e5eb;
-  border-radius: 24px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.85);
-}
-.voice-panel label { font-family: "Noto Sans CJK SC", sans-serif; }
-.voice-icon { color: #303136; padding: 5px; }
-.voice-heading { font-size: 14px; font-weight: 500; color: #45464c; }
-.voice-status { font-size: 11px; color: #73747b; }
-.voice-time { font-family: monospace; font-size: 11px; color: #73747b; }
-.voice-spinner { color: #73747b; min-width: 14px; min-height: 14px; }
-.voice-transcript { font-size: 17px; font-weight: 350; line-height: 26px; color: #45464c; }
-.voice-transcript.placeholder { color: #a0a1a7; }
-.voice-context {
-  font-size: 11px; line-height: 18px; color: #73747b;
-  border-left: 2px solid #dcdde1; border-radius: 2px; padding: 0 0 0 10px;
-}
-.voice-hint { font-size: 11px; color: #73747b; }
-.voice-warning {
-  font-size: 12px; line-height: 20px; color: #805b35;
-  background: #f2ede6; border: 1px solid #eae3d9; border-radius: 12px; padding: 9px 12px;
-}
-.voice-panel button {
-  font-size: 12px; font-weight: 500; color: #73747b;
-  background: transparent; background-image: none;
-  border: 1px solid transparent; border-radius: 12px; padding: 8px 12px;
-  min-height: 18px; box-shadow: none; text-shadow: none;
-}
-.voice-panel button:hover { background: #ececf0; color: #33343a; }
-.voice-panel button:active { background: #e3e3e8; }
-.voice-panel button.primary {
-  color: #fafafa; background: #36373d; border-color: #36373d; font-weight: 500;
-  padding: 8px 16px;
-}
-.voice-panel button.primary:hover { background: #414248; border-color: #414248; }
-.voice-panel button.primary:active { background: #292a30; border-color: #292a30; }
-.voice-panel button.close { padding: 6px; min-height: 18px; min-width: 18px; border-radius: 999px; }
-.voice-panel button:disabled { opacity: 0.45; }
-.voice-divider { min-height: 1px; border-radius: 1px; margin: 0 2px; background: #e9e9ed; }
-.voice-scroll { background: transparent; border: none; border-radius: 8px; }
-.voice-scroll scrollbar { background: transparent; border: none; }
-.voice-scroll scrollbar slider { background: #d6d6dd; min-width: 6px; min-height: 24px; border-radius: 999px; border: none; padding: 0; margin: 2px; }
+window.hyprvoice { background: transparent; color: #202c3c; border: none; box-shadow: none; }
+.voice-panel { background: #ffffff; border: 1px solid #dde3ec; border-radius: 18px; box-shadow: 0 8px 22px rgba(25,43,70,0.12); }
+.voice-panel label, .voice-panel button, .voice-editor { font-family: "Noto Sans CJK SC", sans-serif; }
+.voice-heading { font-size: 13px; font-weight: 600; color: #263750; }
+.voice-status { font-size: 12px; color: #617086; }
+.voice-status.attention { color: #805a0c; }
+.voice-time { font-size: 12px; color: #617086; }
+.voice-transcript { font-size: 17px; font-weight: 400; line-height: 28px; color: #202c3c; }
+.voice-transcript.placeholder { color: #697789; }
+.voice-hint, .voice-target, .voice-source { font-size: 12px; line-height: 20px; color: #617086; }
+.voice-warning { font-size: 12px; line-height: 20px; color: #79591b; background: #fff7e7; border: 1px solid #ecd5a0; border-radius: 9px; padding: 10px 12px; }
+.voice-instruction { font-size: 13px; line-height: 22px; color: #30488f; background: #edf1fb; border-left: 2px solid #4059a8; border-radius: 0 6px 6px 0; padding: 10px 12px; }
+.voice-panel button { font-size: 12px; font-weight: 400; color: #53667e; background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 8px 9px; min-height: 20px; box-shadow: none; }
+.voice-panel button:hover { background: #f0f3f8; color: #263750; }
+.voice-panel button:focus-visible { outline: 2px solid #728ad0; outline-offset: 2px; }
+.voice-panel button.primary { color: #fff; background: #4059a8; border-color: #4059a8; padding: 8px 14px; min-width: 84px; }
+.voice-panel button.primary:hover { background: #30488f; }
+.voice-panel button:disabled { opacity: 0.43; }
+.voice-panel button.icon-only { min-width: 18px; padding: 8px; }
+.voice-panel button.small { padding: 3px 7px; min-height: 20px; }
+.voice-panel button.choice { border: 1px solid #dde3ec; border-radius: 8px; padding: 8px 10px; }
+.voice-panel button.choice.current { background: #edf1fb; }
+.voice-panel button.choice label { font-size: 17px; line-height: 26px; }
+.voice-choice-panel { border: 1px solid #dde3ec; border-radius: 10px; padding: 8px; }
+.voice-divider { background: #dde3ec; min-height: 1px; }
+.voice-scroll { background: transparent; border: none; }
+.voice-scroll scrollbar { background: transparent; }
+.voice-scroll scrollbar slider { min-width: 6px; min-height: 24px; border: none; border-radius: 8px; background: #cad2df; margin: 2px; }
+.voice-editor { font-size: 17px; font-weight: 400; color: #202c3c; background: #f4f6fa; border: 1px solid #cbd5e5; border-radius: 10px; padding: 10px 12px; }
+.voice-editor:focus { border-color: #4059a8; outline: 2px solid #e3eafa; }
+.voice-editor text { background: transparent; color: #202c3c; }
 )css";
-} // namespace hv
+}

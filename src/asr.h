@@ -11,6 +11,7 @@ class FunBackend;
 struct Transcript {
   std::string streaming, text, warning;
   bool speech = false;
+  std::string refined;
 };
 class Asr {
 public:

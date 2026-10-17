@@ -1,9 +1,11 @@
 // Persistent, standard US keyboard for a headless desktop acceptance session.
 #include "virtual-keyboard.h"
+#include "virtual-pointer.h"
 #include <algorithm>
 #include <chrono>
 #include <cstring>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -14,6 +16,8 @@ struct Keyboard {
   zwp_virtual_keyboard_manager_v1 *manager = nullptr;
   zwp_virtual_keyboard_v1 *keyboard = nullptr;
   xkb_keymap *map = nullptr;
+  zwlr_virtual_pointer_manager_v1 *pointer_manager = nullptr;
+  zwlr_virtual_pointer_v1 *pointer = nullptr;
   void key(xkb_keysym_t symbol) {
     for (auto code = xkb_keymap_min_keycode(map);
          code <= xkb_keymap_max_keycode(map); ++code) {
@@ -51,6 +55,10 @@ int main() {
             k.manager =
                 static_cast<zwp_virtual_keyboard_manager_v1 *>(wl_registry_bind(
                     r, id, &zwp_virtual_keyboard_manager_v1_interface, 1));
+          if (std::strcmp(name, "zwlr_virtual_pointer_manager_v1") == 0)
+            k.pointer_manager =
+                static_cast<zwlr_virtual_pointer_manager_v1 *>(wl_registry_bind(
+                    r, id, &zwlr_virtual_pointer_manager_v1_interface, 1));
         },
         +[](void *, wl_registry *, uint32_t) {}};
     wl_registry_add_listener(registry, &listener, &k);
@@ -72,6 +80,9 @@ int main() {
       throw std::runtime_error("Cannot write test keyboard map");
     k.keyboard = zwp_virtual_keyboard_manager_v1_create_virtual_keyboard(
         k.manager, k.seat);
+    if (k.pointer_manager)
+      k.pointer = zwlr_virtual_pointer_manager_v1_create_virtual_pointer(
+          k.pointer_manager, k.seat);
     zwp_virtual_keyboard_v1_keymap(k.keyboard, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
                                    fd, size);
     close(fd);
@@ -80,7 +91,22 @@ int main() {
     std::cout << "READY" << std::endl;
     std::string line;
     while (std::getline(std::cin, line)) {
-      if (line.starts_with("type "))
+      if (line.starts_with("click ")) {
+        unsigned x, y;
+        std::istringstream input(line.substr(6));
+        if (!k.pointer || !(input >> x >> y) || x >= 1280 || y >= 800)
+          throw std::runtime_error("Invalid private pointer click");
+        zwlr_virtual_pointer_v1_motion_absolute(k.pointer, 0, x, y, 1280, 800);
+        zwlr_virtual_pointer_v1_frame(k.pointer);
+        wl_display_roundtrip(display);
+        zwlr_virtual_pointer_v1_button(k.pointer, 1, 272,
+                                       WL_POINTER_BUTTON_STATE_PRESSED);
+        zwlr_virtual_pointer_v1_frame(k.pointer);
+        wl_display_roundtrip(display);
+        zwlr_virtual_pointer_v1_button(k.pointer, 2, 272,
+                                       WL_POINTER_BUTTON_STATE_RELEASED);
+        zwlr_virtual_pointer_v1_frame(k.pointer);
+      } else if (line.starts_with("type "))
         for (unsigned char ch : line.substr(5))
           k.key(ch);
       else if (line.starts_with("key "))
@@ -88,8 +114,8 @@ int main() {
                                    XKB_KEYSYM_CASE_INSENSITIVE));
       else if (line.starts_with("ctrl ") || line.starts_with("shift ")) {
         bool shift = line.starts_with("shift ");
-        auto mod = xkb_keymap_mod_get_index(
-            k.map, shift ? XKB_MOD_NAME_SHIFT : XKB_MOD_NAME_CTRL);
+        auto mod = xkb_keymap_mod_get_index(k.map, shift ? XKB_MOD_NAME_SHIFT
+                                                         : XKB_MOD_NAME_CTRL);
         zwp_virtual_keyboard_v1_modifiers(k.keyboard, 1u << mod, 0, 0, 0);
         k.key(xkb_keysym_from_name(line.substr(shift ? 6 : 5).c_str(),
                                    XKB_KEYSYM_CASE_INSENSITIVE));
@@ -102,6 +128,8 @@ int main() {
       std::cout << "OK" << std::endl;
     }
     zwp_virtual_keyboard_v1_destroy(k.keyboard);
+    if (k.pointer)
+      zwlr_virtual_pointer_v1_destroy(k.pointer);
     wl_display_roundtrip(display);
     xkb_keymap_unref(k.map);
     xkb_context_unref(ctx);

@@ -20,6 +20,7 @@ public:
   ~Desktop();
   Target target();
   Target rebind(const Target &target);
+  std::string editingDisplay(const Target &target);
   bool matches(const Target &target);
   Json context(const Target &target);
   Json inputTarget(const Target &target);

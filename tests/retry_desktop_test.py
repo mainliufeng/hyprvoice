@@ -27,6 +27,7 @@ children, checks = [], []
 result = {'checks': checks, 'real_microphone': False, 'external_model_calls': False}
 app = None
 server = None
+app_binary = repo / ('build/recovery_app' if os.environ.get('HYPRVOICE_REVIEW_QA') else 'build/hyprvoice')
 
 
 def spawn(argv, name):
@@ -52,7 +53,7 @@ def run(*argv):
 
 
 def command(*argv):
-    r = subprocess.run([str(repo / 'build/hyprvoice'), *argv], env=env,
+    r = subprocess.run([str(app_binary), *argv], env=env,
                        capture_output=True, text=True, timeout=5)
     return r.returncode, json.loads(r.stdout)
 
@@ -183,7 +184,7 @@ def boot(timeout=5, auto=True, restore=False):
     config['auto_commit'] = auto
     config['clipboard_restore'] = restore
     config_path.write_text(json.dumps(config, ensure_ascii=False))
-    app = spawn([str(repo / 'build/hyprvoice'), 'serve'], 'app-' + str(len(children)))
+    app = spawn([str(app_binary), 'serve'], 'app-' + str(len(children)))
     wait(lambda: (runtime / 'hyprvoice/control.sock').is_socket())
     phase('idle')
 
@@ -293,6 +294,22 @@ for line in sys.stdin:
     (evidence/'initial-target.json').write_text(run(str(repo/'build/hyprvoice'), 'read-target', str(first.pid)))
     raw = '合成原文：不会支付2400元'
     processed = '合成结果：不会支付2400元。'
+
+    if os.environ.get('HYPRVOICE_CAPTURE_QA'):
+        from capture_interruption_cases import run as run_capture
+        run_capture(globals())
+        result['http_requests'] = len(server.bodies)
+        result['binary_sha256'] = hashlib.sha256(app_binary.read_bytes()).hexdigest()
+        raise SystemExit(0)
+
+    if os.environ.get('HYPRVOICE_REVIEW_QA'):
+        from result_review_cases import run as run_review
+        run_review(globals())
+        result['backend_doubles'] = ['Audio', 'Asr']
+        result['production_app'] = True
+        result['http_requests'] = len(server.bodies)
+        result['binary_sha256'] = hashlib.sha256(app_binary.read_bytes()).hexdigest()
+        raise SystemExit(0)
 
     if os.environ.get('HYPRVOICE_REVISION_QA'):
         from revision_cases import run as run_revision

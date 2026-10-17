@@ -61,7 +61,11 @@ os.execv('/usr/bin/hyprctl',['hyprctl',*args])
 ''')
     (tools/'hyprctl').chmod(0o700)
     env.update(PATH=str(tools)+':/usr/bin:/bin')
-    if os.environ.get('HV_TEST_SUITE') != 'retry':
+    if os.environ.get('HV_TEST_SUITE') == 'review':
+        env['HYPRVOICE_REVIEW_QA'] = '1'
+    elif os.environ.get('HV_TEST_SUITE') == 'capture':
+        env['HYPRVOICE_CAPTURE_QA'] = '1'
+    elif os.environ.get('HV_TEST_SUITE') != 'retry':
         env['HYPRVOICE_REVISION_QA'] = '1'
     subprocess.run(['/usr/bin/python3', '/opt/hv/tests/retry_desktop_test.py', str(rt), '/tmp/evidence'], env=env, check=True)
 finally:
