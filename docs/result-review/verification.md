@@ -17,7 +17,7 @@
 | 实际采集连接故障 | 8项通过（含实际Label断言） | 生产37709、实际私有PipeWire断开/启动失败、Fun worker合约；[结果](evidence/capture-app.json) |
 | 恢复/候选/草稿/重试 | 70项通过 | recovery_app b68c、Audio/ASR显式替身、实际GTK/指针/剪贴板；[结果](evidence/review-app.json) |
 | 独立主桌面/多seat | 主桌面15项、多seat29项通过 | 同一生产37709；实际指针、键盘、两个secondary display生命周期、F9/撤销/一次输入与launcher保护 |
-| 公开WAV真实X-ASR | 同模型对基线逐字、前缀、尾句及评分一致 | 同一生产37709；warning为空，这次未触发尾句恢复警告，不冒称触发验收；独立归档见tests/revision_focus/evidence |
+| 公开WAV真实X-ASR | 同模型对基线逐字、前缀、尾句及评分一致 | 同一生产37709；warning为空，这次未触发尾句恢复警告，不冒称触发验收；[独立归档](../../tests/revision_focus/evidence/release-3770/README.md) |
 
 所有隔离测试均未接入日常麦克风、日常输入框或私人文本，没有外部模型请求。实际公开 WAV 回放只能说明该样本同模型不退化，不证明所有口述识别质量，也没有覆盖真实云端模型质量。
 
