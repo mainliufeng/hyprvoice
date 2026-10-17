@@ -1,0 +1,35 @@
+{
+  "normalization": "NFKC, casefold, Unicode alphanumeric characters",
+  "summary": {
+    "dev/en_us/long": {
+      "cases": 1,
+      "characters": 453,
+      "edits": 51,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.11258278145695365
+    }
+  },
+  "baseline_summary": {
+    "dev/en_us/long": {
+      "cases": 1,
+      "characters": 453,
+      "edits": 51,
+      "false_insertions": 0,
+      "errors": 0,
+      "cer": 0.11258278145695365
+    }
+  },
+  "changed_cases": [],
+  "identical_cases": 1,
+  "case_comparisons": [
+    {
+      "id": "long-en_us-dev",
+      "baseline_edits": 51,
+      "candidate_edits": 51,
+      "delta": 0,
+      "new_error": false
+    }
+  ],
+  "regressions": []
+}
