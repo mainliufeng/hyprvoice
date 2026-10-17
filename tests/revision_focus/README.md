@@ -27,7 +27,33 @@ cases覆盖：真实GTK TextView获取焦点→键盘写草稿→全局F9/输入
 
 资源边界：既有scope CPU200%、MemoryMax3G、TasksMax512、RuntimeMax20min，PID/网络/用户目录/D-Bus/音频命名空间独立，仅renderD128可用；无物理输入、声卡、DRM card节点，无日常窗口与麦克风、无外部模型。
 
-## Secondary / launcher额外门禁（尚待候选与原生呈现测试接入）
+## Secondary / launcher真实夹具与当前结果
+
+`run-native.sh`、`native_runner.py`、`native_bootstrap.py`、`native_cases.py`已实际执行现有兼容Cornice/Hyprland上的真实App。be0f911路由诊断模式16项通过后**整套失败**，证据见[evidence/native-be0f911-failed-checks.json](evidence/native-be0f911-failed-checks.json)。
+
+- 确认actual physical-input-target-v2落agent1；真实App录音→F9→明确输入只改变agent1，primary/agent2/同seat其他窗口不变。
+- 实际cn.launcher打开，F9与输入都拒绝且保字；不同seat、primary、同seat错误窗口均拒绝。
+- 最后原seat/原窗口往返后的F9失败，原生route allowed=true但App旧token失效。这个失败已交生产线程修复，不能改成永远拒绝后宣称功能成功。
+- 目视截图中HyprVoice浮层缺失。旧App连接legacy `$runtime/cornice/$signature/desktop.sock`不存在，真实broker在hashed ipc目录；端点已实际核查。修复需保留现有peer/PID权限。
+- 当前broker的register-local-overlay固定keyboard=false，fork的keyboardOverlay要求rule.keyboard=true，仅GTK ON_DEMAND不足以在native takeover接键。未改Cornice接口或权限，实施线程评估既有secondary display原生编辑窗路径。
+
+完整模式默认要求真实编辑/保存/确认由primary物理指针命中实际控件，实际F9按下/松开由primary wl_keyboard送达；断言仅draft变化、底层GTK不变。AT-SPI只读实际可访问名与WINDOW坐标，再结合compositor layer/client实际边框换算，不用DoAction绕过不可见浮层；SCREEN=0,0在Wayland layer上不可信。完整模式等待统一候选，不计通过。
+
+```sh
+HV_TEST_CANDIDATE=/absolute/production-candidate \
+HV_TEST_HYPRLAND_SOURCE=/tmp/cornice-hyprland-fixed-20261016 \
+HV_TEST_CORNICE_PRODUCT=/home/liufeng/.local/share/cornice \
+HV_TEST_CORNICE_SOURCE=/home/liufeng/Code/self/cornice \
+HV_TEST_EVIDENCE=/tmp/hyprvoice-native-full \
+/home/liufeng/Code/self/cornice/test/resource-scope.sh \
+/absolute/current-result-voice-edit/tests/revision_focus/run-native.sh
+```
+
+仅复现旧baseline路由问题可加HV_NATIVE_ROUTE_ONLY=1（跳过尚不存在的新UI，报告明确route_only=true，不能当完整UI通过）；HV_NATIVE_GEOMETRY_ONLY=1只做坐标/API诊断，同样不算整套通过。
+
+当前已实际读取hyprctl -j seat list：JSON数组中每项name、display、seatId、generation、available、paused，input-target-v2.seatName精确匹配list[].name拿到真实display；主seat不在active-secondary数组，不能选第一项作fallback。原始私有dump在/tmp/hyprvoice-native-mapping/，含测试namespace临时token的原始文件不提交。
+
+### 完整候选仍需通过的路径
 
 普通primary脚本不能证明secondary seat。需要现有兼容Hyprland + Cornice产品只读挂载，cornice-desktopd和原生presentation；实际primary虚拟键盘/指针接管到agent seat，应用通过该seat的Wayland端点启动。不得用强制focuswindow或CLI改target来冒充物理接管路由。
 

@@ -1,0 +1,40 @@
+{
+  "checks": [
+    "only-private-zero-source",
+    "actual-physical-route-is-controlled-agent1",
+    "actual-app-captures-secondary-and-retains-body",
+    "private-native-control-geometry-query-works",
+    "secondary-initial-f9-can-start-original-target",
+    "actual-secondary-app-revision-needs-confirmation",
+    "secondary-explicit-input-command-succeeds",
+    "secondary-input-only-reaches-agent1",
+    "real-launcher-rejects-revision",
+    "real-launcher-rejects-input-without-hidden-fallback",
+    "different-seat-rejects-revision-and-retains-body",
+    "different-seat-input-cannot-steal-result",
+    "primary-cannot-steal-pending-agent1-body",
+    "primary-cannot-receive-agent1-result",
+    "different-window-same-seat-cannot-revise",
+    "native-away-back-actually-changes-route-token"
+  ],
+  "real_microphone": false,
+  "external_model_calls": false,
+  "native_seats": true,
+  "route_only": true,
+  "real_overlay_editor_tested": false,
+  "launcher_tested": true,
+  "start_command_ms": [
+    277.23,
+    226.55,
+    182.25,
+    294.06
+  ],
+  "checks_passed": 16,
+  "all_test_children_stopped": true,
+  "suite_passed": false,
+  "failed_check": "secondary-return-f9-can-start-original-target",
+  "baseline_commit": "be0f911",
+  "baseline_binary_sha256": "c3aabf4aa0af833d66bf309a3b9f91d153ea3dcd71f2c18552a3f3197214b68a",
+  "overlay_visible_in_presented_screenshot": false,
+  "scope_note": "Actual App routing + synthetic ASR/HTTP; route-only mode did not exercise overlay editing."
+}
