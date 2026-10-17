@@ -2,10 +2,14 @@
 
 所有权仅此目录。不要编辑校对线程的生产文件、既有tests或UI原型。
 
-## 当前状态
+## 最新统一候选
 
-- primary UI脚本已准备、仅语法检查通过，等待基于be0f911的新生产候选与可访问名称确认；未把它算成已通过验收。
-- 使用现有private_desktop_runner同样的隔离边界和既有retry_desktop_test fixture，以独立bootstrap加载本目录cases，不修改旧fixture或生产App，也不通过edit-result绕过真实编辑控件。
+固定SHA a34bbc4e7195的[独立完整验收](evidence/candidate-a34b/README.md)：primary15项、native29项、同模型真实公开尾句对照均通过。以下be0f911失败保留为历史回归依据，不能与新候选通过结果混淆。
+
+## 初始准备及历史基线
+
+- 最初primary UI脚本只完成语法检查，等待新候选；之后已按上面的a34b固定SHA通过真实物理输入验收。
+- 使用现有private_desktop_runner同样的隔离边界和既有retry_desktop_test fixture，以独立bootstrap加载本目录cases，不修改旧fixture或生产App，也不通过edit-result绕过真实编辑控件。窗口/控件坐标只用于定位，点击与键盘为真实私有primary输入设备。
 - be0f911的recognition_coverage、replay_regression_guard、input_target_snapshot三组现有CTest再次通过。
 - 公开long-en_us-dev音频已在旧本机corpus找到并核SHA。现有X-ASR真实回放be0f911末句完整；这次warning为空，**没有证明尾句修复分支实际被触发**；中间句遗漏仍在。
 
@@ -16,6 +20,7 @@
 ```sh
 HV_TEST_CANDIDATE=/absolute/production-candidate \
 HV_TEST_HYPRLAND=/tmp/cornice-hyprland-fixed-20261016/build-release/Hyprland \
+HV_TEST_HYPRLAND_SOURCE=/tmp/cornice-hyprland-fixed-20261016 \
 HV_TEST_EVIDENCE=/tmp/hyprvoice-focus-primary \
 /home/liufeng/Code/self/cornice/test/resource-scope.sh \
 /absolute/current-result-voice-edit/tests/revision_focus/run.sh
@@ -37,7 +42,7 @@ cases覆盖：真实GTK TextView获取焦点→键盘写草稿→全局F9/输入
 - 目视截图中HyprVoice浮层缺失。旧App连接legacy `$runtime/cornice/$signature/desktop.sock`不存在，真实broker在hashed ipc目录；端点已实际核查。修复需保留现有peer/PID权限。
 - 当前broker的register-local-overlay固定keyboard=false，fork的keyboardOverlay要求rule.keyboard=true，仅GTK ON_DEMAND不足以在native takeover接键。未改Cornice接口或权限，实施线程评估既有secondary display原生编辑窗路径。
 
-完整模式默认要求真实编辑/保存/确认由primary物理指针命中实际控件，实际F9按下/松开由primary wl_keyboard送达；断言仅draft变化、底层GTK不变。AT-SPI只读实际可访问名与WINDOW坐标，再结合compositor layer/client实际边框换算，不用DoAction绕过不可见浮层；SCREEN=0,0在Wayland layer上不可信。完整模式等待统一候选，不计通过。
+完整模式默认要求真实编辑/保存/确认由primary物理指针命中实际控件，实际F9按下/松开由primary wl_keyboard送达；断言仅draft变化、底层GTK不变。AT-SPI只读实际可访问名与WINDOW坐标，再结合compositor layer/client实际边框换算，不用DoAction绕过不可见浮层；SCREEN=0,0在Wayland layer上不可信。完整模式已在固定a34b新候选通过29项；旧be0f911诊断失败不可当作新候选结果。
 
 ```sh
 HV_TEST_CANDIDATE=/absolute/production-candidate \
@@ -53,7 +58,7 @@ HV_TEST_EVIDENCE=/tmp/hyprvoice-native-full \
 
 当前已实际读取hyprctl -j seat list：JSON数组中每项name、display、seatId、generation、available、paused，input-target-v2.seatName精确匹配list[].name拿到真实display；主seat不在active-secondary数组，不能选第一项作fallback。原始私有dump在/tmp/hyprvoice-native-mapping/，含测试namespace临时token的原始文件不提交。
 
-### 完整候选仍需通过的路径
+### 完整候选门禁路径（a34b已通过）
 
 普通primary脚本不能证明secondary seat。需要现有兼容Hyprland + Cornice产品只读挂载，cornice-desktopd和原生presentation；实际primary虚拟键盘/指针接管到agent seat，应用通过该seat的Wayland端点启动。不得用强制focuswindow或CLI改target来冒充物理接管路由。
 

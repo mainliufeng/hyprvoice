@@ -56,11 +56,19 @@ with result_path.open('w') as output, (args.output / 'replay.log').open('w') as 
 result = json.loads(result_path.read_text())
 assert result['id'] == 'long-en_us-dev'
 complete_tail = 'The major religion in Moldova is Orthodox Christian.'
+provenance_file = repo / 'snapshot-provenance.json'
+if provenance_file.exists():
+    provenance = json.loads(provenance_file.read_text())
+    source_head, source_status = provenance['source_head'], provenance['source_status']
+    assert provenance['binary_sha256'] == hashlib.sha256(binary.read_bytes()).hexdigest()
+else:
+    source_head = subprocess.check_output(['git', '-C', str(repo), 'rev-parse', 'HEAD'], text=True).strip()
+    source_status = subprocess.check_output(['git', '-C', str(repo), 'status', '--porcelain'], text=True).strip()
 report = {'sample_id': result['id'], 'audio_sha256': expected_audio,
           'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
           'model_sha256': model_hashes,
-          'source_head': subprocess.check_output(['git', '-C', str(repo), 'rev-parse', 'HEAD'], text=True).strip(),
-          'source_status': subprocess.check_output(['git', '-C', str(repo), 'status', '--porcelain'], text=True).strip(),
+          'source_head': source_head, 'source_status': source_status,
+          'frozen_snapshot': provenance_file.exists(),
           'tail_complete': result['text'].endswith(complete_tail),
           'warning': result.get('warning', ''),
           'auto_commit_blocked': result.get('auto_commit_blocked'),

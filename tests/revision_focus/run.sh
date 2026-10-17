@@ -6,6 +6,7 @@ owned_tests=$(cd "$(dirname "$0")" && pwd)
 repo=$(realpath -e "$HV_TEST_CANDIDATE")
 [[ -x "$repo/build/hyprvoice" && -x "$repo/build/test_editor" ]]
 : "${HV_TEST_HYPRLAND:?Select an existing Hyprland executable}"
+: "${HV_TEST_HYPRLAND_SOURCE:?Select its existing compatible fork sources for the private input helper}"
 : "${HV_TEST_EVIDENCE:?Select an empty evidence directory}"
 mkdir -p "$HV_TEST_EVIDENCE"
 artifacts=$(mktemp -d /tmp/hv-revision.XXXXXX)
@@ -15,7 +16,7 @@ exec /usr/bin/python3 -c 'import os,sys; os.closerange(3,1048576); os.execv(sys.
  /usr/bin/bwrap --unshare-all --die-with-parent --new-session \
  --ro-bind / / --dev /dev --proc /proc --tmpfs /run --tmpfs /tmp --tmpfs /var/tmp --tmpfs /home --tmpfs /root --tmpfs /opt \
  --dir /dev/dri --dev-bind /dev/dri/renderD128 /dev/dri/renderD128 \
- --ro-bind "$repo" /opt/hv --ro-bind "$owned_tests" /opt/focus-tests --ro-bind "$HV_TEST_HYPRLAND" /opt/Hyprland \
+ --ro-bind "$repo" /opt/hv --ro-bind "$owned_tests" /opt/focus-tests --ro-bind "$HV_TEST_HYPRLAND_SOURCE" /opt/fork --ro-bind "$HV_TEST_HYPRLAND" /opt/Hyprland \
  --bind "$artifacts" /tmp --bind "$HV_TEST_EVIDENCE" /tmp/evidence \
  --clearenv --setenv PATH /usr/bin:/bin --setenv LANG C.UTF-8 \
  --setenv HOME /tmp/home --setenv TMPDIR /tmp/tmp --setenv USER "$(id -un)" \

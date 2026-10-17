@@ -62,6 +62,15 @@ os.execv('/usr/bin/hyprctl',['hyprctl',*args])
     (tools/'hyprctl').chmod(0o700)
     env.update(PATH=str(tools)+':/usr/bin:/bin')
     env['HYPRVOICE_REVISION_QA'] = '1'
+    for source, name in [('virtual-keyboard-unstable-v1','virtual-keyboard'),
+                         ('wlr-virtual-pointer-unstable-v1','virtual-pointer')]:
+        for mode, ext in [('client-header','h'),('private-code','c')]:
+            subprocess.run(['wayland-scanner',mode,'/opt/fork/protocols/'+source+'.xml',
+                            str(rt/(name+'.'+ext))],check=True)
+    flags = subprocess.check_output(['pkg-config','--cflags','--libs','wayland-client','xkbcommon'],text=True).split()
+    subprocess.run(['cc','-I'+str(rt),'/opt/fork/hyprtester/multiseat/input.c',
+                    str(rt/'virtual-keyboard.c'),str(rt/'virtual-pointer.c'),
+                    '-o',str(rt/'human-input'),*flags],check=True)
     subprocess.run(['/usr/bin/python3', '/opt/focus-tests/bootstrap.py', str(rt), '/tmp/evidence'], env=env, check=True)
 finally:
     for child in reversed(children):
