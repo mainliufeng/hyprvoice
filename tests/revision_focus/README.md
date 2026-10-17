@@ -4,7 +4,7 @@
 
 ## 最新统一候选
 
-固定SHA a34bbc4e7195的[独立完整验收](evidence/candidate-a34b/README.md)：primary15项、native29项、同模型真实公开尾句对照均通过。以下be0f911失败保留为历史回归依据，不能与新候选通过结果混淆。
+最终Release 0.3.0、固定SHA 37709bdf4b6c的[独立完整验收](evidence/release-3770/README.md)：primary15项、native29项、同模型真实公开尾句对照均通过，已目视真实截图。此前a34b、2e14、3372、c6b4证据只对应各自旧SHA；be0f911失败保留为历史回归依据。不得将旧版本通过结果混用于最终二进制。
 
 ## 初始准备及历史基线
 

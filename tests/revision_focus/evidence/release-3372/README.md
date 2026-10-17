@@ -1,0 +1,7 @@
+# Release 0.3.0 高度修复候选（后续仍需retry来源修复）
+
+源码91b15a983e414bcfa75355b6843fecbcc4a449df，工作树干净，Release。
+生产binary SHA3372e503f1bec00eb1fcbf07a091ec87b396d9ca4083dafbbec61a0a7375ea6f。
+本SHA的primary15/native29及真实公开尾句同模型对照通过，所有子进程停止。
+
+父review随后确认普通文字处理retry成功后旧ASR槽未停用的逻辑缺口。Fun单假设focus fixture不覆盖该用例，不能以这里通过抵消该缺口。实施线程将修复并做双来源App定向验收，再给新SHA。此处不是部署最终验收，不为后续SHA背书；模型与替身边界同candidate-a34b说明。

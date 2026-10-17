@@ -1,0 +1,7 @@
+# Release 0.3.0 retry来源修复候选（后续仍需idle清理）
+
+生产提交9673db3，快照source HEAD5353648525f8b7c80f205b855729fc9c5b2f00bf，生产树自9673db3无变化；快照时仅docs/result-review未跟踪。Release生产binary SHA c6b48187621fd49508774f85bfbd5f7312a38109bb9e8c84467b1d4426f57bd5。
+
+本SHA的primary15/native29及真实公开尾句同模型对照通过，所有子进程停止，native lease错误为空。已目视编辑草稿与修改预览。
+
+之后实施线程发现消费结果进入idle后ASR恢复警告残留，3730ecb作状态清理修复。此处保留为前一版证据，不为最终SHA背书。Fun单假设focus测试不覆盖双ASR文字retry来源问题，定向测试由实施线程负责；ASR/HTTP替身、真实公开音频等边界同candidate-a34b说明。
