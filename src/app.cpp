@@ -144,7 +144,18 @@ void App::updateLocked(const Json &patch) {
   if (patch.contains("phase") && patch.at("phase") == "idle") {
     editing_ = have_draft_ = focus_editor_ = false;
     draft_text_.clear();
+    draft_session_id_ = draft_base_revision_ = 0;
+    state_["asr_parts"] = Json::array();
     state_["asr_candidates_active"] = false;
+    state_["asr_streaming"] = "";
+    state_["asr_refined"] = "";
+    state_["recovered"] = state_["incomplete"] = false;
+    state_["capture_error"] = "";
+    state_["recognition_warning"] = "";
+    state_["result_source"] = "asr";
+    state_["change_before"] = "";
+    state_["action_note"] = "";
+    state_["command_mode"] = false;
     state_["context"] = "";
     state_["context_note"] = "";
     rewrite_request_.reset();

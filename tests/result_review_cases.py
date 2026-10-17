@@ -41,6 +41,7 @@ def run(namespace):
             f.photo('recovery-'+name)
             f.command('copy'); f.phase('idle')
             f.check(name+'-copy-body-without-warning', f.run('wl-paste', '--no-newline') == expected)
+            f.check(name+'-copy-clears-consumed-warning', not f.state()['incomplete'] and not f.state()['recognition_warning'])
 
     # Two actual recognizer outputs are kept separately. Text processing is not
     # offered through these ASR selectors.
