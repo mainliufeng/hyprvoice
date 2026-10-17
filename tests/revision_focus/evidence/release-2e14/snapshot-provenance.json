@@ -1,0 +1,9 @@
+{
+  "source_checkout": "/home/liufeng/Code/self/hyprvoice/.worktrees/result-review-implementation",
+  "source_head": "e759cce59a0749a3346e6ccb6522cea19c063c71",
+  "source_status": "",
+  "binary_sha256": "2e1465373f0fd60f604b790d55ba8e71254b123d2eef8083c3eada9da37011dd",
+  "binary_frozen": true,
+  "build_type": "Release",
+  "version": "hyprvoice 0.3.0"
+}

@@ -1,0 +1,11 @@
+{
+  "source_checkout": "/home/liufeng/Code/self/hyprvoice/.worktrees/result-review-implementation",
+  "source_head": "3730ecbc9ed424d14f1e7dbf4d3f60e7b965f984",
+  "production_commit": "3730ecbc9ed424d14f1e7dbf4d3f60e7b965f984",
+  "production_tree_unchanged_since_commit": true,
+  "source_status": " M tests/capture_interruption_cases.py\n?? docs/result-review/\n",
+  "binary_sha256": "37709bdf4b6cad1a3cd047c1e272f24be676ebfda1949dbc22b026abbfe82612",
+  "binary_frozen": true,
+  "build_type": "Release",
+  "version": "hyprvoice 0.3.0"
+}

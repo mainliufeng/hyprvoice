@@ -1,0 +1,29 @@
+{
+  "checks": [
+    "only-private-zero-source",
+    "real-overlay-typing-updates-draft-only",
+    "unsaved-draft-does-not-replace-effective-body",
+    "global-f9-rejects-unsaved-real-ui-draft",
+    "draft-f9-does-not-start-capture-or-model",
+    "global-input-rejects-unsaved-real-ui-draft",
+    "real-editor-save-retains-original-asr",
+    "f9-after-real-overlay-edit-uses-saved-body",
+    "focus-return-revision-does-not-auto-input",
+    "undo-restores-real-editor-saved-body",
+    "different-window-cannot-revise-or-steal-target",
+    "different-window-cannot-insert",
+    "return-from-other-window-can-revise-original",
+    "final-explicit-ui-input-reaches-original-control-once",
+    "no-extra-model-calls"
+  ],
+  "real_microphone": false,
+  "external_model_calls": false,
+  "start_command_ms": [
+    214.59,
+    279.05
+  ],
+  "http_requests": 3,
+  "binary_sha256": "2e1465373f0fd60f604b790d55ba8e71254b123d2eef8083c3eada9da37011dd",
+  "checks_passed": 15,
+  "all_test_children_stopped": true
+}
