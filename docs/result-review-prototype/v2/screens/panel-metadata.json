@@ -1,0 +1,56 @@
+[
+  {
+    "name": "02-asr-panel",
+    "clip": {
+      "x": 660,
+      "y": 304,
+      "width": 584,
+      "height": 578
+    }
+  },
+  {
+    "name": "03-editing-panel",
+    "clip": {
+      "x": 660,
+      "y": 304,
+      "width": 584,
+      "height": 508
+    }
+  },
+  {
+    "name": "04-interruption-panel",
+    "clip": {
+      "x": 668,
+      "y": 304,
+      "width": 584,
+      "height": 425
+    }
+  },
+  {
+    "name": "05-voice-changes-panel",
+    "clip": {
+      "x": 668,
+      "y": 304,
+      "width": 584,
+      "height": 485
+    }
+  },
+  {
+    "name": "06-voice-requirement-panel",
+    "clip": {
+      "x": 668,
+      "y": 304,
+      "width": 584,
+      "height": 447
+    }
+  },
+  {
+    "name": "07-voice-processing-panel",
+    "clip": {
+      "x": 668,
+      "y": 304,
+      "width": 584,
+      "height": 447
+    }
+  }
+]

@@ -1,0 +1,369 @@
+{
+  "scope": "Browser UI fixtures only; no audio, model, native focus or OS delivery acceptance",
+  "checks": [
+    {
+      "name": "保留当前候选不改正文",
+      "actual": "这次先保留完整的识别结果，异常结束时也不要清空。请在周五之前给我看一版原型，确认后再实施。",
+      "expected": "这次先保留完整的识别结果，异常结束时也不要清空。请在周五之前给我看一版原型，确认后再实施。",
+      "passed": true
+    },
+    {
+      "name": "保留后待检查数下降",
+      "actual": "1 处待检查",
+      "expected": "1 处待检查",
+      "passed": true
+    },
+    {
+      "name": "选择备选正文含周四",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "候选输出无来源",
+      "actual": "这次先保留完整的识别结果，异常结束时也不要清空。请在周四之前给我看一版原型，确认后再实施。",
+      "expected": "这次先保留完整的识别结果，异常结束时也不要清空。请在周四之前给我看一版原型，确认后再实施。",
+      "passed": true
+    },
+    {
+      "name": "暂不应用保留当前正文",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "刷新恢复未应用草稿",
+      "actual": "手动保留这份记录。确认原型后再实现，不要重启服务。",
+      "expected": "手动保留这份记录。确认原型后再实现，不要重启服务。",
+      "passed": true
+    },
+    {
+      "name": "完成后正文等于草稿",
+      "actual": "手动保留这份记录。确认原型后再实现，不要重启服务。",
+      "expected": "手动保留这份记录。确认原型后再实现，不要重启服务。",
+      "passed": true
+    },
+    {
+      "name": "手动编辑后旧ASR入口停用",
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    },
+    {
+      "name": "任意入口展示独立要求",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "处理中保留手动正文",
+      "actual": "手动保留这份记录。确认原型后再实现，不要重启服务。",
+      "expected": "手动保留这份记录。确认原型后再实现，不要重启服务。",
+      "passed": true
+    },
+    {
+      "name": "处理中主按钮宽度稳定",
+      "actual": 112,
+      "expected": 112,
+      "passed": true
+    },
+    {
+      "name": "手动基线比较没有伪造原始改字",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "阅读与输出一致",
+      "actual": "请保留完整的识别结果，异常结束时不要清空。周五前先看原型，确认后再实施。这轮先保留本地版本。",
+      "expected": "请保留完整的识别结果，异常结束时不要清空。周五前先看原型，确认后再实施。这轮先保留本地版本。",
+      "passed": true
+    },
+    {
+      "name": "F9后不再出现旧ASR候选",
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    },
+    {
+      "name": "撤销恢复手动修改基线",
+      "actual": "手动保留这份记录。确认原型后再实现，不要重启服务。",
+      "expected": "手动保留这份记录。确认原型后再实现，不要重启服务。",
+      "passed": true
+    },
+    {
+      "name": "取消口述保留正文",
+      "actual": "请保留完整的识别结果，异常结束时不要清空。周五前先看原型，确认后再实施。这轮先保留本地版本。",
+      "expected": "请保留完整的识别结果，异常结束时不要清空。周五前先看原型，确认后再实施。这轮先保留本地版本。",
+      "passed": true
+    },
+    {
+      "name": "模型失败保留正文",
+      "actual": "请保留完整的识别结果，异常结束时不要清空。周五前先看原型，确认后再实施。这轮先保留本地版本。",
+      "expected": "请保留完整的识别结果，异常结束时不要清空。周五前先看原型，确认后再实施。这轮先保留本地版本。",
+      "passed": true
+    },
+    {
+      "name": "再次修改进入第三版",
+      "actual": "V3 · 语音修改",
+      "expected": "V3 · 语音修改",
+      "passed": true
+    },
+    {
+      "name": "第三版撤销回第二版",
+      "actual": "请保留完整的识别结果，异常结束时不要清空。周五前先看原型，确认后再实施。这轮先保留本地版本。",
+      "expected": "请保留完整的识别结果，异常结束时不要清空。周五前先看原型，确认后再实施。这轮先保留本地版本。",
+      "passed": true
+    },
+    {
+      "name": "停止后保留预览",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "收尾中禁止输入",
+      "actual": false,
+      "expected": false,
+      "passed": true
+    },
+    {
+      "name": "处理中预览不清空",
+      "actual": "这次先保留完整的识别结果，异常结束时也不要清空。请在周五之前",
+      "expected": "这次先保留完整的识别结果，异常结束时也不要清空。请在周五之前",
+      "passed": true
+    },
+    {
+      "name": "有效音频结果继续增长",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "无预览不造正文",
+      "actual": "没有恢复到可用的文字。",
+      "expected": "没有恢复到可用的文字。",
+      "passed": true
+    },
+    {
+      "name": "无结果禁止复制",
+      "actual": false,
+      "expected": false,
+      "passed": true
+    },
+    {
+      "name": "无结果禁止输入",
+      "actual": false,
+      "expected": false,
+      "passed": true
+    },
+    {
+      "name": "收尾失败退回真实预览",
+      "actual": "这次先保留完整的识别结果，异常结束时也不要清空。请在周五之前",
+      "expected": "这次先保留完整的识别结果，异常结束时也不要清空。请在周五之前",
+      "passed": true
+    },
+    {
+      "name": "异常标记不进入输出",
+      "actual": "这次先保留完整的识别结果，异常结束时也不要清空。请在周五之前",
+      "expected": "这次先保留完整的识别结果，异常结束时也不要清空。请在周五之前",
+      "passed": true
+    },
+    {
+      "name": "积压说明不宣称恢复丢失音频",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "F9成功仍保留不完整标记",
+      "actual": "可能不完整",
+      "expected": "可能不完整",
+      "passed": true
+    },
+    {
+      "name": "F9成功仍保留异常提醒",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "目标变化禁止输入",
+      "actual": false,
+      "expected": false,
+      "passed": true
+    },
+    {
+      "name": "目标变化可复制",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "Tab从复制到编辑",
+      "actual": "edit",
+      "expected": "edit",
+      "passed": true
+    },
+    {
+      "name": "键盘焦点可见",
+      "actual": "solid",
+      "expected": "solid",
+      "passed": true
+    },
+    {
+      "name": "Tab从编辑到语音修改",
+      "actual": "voice",
+      "expected": "voice",
+      "passed": true
+    },
+    {
+      "name": "Tab从语音修改到确认",
+      "actual": "insert",
+      "expected": "insert",
+      "passed": true
+    },
+    {
+      "name": "空白草稿禁止完成",
+      "actual": false,
+      "expected": false,
+      "passed": true
+    },
+    {
+      "name": "未应用草稿阻止F9覆盖",
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    },
+    {
+      "name": "未应用草稿明确提示",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "保留两个当前词后完成检查",
+      "actual": "2 处已检查",
+      "expected": "2 处已检查",
+      "passed": true
+    },
+    {
+      "name": "Esc收起校对而不丢字",
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    },
+    {
+      "name": "Esc正文保持",
+      "actual": "这次先保留完整的识别结果，异常结束时也不要清空。请在周五之前给我看一版原型，确认后再实施。",
+      "expected": "这次先保留完整的识别结果，异常结束时也不要清空。请在周五之前给我看一版原型，确认后再实施。",
+      "passed": true
+    },
+    {
+      "name": "1280布局无水平溢出",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "1920布局无水平溢出",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "失败标题不宣称成功",
+      "actual": "这次修改未完成",
+      "expected": "这次修改未完成",
+      "passed": true
+    },
+    {
+      "name": "失败副标题说明保留上一版",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "name": "失败版本显示已保留",
+      "actual": "V2 · 已保留",
+      "expected": "V2 · 已保留",
+      "passed": true
+    },
+    {
+      "name": "失败仍持有上一版正文",
+      "actual": "请保留完整的识别结果，异常结束时不要清空。周五前先看原型，确认后再实施。这轮先保留本地版本。",
+      "expected": "请保留完整的识别结果，异常结束时不要清空。周五前先看原型，确认后再实施。这轮先保留本地版本。",
+      "passed": true
+    },
+    {
+      "name": "复制按钮只输出有效正文",
+      "actual": "请保留完整的识别结果，异常结束时不要清空。周五前先看原型，确认后再实施。这轮先保留本地版本。",
+      "expected": "请保留完整的识别结果，异常结束时不要清空。周五前先看原型，确认后再实施。这轮先保留本地版本。",
+      "passed": true
+    },
+    {
+      "name": "默认阅读仅一行头部",
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    },
+    {
+      "name": "默认隐藏解释副文案",
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    },
+    {
+      "name": "默认只有一个主动作",
+      "actual": 1,
+      "expected": 1,
+      "passed": true
+    },
+    {
+      "name": "紧凑图标Tab到编辑",
+      "actual": "edit",
+      "expected": "edit",
+      "passed": true
+    },
+    {
+      "name": "紧凑编辑完成后正文正确",
+      "actual": "简洁界面下的完整编辑结果。",
+      "expected": "简洁界面下的完整编辑结果。",
+      "passed": true
+    },
+    {
+      "name": "编辑完成回到简洁检查",
+      "actual": 0,
+      "expected": 0,
+      "passed": true
+    },
+    {
+      "name": "简洁界面输出仍是纯正文",
+      "actual": "简洁界面下的完整编辑结果。",
+      "expected": "简洁界面下的完整编辑结果。",
+      "passed": true
+    },
+    {
+      "name": "简洁双方案1280无横向溢出",
+      "actual": true,
+      "expected": true,
+      "passed": true
+    }
+  ],
+  "invalidObservations": [
+    {
+      "name": "默认阅读仅一行头部",
+      "actual": 1,
+      "expected": 0,
+      "passed": false,
+      "reason": "Test setup was still on voice state; explicitly selected default reading before repeating."
+    },
+    {
+      "name": "默认阅读仅一行头部",
+      "actual": 1,
+      "expected": 0,
+      "passed": false,
+      "reason": "A stale browser locator was still bound to the previous page build; repeated with a fresh tab and versioned assets."
+    }
+  ]
+}

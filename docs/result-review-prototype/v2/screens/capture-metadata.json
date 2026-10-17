@@ -1,0 +1,74 @@
+[
+  {
+    "name": "02-asr-1920",
+    "devicePixelRatio": 1,
+    "height": 557.5,
+    "viewport": {
+      "height": 1080,
+      "width": 1920
+    },
+    "width": 552,
+    "x": 676.5,
+    "y": 314.5
+  },
+  {
+    "name": "03-editing-1920",
+    "devicePixelRatio": 1,
+    "height": 488,
+    "viewport": {
+      "height": 1080,
+      "width": 1920
+    },
+    "width": 552,
+    "x": 676.5,
+    "y": 314.5
+  },
+  {
+    "name": "04-interruption-1920",
+    "devicePixelRatio": 1,
+    "height": 405,
+    "viewport": {
+      "height": 1080,
+      "width": 1920
+    },
+    "width": 552,
+    "x": 684,
+    "y": 314.5
+  },
+  {
+    "name": "05-voice-changes-1920",
+    "devicePixelRatio": 1,
+    "height": 465,
+    "viewport": {
+      "height": 1080,
+      "width": 1920
+    },
+    "width": 552,
+    "x": 684,
+    "y": 314.5
+  },
+  {
+    "name": "06-voice-requirement-1920",
+    "devicePixelRatio": 1,
+    "height": 427,
+    "viewport": {
+      "height": 1080,
+      "width": 1920
+    },
+    "width": 552,
+    "x": 684,
+    "y": 314.5
+  },
+  {
+    "name": "07-voice-processing-1920",
+    "devicePixelRatio": 1,
+    "height": 427,
+    "viewport": {
+      "height": 1080,
+      "width": 1920
+    },
+    "width": 552,
+    "x": 684,
+    "y": 314.5
+  }
+]
