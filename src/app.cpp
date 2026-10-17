@@ -1932,7 +1932,7 @@ void App::ui() {
     g_object_unref(monitor);
   }
   const auto max_body =
-      std::clamp(screen_height - 380 - (candidate_open ? 140 : 0) -
+      std::clamp(screen_height - 380 - (candidate_open ? 220 : 0) -
                      (!warning.empty() ? 70 : 0),
                  96, 280);
   gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroll_),
@@ -2138,7 +2138,7 @@ void App::run() {
                    this);
   candidate_scroll_ = scroller();
   gtk_scrolled_window_set_max_content_height(
-      GTK_SCROLLED_WINDOW(candidate_scroll_), 150);
+      GTK_SCROLLED_WINDOW(candidate_scroll_), 220);
   gtk_box_append(GTK_BOX(box), candidate_scroll_);
   candidate_box_ = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
   gtk_widget_add_css_class(candidate_box_, "voice-choice-panel");
