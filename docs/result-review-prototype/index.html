@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HyprVoice · 结果检查原型</title>
+<link rel="stylesheet" href="style.css">
+<body>
+<main>
+  <header class="page-header">
+    <div><p class="eyebrow">HYPRVOICE / INTERACTION STUDY 01</p><h1>说过的话，留在这里。</h1><p class="intro">检查差异，随手修改，再确认输入。</p></div>
+    <span class="prototype-label">交互原型 · 非运行版</span>
+  </header>
+  <div class="demo-bar"><p>下方四种状态可直接操作。文字与候选均为演示样例，无录音、模型调用或真实上屏。</p><button id="reset">重置演示</button></div>
+  <div class="board" id="board"></div>
+  <section class="output" aria-label="原型输出检查"><div class="output-heading"><h2>输出检查</h2><span id="output-status" role="status">点击浮层中的“复制”或“确认输入”，检查纯正文。</span></div><pre id="output-text">尚未输出</pre><p>这里展示原型准备输出的文字；“确认输入”只写到本区域，不接触真实应用。复制写入浏览器剪贴板。</p></section>
+  <footer class="page-footer">沿用现有浮层的浅灰面板、柔和字重、26 px 正文行距与黑色主按钮。目标示例固定为「文本编辑器 · 迭代笔记」。</footer>
+</main>
+<script src="prototype.js"></script>
+</body>
+</html>
