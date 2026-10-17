@@ -15,3 +15,5 @@
 隔离验收复用 `tests/retry_desktop_test.py` 的私有 GTK／AT-SPI／零样本 PipeWire／loopback HTTP 夹具，附加流程见 `tests/result_actions_cases.py`。没有新增测试专用生产命令、读取真实麦克风或发送真实用户数据。后续 Chromium 网页输入兼容见 [browser-input.md](browser-input.md)。kitty 保留复制粘贴回退。
 
 粘贴请求发出后若无法确认发送状态，结果保持“请检查输入框”，显示已识别文字和“复制”，不会显示“就绪”或断言“没有输入”。无法确认的结果禁止重发／开始新录音，避免已经输入的文字重复；用户可检查输入框后复制或取消。这个状态不再把文字和恢复操作丢掉。
+
+当前结果语音修改已取代应用选区指令，状态与UI确认边界见 [语音修改契约](voice-revision/contract.md)。语音修改不自动输入，确认输入复用原窗口保护。

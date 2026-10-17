@@ -1,0 +1,27 @@
+Test project /home/liufeng/Code/self/hyprvoice/.worktrees/current-result-voice-edit/build
+      Start  8: fun_worker_contract
+      Start 10: retry_http_contract
+ 1/11 Test #10: retry_http_contract ................   Passed    4.09 sec
+      Start 11: fidelity_http_contract
+ 2/11 Test  #8: fun_worker_contract ................   Passed    5.37 sec
+      Start  9: rewrite_http_contract
+ 3/11 Test  #9: rewrite_http_contract ..............   Passed    0.71 sec
+      Start  7: replay_regression_guard
+ 4/11 Test  #7: replay_regression_guard ............   Passed    0.12 sec
+      Start  2: core
+ 5/11 Test  #2: core ...............................   Passed    0.13 sec
+      Start  1: settings_transaction_diagnostics
+ 6/11 Test  #1: settings_transaction_diagnostics ...   Passed    0.06 sec
+      Start  6: benchmark_metrics
+ 7/11 Test  #6: benchmark_metrics ..................   Passed    0.04 sec
+      Start  5: input_target_snapshot
+ 8/11 Test  #5: input_target_snapshot ..............   Passed    0.04 sec
+      Start  4: ui_text_config
+ 9/11 Test  #4: ui_text_config .....................   Passed    0.03 sec
+      Start  3: recognition_coverage
+10/11 Test  #3: recognition_coverage ...............   Passed    0.03 sec
+11/11 Test #11: fidelity_http_contract .............   Passed    2.68 sec
+
+[0;32m100% tests passed[0;0m out of 11
+
+Total Test time (real) =   6.78 sec

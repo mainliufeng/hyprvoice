@@ -81,7 +81,7 @@ def run(namespace):
     index = f.plan('success', output=revised)
     f.command('retry')
     retried = f.phase('ready')
-    f.check('retry-uses-exact-request-without-new-asr', f.server.bodies[index] == f.server.bodies[index-1] and f.decode_count.read_text() == '1' and retried['text'] == revised)
+    f.check('retry-uses-exact-request-without-new-asr', f.server.bodies[index] == f.server.bodies[index-1] and f.decode_count.read_text() == '1' and retried['text'] == revised and retried['revision_error'] == '' and retried['error'] == '')
     f.command('undo-revision')
 
     f.set_transcripts('')
@@ -89,6 +89,10 @@ def run(namespace):
     f.begin('revise'); f.command('stop')
     failed = f.phase('ready')
     f.check('empty-asr-keeps-body-no-model-call', failed['effective_text'] == manual and failed['raw'] == f.raw and len(f.server.bodies) == index)
+    f.set_transcripts({'error': 'Synthetic recognition failure'})
+    f.begin('revise'); f.command('stop')
+    failed = f.phase('ready')
+    f.check('asr-error-keeps-body-no-model-call', failed['effective_text'] == manual and failed['raw'] == f.raw and len(f.server.bodies) == index)
     f.set_transcripts(instruction)
     f.begin('revise')
     f.command('cancel')
@@ -129,6 +133,30 @@ def run(namespace):
     f.wait(lambda: f.first_path.read_text() == baseline + final)
     f.check('input-once-never-instruction', f.first_path.read_text() == baseline+final and f.command('commit')[0] == 1 and other_path.read_text() == 'Other public target.')
     f.check('consumed-result-cannot-revise', f.command('revise')[0] == 1)
+
+    # Even when ordinary dictation is configured for automatic input, revision
+    # success/failure/undo always waits for explicit input.
+    f.focus(f.first); f.key('ctrl End')
+    f.boot(timeout=1, auto=True)
+    f.set_transcripts(f.raw); f.plan('failure')
+    f.begin(); f.finish()
+    auto_before = f.first_path.read_text()
+    f.set_transcripts(instruction); f.plan('success', output=revised)
+    f.begin('command'); f.command('command-release')
+    auto_result = f.phase('ready')
+    time.sleep(.3)
+    f.check('configured-auto-input-disabled-after-revision', auto_result['manual_confirmation'] and not auto_result['error'] and f.state()['phase'] == 'ready' and f.first_path.read_text() == auto_before)
+    f.command('undo-revision')
+    time.sleep(.2)
+    f.check('undo-preserves-error-and-no-auto-input', f.state()['effective_text'] == f.raw and f.state()['error'] and f.first_path.read_text() == auto_before)
+    # F9 rejected during ordinary capture must not stop it on key release.
+    f.command('discard'); f.phase('idle')
+    f.set_transcripts(f.raw); f.plan('failure')
+    f.begin()
+    f.check('f9-press-rejected-during-f8-capture', f.command('command')[0] == 1)
+    f.command('command-release')
+    f.check('f9-release-does-not-stop-f8-capture', f.state()['phase'] == 'recording')
+    f.finish()
 
     # Real capture startup failure after a retained result: stop only private PW.
     f.focus(f.first); f.key('ctrl End')

@@ -86,6 +86,8 @@ App::App(Config c) : config_(std::move(c)), desktop_(config_) {
             {"seconds", 0},
             {"context", ""},
             {"context_note", ""}};
+  state_["recognition_warning"] = "";
+  state_["revision_error"] = "";
   state_["action_note"] = "";
   state_["revision_instruction"] = "";
   state_["target_note"] = "";
@@ -132,6 +134,7 @@ void App::updateLocked(const Json &patch) {
     revision_cancel_base_.reset();
     revision_undo_.clear();
     state_["revision_instruction"] = "";
+    state_["revision_error"] = "";
     manual_confirmation_ = false;
     reviewed_guard_ = Json();
     review_token_.clear();
@@ -354,6 +357,8 @@ void App::start(bool cmd) {
           {"target_note", ""},
           {"preferred_raw", false},
           {"revision_instruction", ""},
+          {"recognition_warning",
+           cmd ? before.value("recognition_warning", std::string()) : ""},
           {"action_note", ""},
           {"retry_result", false},
           {"context_note", contextual ? "读取当前输入框前文…" : ""}});
@@ -512,7 +517,9 @@ void App::start(bool cmd) {
               {{"phase", "idle"}, {"text", "未检测到可识别语音"}, {"raw", ""}});
         else {
           TextResult output{result.text, result.warning};
-          updateSession(version, {{"raw", result.text}, {"text", result.text}});
+          updateSession(version, {{"raw", result.text},
+                                  {"text", result.text},
+                                  {"recognition_warning", result.warning}});
           // Do not send speech captured after a move into a protected or
           // unidentified control. The local guard never becomes cloud context.
           bool request_allowed = false;
@@ -595,10 +602,20 @@ void App::restoreRevisionLocked(const std::string &error) {
   state_["revision_instruction"] = instruction;
   state_["review_token"] = "";
   state_["target_note"] = "";
-  if (!error.empty()) {
-    auto previous = state_.at("error").get<std::string>();
-    state_["error"] = previous.empty() ? error : previous + "\n" + error;
+  // Replace the previous attempt's failure while retaining original ASR/body
+  // warnings. A successful retry must not keep claiming that revision failed.
+  auto previous = state_.at("error").get<std::string>();
+  auto prior_failure = state_.value("revision_error", std::string());
+  if (!prior_failure.empty()) {
+    if (previous == prior_failure)
+      previous.clear();
+    else if (previous.ends_with("\n" + prior_failure))
+      previous.resize(previous.size() - prior_failure.size() - 1);
   }
+  state_["revision_error"] = error;
+  state_["error"] = error.empty()      ? previous
+                    : previous.empty() ? error
+                                       : previous + "\n" + error;
 }
 void App::completeRevision(uint64_t version, const TextResult &output) {
   std::lock_guard lock(mutex_);
@@ -623,6 +640,9 @@ void App::completeRevision(uint64_t version, const TextResult &output) {
   // Even an unchanged successful response creates a new version/undo boundary.
   if (revision_base_version_ == result_revision_)
     ++result_revision_;
+  // A successful new body supersedes previous processing failures, while the
+  // original recognition uncertainty remains visible through every edit.
+  state_["error"] = state_.value("recognition_warning", std::string());
   if (!output.error.empty()) {
     auto previous = state_.at("error").get<std::string>();
     state_["error"] =
@@ -1380,7 +1400,15 @@ void App::ui() {
   if (uncertain)
     warning =
         "文字已识别，但无法确认是否已输入。请先检查输入框，避免重复输入。";
-  else if (error.starts_with("语音检测未确认讲话"))
+  else if (!state.value("revision_error", std::string()).empty()) {
+    warning =
+        state.at("revision_error").get<std::string>().starts_with("已取消")
+            ? "已取消语音修改，原正文已保留。"
+            : "语音修改未完成，原正文已保留。可以再次修改，或确认当前正文。";
+    if (error.starts_with("英文词可能有误") ||
+        error.starts_with("部分文字可能听错"))
+      warning += "\n原识别仍有不确定文字，请检查一下。";
+  } else if (error.starts_with("语音检测未确认讲话"))
     warning = "这段话可能听错了，请检查一下。";
   else if (error.find("文本处理") != std::string::npos)
     warning =
@@ -1390,6 +1418,9 @@ void App::ui() {
   else if (error.starts_with("英文词可能有误"))
     warning = command_mode ? "英文词可能听错了，请检查后再确认替换。"
                            : "英文词可能听错了，请检查后再点“输入”。";
+  else if (error.starts_with("部分文字可能听错"))
+    warning = command_mode ? "部分文字可能听错了，请检查后再确认替换。"
+                           : "部分文字可能听错了，请检查后再点“输入”。";
   else if (error.starts_with("复制失败"))
     warning = "没能复制，文字还在这里。请再点一次“复制”。";
   else if (ready && !error.empty())
@@ -1402,11 +1433,15 @@ void App::ui() {
   if (error.starts_with("英文词可能有误") &&
       error.find("文本处理") != std::string::npos)
     warning += "\n英文词可能听错了，请检查一下。";
+  if (error.starts_with("部分文字可能听错") &&
+      error.find("文本处理") != std::string::npos)
+    warning += "\n部分文字可能听错了，请检查一下。";
   if (copy_only && !uncertain) {
     const auto explanation =
         "这里暂时不能直接输入。请点击“复制”，再到输入框粘贴。";
     warning = error.starts_with("语音检测未确认讲话") ||
                       error.starts_with("英文词可能有误") ||
+                      error.starts_with("部分文字可能听错") ||
                       error.starts_with("复制失败")
                   ? warning + "\n" + explanation
                   : explanation;

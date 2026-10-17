@@ -152,17 +152,28 @@ std::string Asr::push(std::span<const float> samples) {
     SherpaOnnxDecodeOnlineStream(online_, stream_);
   return current();
 }
-std::string Asr::decodeOffline(const std::vector<float> &samples) {
+std::string Asr::decodeOffline(const std::vector<float> &samples,
+                              std::vector<TimedToken> *tokens) {
   auto s = SherpaOnnxCreateOfflineStream(offline_);
   if (!s)
     throw std::runtime_error("Cannot create offline stream");
+  std::unique_ptr<const SherpaOnnxOfflineStream,
+                  decltype(&SherpaOnnxDestroyOfflineStream)>
+      stream_owner(s, SherpaOnnxDestroyOfflineStream);
   SherpaOnnxAcceptWaveformOffline(s, 16000, samples.data(), samples.size());
   SherpaOnnxDecodeOfflineStream(offline_, s);
   auto r = SherpaOnnxGetOfflineStreamResult(s);
+  std::unique_ptr<const SherpaOnnxOfflineRecognizerResult,
+                  decltype(&SherpaOnnxDestroyOfflineRecognizerResult)>
+      result_owner(r, SherpaOnnxDestroyOfflineRecognizerResult);
   std::string text = r && r->text ? r->text : "";
-  if (r)
-    SherpaOnnxDestroyOfflineRecognizerResult(r);
-  SherpaOnnxDestroyOfflineStream(s);
+  if (tokens) {
+    tokens->clear();
+    if (r && r->timestamps && r->tokens_arr)
+      for (int32_t i = 0; i < r->count; ++i)
+        tokens->push_back({r->tokens_arr[i] ? r->tokens_arr[i] : "",
+                           r->timestamps[i]});
+  }
   return text;
 }
 Transcript Asr::finish(const std::atomic<bool> *cancelled) {
@@ -216,11 +227,37 @@ Transcript Asr::finish(const std::atomic<bool> *cancelled) {
   try {
     std::vector<std::string> utterances;
     auto jobs = RecognitionJobs(samples_, intervals);
+    size_t job_begin = 0;
+    bool recovered_speech = false;
     for (const auto &job : jobs) {
-      auto text = decodeOffline(job);
+      std::vector<TimedToken> tokens;
+      auto text = decodeOffline(job, &tokens);
       if (text.empty())
         throw std::runtime_error("Offline recognition left an utterance empty");
+      // The original jobs and complete prefix stay intact. A long recording's
+      // unfinished final Latin word may be emitted in trailing silence; retry
+      // only that tail and require stable prefix/critical terms before use.
+      if (samples_.size() > 16000 * 30 &&
+          job_begin + job.size() == samples_.size()) {
+        auto tail = FindLateSpeechTail(text, tokens, intervals,
+                                        job_begin, job.size());
+        recovered_speech |= tail.has_value();
+        if (tail) {
+          if (cancelled && *cancelled)
+            throw std::runtime_error("已取消");
+          try {
+            auto pcm = std::span(samples_).subspan(
+                tail->audio.begin, tail->audio.end - tail->audio.begin);
+            auto recovered = decodeOffline({pcm.begin(), pcm.end()});
+            text = CompleteLateSpeechTail(text, tail->text_offset, recovered);
+          } catch (const std::exception &) {
+            std::cerr << "Refinement diagnostic: tail recovery failed; "
+                         "preserving original job\n";
+          }
+        }
+      }
       utterances.push_back(std::move(text));
+      job_begin += job.size();
     }
     auto refined = AssembleTranscript(utterances);
     if (!refined.empty()) {
@@ -229,6 +266,8 @@ Transcript Asr::finish(const std::atomic<bool> *cancelled) {
         std::cerr << "Refinement diagnostic: Latin term disagreement; "
                      "explicit review required\n";
       }
+      if (recovered_speech && result.warning.empty())
+        result.warning = "部分文字可能听错了，请检查后输入。";
       if (PreservesTranscriptLength(result.streaming, refined)) {
         result.text = std::move(refined);
       } else {

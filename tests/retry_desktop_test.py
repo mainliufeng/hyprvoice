@@ -271,7 +271,7 @@ for line in sys.stdin:
     index = int(counter.read_text())
     text = json.loads((root/'transcripts.json').read_text())[index]
     counter.write_text(str(index + 1))
-    print(json.dumps({'text':text, 'speech':True}, ensure_ascii=False), flush=True)
+    print(json.dumps(text if isinstance(text, dict) else {'text':text, 'speech':True}, ensure_ascii=False), flush=True)
 ''')
     worker.chmod(0o700)
     server = Server(('127.0.0.1', 0), Handler)
@@ -354,8 +354,8 @@ for line in sys.stdin:
     focus(first)
     # Fail only the optional clipboard restore, after the genuine paste shortcut.
     run('/usr/bin/wl-copy', 'Public synthetic previous clipboard')
-    bin_dir = runtime / 'bin'
-    bin_dir.mkdir()
+    bin_dir = runtime / 'restore-bin'
+    bin_dir.mkdir(exist_ok=True)
     restore_count = runtime / 'restore-count'
     restore_count.write_text('0')
     wrapper = bin_dir / 'wl-copy'
@@ -593,7 +593,7 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     uncertain_bin = runtime/'uncertain-bin'
     uncertain_bin.mkdir()
     wrapper = uncertain_bin/'hyprctl'
-    wrapper.write_text("#!/usr/bin/python3\nimport subprocess,sys\nr=subprocess.run(['/usr/bin/hyprctl',*sys.argv[1:]])\npaste=len(sys.argv)>2 and sys.argv[1]=='dispatch' and ((sys.argv[2]=='sendshortcut' and len(sys.argv)>3 and ', V,' in sys.argv[3]) or (sys.argv[2].startswith('hl.dsp.send_shortcut(') and 'key=\"V\"' in sys.argv[2]))\nraise SystemExit(1 if paste else r.returncode)\n")
+    wrapper.write_text("#!/usr/bin/python3\nimport subprocess,sys\nr=subprocess.run(['/usr/bin/hyprctl',*sys.argv[1:]])\npaste=len(sys.argv)>2 and sys.argv[1]=='dispatch' and ((sys.argv[2]=='sendshortcut' and len(sys.argv)>3 and ', V,' in sys.argv[3]) or (sys.argv[2].startswith('hl.dsp.send_shortcut(') and 'key=\"V\"' in sys.argv[2]))\nseatpaste=len(sys.argv)>5 and sys.argv[1]=='seat' and sys.argv[2] in ('input-shortcut','input-shortcut-v2') and sys.argv[-1]=='V'\nraise SystemExit(1 if paste or seatpaste else r.returncode)\n")
     wrapper.chmod(0o700)
     env['PATH'] = str(uncertain_bin)+':'+original_path
     boot(auto=False)

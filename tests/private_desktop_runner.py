@@ -60,7 +60,9 @@ if len(args)>=3 and args[:2]==['dispatch','focuswindow']:
 os.execv('/usr/bin/hyprctl',['hyprctl',*args])
 ''')
     (tools/'hyprctl').chmod(0o700)
-    env.update(PATH=str(tools)+':/usr/bin:/bin', HYPRVOICE_REVISION_QA='1')
+    env.update(PATH=str(tools)+':/usr/bin:/bin')
+    if os.environ.get('HV_TEST_SUITE') != 'retry':
+        env['HYPRVOICE_REVISION_QA'] = '1'
     subprocess.run(['/usr/bin/python3', '/opt/hv/tests/retry_desktop_test.py', str(rt), '/tmp/evidence'], env=env, check=True)
 finally:
     for child in reversed(children):

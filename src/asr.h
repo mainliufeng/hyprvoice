@@ -1,6 +1,7 @@
 #pragma once
 #include "config.h"
 #include "speech.h"
+#include "transcript_text.h"
 #include <atomic>
 #include <sherpa-onnx/c-api/c-api.h>
 #include <span>
@@ -33,7 +34,8 @@ private:
   bool recording_ = false;
   std::vector<float> samples_;
   std::string current();
-  std::string decodeOffline(const std::vector<float> &samples);
+  std::string decodeOffline(const std::vector<float> &samples,
+                            std::vector<TimedToken> *tokens = nullptr);
 };
 std::vector<float> ReadWave(const std::string &path);
 } // namespace hv

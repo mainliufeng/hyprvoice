@@ -17,7 +17,7 @@ exec /usr/bin/python3 -c 'import os,sys; os.closerange(3,1048576); os.execv(sys.
  --clearenv --setenv PATH /usr/bin:/bin --setenv LANG C.UTF-8 \
  --setenv HOME /tmp/home --setenv TMPDIR /tmp/tmp --setenv USER "$(id -un)" \
  --setenv XDG_CONFIG_HOME /tmp/home/.config --setenv XDG_DATA_HOME /tmp/home/.local/share \
- --setenv XDG_STATE_HOME /tmp/home/.local/state --setenv HV_PRIVATE_DESKTOP 1 \
+ --setenv XDG_STATE_HOME /tmp/home/.local/state --setenv HV_PRIVATE_DESKTOP 1 --setenv HV_TEST_SUITE "${HV_TEST_SUITE:-revision}" \
  --setenv GDK_BACKEND wayland --setenv GTK_A11Y atspi --setenv GTK_IM_MODULE wayland \
  --setenv AQ_DRM_DEVICES /dev/null --setenv LIBSEAT_BACKEND noop \
  --setenv LP_NUM_THREADS 1 --setenv OMP_NUM_THREADS 1 \

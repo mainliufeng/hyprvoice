@@ -1,6 +1,8 @@
 # Hyprvoice
 
 当前版本 **0.2.1**（2026-10-08）；更新内容及验证范围见 [版本说明](docs/release-notes.md)。
+
+main 新增英文长录音尾句恢复与逐样本退化检查，尚未独立发行；实际收益与限制见 [验证记录](docs/late-tail-verification.md)。
 项目网站：<https://hyprvoice.liufeng.me>。运行 `hyprvoice --version` 查看程序版本。
 
 独立的 Hyprland 语音输入工具。保留现有 Fcitx 拼音，用快捷键录音，通过悬浮条预览，最终粘贴到应用。
@@ -103,11 +105,11 @@ Lua 配置使用 `config/hyprvoice.lua` 的绑定；仍使用 hyprlang 时参考
 | Super+Alt+Escape | 取消当前会话 |
 | Super+Alt+1 / 2 / 3 / 4 | 原文／纠错／整理／英文翻译 |
 
-文字处理失败后可以点击“再试一次”或运行 `hyprvoice retry`，无需重新录音。重试复用本次原转录、场景、选区和已读取的前文，不重建转录或前文；另行核验本地输入位置保护，重试结果需要手动确认后插入或替换选区。处理时按钮显示“正在重试…”且不能重复启动。普通听写失败保留识别文字，可点击“输入”；指令模式失败保留选区，不能把口述指令作为原文插入。提交或取消后不再保留可重试的本次内容，切换场景或识别后端前须先提交或取消待处理结果。
+文字处理失败后可以点击“再试一次”或运行 `hyprvoice retry`，无需重新录音。普通听写重试复用原转录、场景及已读取前文，失败保留识别文字；当前正文的语音修改重试复用原正文和修改要求，失败保留当前正文，绝不把修改要求输入到应用。重试结果始终等待用户确认。修改录音中取消只退出修改，保留正文；明确放弃整轮使用 `discard`。详见 [语音修改契约](docs/voice-revision/contract.md)。
 
 语音结果界面操作见 [结果界面](docs/result-input-flow.md)，Chromium 网页输入支持见 [浏览器输入](docs/browser-input.md)。同窗口控件、光标、选区和内容保护，以及 CLI 位置确认协议见 [目标保护说明](docs/target-protection.md)。默认纠错／整理的保真边界与合成用例见 [策略验证](docs/fidelity-verification.md)。
 
-CLI 同样支持 `start stop toggle press release command cancel retry commit raw review confirm TOKEN copy status scene NAME backend fun|x-asr quit`。空闲时用 `hyprvoice settings` 打开轻量设置窗口，用 `hyprvoice diagnose` 做不录音、不联网的本地诊断；详见 [设置与诊断](docs/settings-and-diagnostics.md)。更新前保留当前程序和配置，切换及回退步骤见 [迭代切换方案](docs/iteration-installation-rollback-plan.md)。
+CLI 同样支持 `start stop toggle press release command command-release revise undo-revision edit-result discard cancel retry commit raw review confirm TOKEN copy status scene NAME backend fun|x-asr quit`。空闲时用 `hyprvoice settings` 打开轻量设置窗口，用 `hyprvoice diagnose` 做不录音、不联网的本地诊断；详见 [设置与诊断](docs/settings-and-diagnostics.md)。更新前保留当前程序和配置，切换及回退步骤见 [迭代切换方案](docs/iteration-installation-rollback-plan.md)。
 运行 `doctor` 后还应核对麦克风静音状态；程序不自动取消你的麦克风静音，也不修改默认音频设备。
 
 替换旧语音工具时停用旧 Vinput 插件和旧语音后台，保留 Fcitx 拼音。验证新工具在你的日常应用中可用后再切换，避免两套快捷键同时录音。
