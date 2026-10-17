@@ -1,0 +1,23 @@
+{
+  "checks": [
+    "only-private-zero-source",
+    "real-overlay-typing-updates-draft-only",
+    "unsaved-draft-does-not-replace-effective-body",
+    "global-f9-rejects-unsaved-real-ui-draft",
+    "draft-f9-does-not-start-capture-or-model",
+    "global-input-rejects-unsaved-real-ui-draft",
+    "real-editor-save-retains-original-asr"
+  ],
+  "real_microphone": false,
+  "external_model_calls": false,
+  "start_command_ms": [
+    242.55,
+    224.62
+  ],
+  "checks_passed": 7,
+  "all_test_children_stopped": true,
+  "suite_passed": false,
+  "failed_stage": "F9 recording after saved UI edit",
+  "binary_sha256": "4d1a1373c75f78187bbc298821d34f0015bf794ba2ae75d52ee8184462ddb2d1",
+  "production_issue": "Historical focus_changed_ immediately stops the new capture; owner confirmed and fixed"
+}

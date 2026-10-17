@@ -2,11 +2,13 @@
 import json
 import time
 from types import SimpleNamespace
+from pointer import Pointer
 
 
 def run(namespace):
     f = SimpleNamespace(**namespace)
     f.boot(auto=False)
+    pointer = Pointer(namespace, "HV-QA")
     source = 'synthetic focus test original.'
     edited = 'synthetic body saved through the real overlay editor.'
     revised = 'synthetic body revised after saving the real overlay editor.'
@@ -18,12 +20,19 @@ def run(namespace):
 
     # Accessible names are the agreed prototype contract. A missing production
     # control is a failure/blocker, never bypassed by edit-result IPC.
-    f.click('编辑正文')
+    pointer.click('编辑正文')
     f.wait(lambda: any(w['name'] == '编辑完整正文' and w['showing']
                       for w in f.accessible()['widgets']))
-    focused = f.accessible('focus:编辑完整正文')
-    f.check('real-overlay-text-editor-accepts-keyboard-focus', focused['activated'])
+    pointer.click('编辑完整正文')
     f.key('ctrl a'); f.key('type ' + edited)
+    try:
+        f.wait(lambda: f.state().get('draft_text') == edited, seconds=4)
+    except Exception:
+        f.photo('primary-editor-typing-failure')
+        (f.evidence/'primary-editor-typing-failure.json').write_text(json.dumps(
+            {'state':f.state(),'widgets':f.accessible(),'primary_body':f.first_path.read_text(),
+             'expected':edited},ensure_ascii=False,indent=2))
+        raise
     f.check('real-overlay-typing-updates-draft-only', f.state().get('draft_text') == edited and f.first_path.read_text() == before)
     f.check('unsaved-draft-does-not-replace-effective-body', f.state()['effective_text'] == source)
     requests = len(f.server.bodies)
@@ -32,7 +41,7 @@ def run(namespace):
     f.check('draft-f9-does-not-start-capture-or-model', not f.state()['busy'] and len(f.server.bodies) == requests)
     f.check('global-input-rejects-unsaved-real-ui-draft', f.command('insert-current')[0] == 1 and f.first_path.read_text() == before)
     f.photo('focus-02-unsaved-editor')
-    f.click('完成编辑')
+    pointer.click('完成编辑')
     saved = f.wait(lambda: s if (s := f.state())['effective_text'] == edited else None)
     f.check('real-editor-save-retains-original-asr', saved['raw'] == source)
     f.photo('focus-03-saved-body')
@@ -43,7 +52,14 @@ def run(namespace):
     f.key('ctrl End')
     f.set_transcripts('Make the requested revision.')
     index = f.plan('success', output=revised)
-    f.begin('command'); f.command('command-release')
+    try:
+        f.begin('command')
+    except Exception:
+        f.photo('primary-f9-after-edit-failure')
+        (f.evidence/'primary-f9-after-edit-failure.json').write_text(json.dumps(
+            {'state':f.state(),'widgets':f.accessible()},ensure_ascii=False,indent=2))
+        raise
+    f.command('command-release')
     changed = f.phase('ready')
     body = json.loads(json.loads(f.server.bodies[index])['messages'][1]['content'])
     f.check('f9-after-real-overlay-edit-uses-saved-body', body['original_body'] == edited and changed['effective_text'] == revised)
@@ -62,13 +78,13 @@ def run(namespace):
     # focus briefly moved away. The UI button and global key share the endpoint.
     f.set_transcripts('Keep the result as requested.')
     f.plan('success', output=revised)
-    f.click('语音修改（F9）')
+    pointer.click('语音修改（F9）')
     source_port, target_port = f.wait(f.ports, seconds=4)
     f.run('pw-link', source_port, target_port)
     f.phase('recording'); time.sleep(.2)
     f.command('stop'); f.phase('ready')
     f.check('return-from-other-window-can-revise-original', f.state()['effective_text'] == revised)
-    f.click('确认输入')
+    pointer.click('确认输入')
     f.phase('idle')
     f.wait(lambda: f.first_path.read_text() == before + revised)
     f.check('final-explicit-ui-input-reaches-original-control-once', f.first_path.read_text() == before + revised and other_path.read_text() == 'Other independent window.' and f.command('insert-current')[0] == 1)

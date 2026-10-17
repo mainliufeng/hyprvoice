@@ -1,0 +1,7 @@
+{
+  "source_checkout": "/home/liufeng/Code/self/hyprvoice/.worktrees/result-review-implementation",
+  "source_head": "be0f911ecd2386754bb8da7d551fb5c37956996a",
+  "source_status": " M CMakeLists.txt\n M src/app.cpp\n M src/app.h\n M src/asr.cpp\n M src/asr.h\n M src/audio.cpp\n M src/audio.h\n M src/desktop.cpp\n M src/desktop.h\n M src/overlay_style.h\n M tests/keyboard.cpp\n M tests/private_desktop_runner.py\n M tests/retry_a11y.py\n M tests/retry_desktop_test.py\n?? src/result_review.cpp\n?? src/result_review.h\n?? tests/audio_capture_test.cpp\n?? tests/capture_interruption_cases.py\n?? tests/recovery_backends.cpp\n?? tests/result_review_cases.py\n?? tests/result_review_test.cpp\n?? tests/virtual-pointer.xml\n",
+  "binary_sha256": "a34bbc4e71953ace94fe142cd73c9c882397445e9fd5826b937df33d38ea20ff",
+  "binary_frozen": true
+}

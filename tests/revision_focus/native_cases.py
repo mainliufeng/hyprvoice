@@ -6,6 +6,7 @@ from pathlib import Path
 import select
 import subprocess
 import time
+import threading
 from types import SimpleNamespace
 
 OWNER = 'hyprvoice-focus-native-owner-0000000000001'
@@ -47,17 +48,39 @@ def run(namespace):
         time.sleep(.25)
         subprocess.run(['grim','-o','human',str(f.evidence/(name+'.png'))],env=env,check=True,timeout=5)
 
+    active_seat = None
     def show(name, control=True):
+        nonlocal active_seat
         state = cli('state',name)
         shown = ctl('-j','seat','present',name,state['display'],'human','current',OWNER)
         assert shown['active'], shown
         if control:
             controlled = ctl('-j','seat','present-control',OWNER,'yes')
             assert controlled['humanControl'], controlled
+        active_seat = name
+        lease_enabled.set()
         return shown
 
     def hide():
+        lease_enabled.clear()
         ctl('seat','unpresent',OWNER)
+
+    lease_enabled = threading.Event()
+    lease_stop = threading.Event()
+    lease_errors = []
+    def renew_lease():
+        while not lease_stop.wait(.6):
+            if not lease_enabled.is_set():
+                continue
+            try:
+                reply = ctl('-j','seat','presentation',OWNER)
+                if lease_enabled.is_set() and not reply.get('active',False):
+                    lease_errors.append('Private viewer lease expired; no automatic re-presentation was attempted')
+            except Exception as error:
+                if lease_enabled.is_set():
+                    lease_errors.append(str(error))
+    lease_thread = threading.Thread(target=renew_lease,daemon=True)
+    lease_thread.start()
 
     paths = {}
     def launch(name, seat):
@@ -132,7 +155,7 @@ def run(namespace):
         offset = [0,0]
         if len(windows) == 1:
             root_x,root_y = windows[0]['at']
-            offset = cli('state','agent1')['position']
+            offset = cli('state',active_seat)['position']
         else:
             layers = []
             for monitor, data in ctl('-j','layers').items():
@@ -144,7 +167,7 @@ def run(namespace):
             monitor, layer = layers[0]
             root_x,root_y = layer['x'],layer['y']
             if monitor != 'human':
-                offset = cli('state','agent1')['position']
+                offset = cli('state',active_seat)['position']
         click_x,click_y = root_x+x+w/2-offset[0], root_y+y+h/2-offset[1]
         assert 0 <= click_x < 1280 and 0 <= click_y < 800, {'control':control,'click':[click_x,click_y]}
         (f.evidence/('native-ui-'+str(time.monotonic_ns())+'.json')).write_text(json.dumps(
@@ -225,8 +248,19 @@ def run(namespace):
             f.wait(lambda: any(w['name'] == '编辑完整正文' and w['showing'] for w in f.accessible()['widgets']))
             click_ui('编辑完整正文')
             before_edit = content('focus-agent1')
-            f.key('ctrl a'); f.key('type '+edit_body)
+            send('mods 4'); send('key 30 1'); send('key 30 0'); send('mods 0')
+            send('type '+edit_body)
+            try:
+                f.wait(lambda: f.state().get('draft_text') == edit_body, seconds=4)
+            except Exception:
+                photo('native-editor-typing-failure')
+                (f.evidence/'native-editor-typing-failure.json').write_text(json.dumps(
+                    {'state':f.state(),'widgets':f.accessible(),'physical_route':route(),
+                     'buffers':{name:content(name) for name in paths},
+                     'primary_body':f.first_path.read_text(),'expected':edit_body},ensure_ascii=False,indent=2))
+                raise
             f.check('native-overlay-receives-typing-without-editing-underlying-app',f.state().get('draft_text') == edit_body and content('focus-agent1') == before_edit)
+            photo('native-agent1-real-editor-draft')
             f.check('secondary-draft-blocks-global-f9',f.command('command')[0] == 1)
             f.command('command-release')
             f.check('secondary-draft-blocks-input',f.command('insert-current')[0] == 1)
@@ -247,6 +281,7 @@ def run(namespace):
         ready,index = revise('synthetic final original-seat result.', after_return=True)
         user = json.loads(json.loads(f.server.bodies[index])['messages'][1]['content'])
         f.check('native-return-revision-uses-saved-body',user['original_body'] == edit_body)
+        photo('native-returned-revision-preview')
         f.command('undo-revision')
         f.check('native-undo-restores-pre-revision-body',f.state()['effective_text'] == edit_body)
         if route_only:
@@ -256,8 +291,42 @@ def run(namespace):
         f.phase('idle'); f.wait(lambda: content('focus-agent1') == revised + edit_body)
         f.check('native-return-input-only-original-seat-window-once',content('focus-agent1-other') == '' and content('focus-agent2') == '' and f.first_path.read_text() == primary_before and f.command('insert-current')[0] == 1)
         photo('native-04-returned-original-seat-confirmed')
+        if not route_only:
+            # Reuse the same App process after closing agent1's real display:
+            # the editor must be re-created safely on agent2, not kept bound to
+            # the old GdkDisplay/window or the primary target.
+            agent1_after = content('focus-agent1')
+            show('agent2'); click_entry('focus-agent2','agent2')
+            second_original = 'synthetic agent2 original body.'
+            second_edit = 'synthetic agent2 saved editor body.'
+            record(second_original,second_original)
+            click_ui('编辑正文')
+            f.wait(lambda: any(w['name'] == '编辑完整正文' and w['showing'] for w in f.accessible()['widgets']))
+            click_ui('编辑完整正文')
+            send('mods 4'); send('key 30 1'); send('key 30 0'); send('mods 0'); send('type '+second_edit)
+            f.wait(lambda: f.state().get('draft_text') == second_edit,seconds=4)
+            f.check('agent2-new-display-editor-draft-is-isolated',content('focus-agent2') == '' and content('focus-agent1') == agent1_after)
+            photo('native-agent2-real-editor-draft')
+            click_ui('完成编辑')
+            f.wait(lambda: f.state()['effective_text'] == second_edit)
+            click_entry('focus-agent2','agent2')
+            second_result = 'synthetic agent2 revised editor body.'
+            ready,index = revise(second_result, after_return=True)
+            user = json.loads(json.loads(f.server.bodies[index])['messages'][1]['content'])
+            f.check('agent2-new-display-f9-uses-its-own-saved-body',user['original_body'] == second_edit and ready['raw'] == second_original)
+            f.command('undo-revision')
+            f.check('agent2-undo-preserves-original-display-state',f.state()['effective_text'] == second_edit)
+            click_ui('确认输入'); f.phase('idle')
+            f.wait(lambda: content('focus-agent2') == second_edit)
+            f.check('agent1-to-agent2-editor-lifecycle-keeps-targets-separate',content('focus-agent1') == agent1_after and f.first_path.read_text() == primary_before and content('focus-agent1-other') == '')
+            photo('native-05-agent2-editor-lifecycle-confirmed')
         f.check('native-suite-has-no-unplanned-http',f.server.unexpected == 0)
+        f.check('private-viewer-lease-stayed-live',not lease_errors)
     finally:
+        lease_enabled.clear()
+        lease_stop.set()
+        lease_thread.join(timeout=4)
+        (f.evidence/'native-lease-errors.json').write_text(json.dumps(lease_errors,indent=2))
         try:
             hide()
         except Exception:
