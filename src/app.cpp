@@ -86,6 +86,8 @@ App::App(Config c) : config_(std::move(c)), desktop_(config_) {
             {"seconds", 0},
             {"context", ""},
             {"context_note", ""}};
+  state_["action_note"] = "";
+  state_["revision_instruction"] = "";
   state_["target_note"] = "";
   state_["review_token"] = "";
   state_["preferred_raw"] = false;
@@ -117,11 +119,19 @@ App::~App() {
     gtk_window_destroy(GTK_WINDOW(window_));
 }
 void App::updateLocked(const Json &patch) {
+  if (patch.value("phase", std::string()) == "ready" &&
+      ((patch.contains("text") && patch.at("text") != state_.at("text")) ||
+       (patch.contains("raw") && patch.at("raw") != state_.at("raw"))))
+    ++result_revision_;
   state_.update(patch);
   if (patch.contains("phase") && patch.at("phase") == "idle") {
     state_["context"] = "";
     state_["context_note"] = "";
     rewrite_request_.reset();
+    revision_base_.reset();
+    revision_cancel_base_.reset();
+    revision_undo_.clear();
+    state_["revision_instruction"] = "";
     manual_confirmation_ = false;
     reviewed_guard_ = Json();
     review_token_.clear();
@@ -151,13 +161,24 @@ bool App::rememberRewrite(uint64_t version, const TextRequest &request) {
 }
 void App::finishSession(uint64_t version) {
   std::lock_guard lock(mutex_);
-  if (version != session_version_ || cancel_)
-    updateLocked({{"phase", "idle"}, {"text", ""}, {"raw", ""}, {"error", ""}});
+  if (version != session_version_ || cancel_) {
+    if (revision_base_)
+      restoreRevisionLocked("已取消语音修改，原正文已保留");
+    else
+      updateLocked(
+          {{"phase", "idle"}, {"text", ""}, {"raw", ""}, {"error", ""}});
+  }
+  revision_cancel_base_.reset();
   busy_ = false;
 }
 Json App::snapshot() {
   std::lock_guard lock(mutex_);
   auto state = state_;
+  state["session_id"] = session_id_;
+  state["result_revision"] = result_revision_;
+  state["effective_text"] =
+      preferred_raw_ ? state_.at("raw") : state_.at("text");
+  state["undo_revision_available"] = !revision_undo_.empty() && !delivered_;
   state["busy"] = busy_.load();
   state["retry_available"] = rewrite_request_.has_value() && !delivered_;
   state["manual_confirmation"] = manual_confirmation_;
@@ -254,27 +275,24 @@ void App::start(bool cmd) {
     throw std::runtime_error("正在处理上一段语音，请稍候");
   if (!asr_)
     throw std::runtime_error("本地模型不可用，请检查配置并重启");
-  if (snapshot().value("phase", std::string()) == "ready" ||
-      snapshot().value("phase", std::string()) == "delivery-uncertain" ||
-      snapshot().value("retry_available", false))
-    throw std::runtime_error("请先提交或取消上一段结果");
-  auto next_target = desktop_.target();
-  // Bind the editor at the user's start action, before any asynchronous audio
-  // startup. A later focus change must not become the implicit destination.
-  Json next_guard = desktop_.inputTarget(next_target);
+  const auto before = snapshot();
   if (cmd) {
-    if (next_guard.value("protected", false))
-      throw std::runtime_error("密码输入框不能复制选区或使用文本修改指令");
-    if (!next_guard.value("reliable", false))
-      throw std::runtime_error("无法核验编辑控件；未复制选区或发送模型请求");
-    auto ranges = next_guard.value("selections", Json::array());
-    if (ranges.size() != 1 || ranges[0][0] == ranges[0][1])
-      throw std::runtime_error("请先选择一段非空文字再触发指令模式");
-  }
-  auto next_selected = cmd ? desktop_.selection(next_target) : "";
-  if (cmd &&
-      !EquivalentInputTarget(next_guard, desktop_.inputTarget(next_target)))
-    throw std::runtime_error("编辑位置已变化；请重新选择文字再触发指令模式");
+    if (delivered_ || before.at("phase") != "ready" ||
+        !ValidBody(before.at("effective_text").get<std::string>()))
+      throw std::runtime_error("没有可修改的待确认正文；请先录音并保留结果");
+  } else if (before.at("phase") == "ready" ||
+             before.at("phase") == "delivery-uncertain" ||
+             before.value("retry_available", false))
+    throw std::runtime_error("请先提交或取消上一段结果");
+  // Revision always uses this session's retained body and original destination.
+  // No selection/clipboard/context is read to discover a revision subject.
+  auto next_target = cmd ? target_ : desktop_.target();
+  Json next_guard = desktop_.inputTarget(next_target);
+  if (cmd && (next_guard.value("protected", false) ||
+              !next_guard.value("reliable", false) || capture_changed_ ||
+              !EquivalentInputTarget(origin_guard_, next_guard)))
+    throw std::runtime_error(
+        "原输入位置受保护、已变化或无法核验；正文已保留，未开始语音修改");
   auto next_watch =
       next_target.kind == "local-editor"
           ? std::make_unique<InputWatch>(next_guard,
@@ -286,19 +304,29 @@ void App::start(bool cmd) {
           : std::make_unique<InputWatch>(next_target.pid, next_guard);
   target_watch_ = std::move(next_watch);
   copy_notice_until_ = 0;
-  capture_changed_ = false;
+  if (!cmd)
+    capture_changed_ = false;
   target_ = next_target;
-  selected_ = next_selected;
   focusEvents();
-  focus_changed_ = false;
+  if (!cmd)
+    focus_changed_ = false;
   delivered_ = false;
   stop_ = false;
   uint64_t version;
   {
     std::lock_guard lock(mutex_);
     version = ++session_version_;
+    if (cmd) {
+      revision_base_ = state_;
+      revision_cancel_base_ = state_;
+      revision_base_version_ = result_revision_;
+    } else {
+      ++session_id_;
+      result_revision_ = 0;
+      revision_undo_.clear();
+    }
     rewrite_request_.reset();
-    manual_confirmation_ = false;
+    manual_confirmation_ = cmd;
     origin_guard_ = next_guard;
     reviewed_guard_ = Json();
     review_token_.clear();
@@ -309,13 +337,15 @@ void App::start(bool cmd) {
   level_ = 0;
   recording_text_.clear();
   busy_ = true;
-  auto scene = scene_, selected = selected_;
+  auto scene = scene_;
+  auto original_body =
+      cmd ? before.at("effective_text").get<std::string>() : "";
   auto target = target_;
-  bool contextual = config_.data.at("context").value("enabled", false);
+  bool contextual = !cmd && config_.data.at("context").value("enabled", false);
   update({{"insertion_status", InsertionStatus(next_guard)},
           {"phase", "starting"},
-          {"text", "正在连接麦克风…"},
-          {"raw", ""},
+          {"text", cmd ? original_body : "正在连接麦克风…"},
+          {"raw", cmd ? before.at("raw").get<std::string>() : ""},
           {"error", ""},
           {"command_mode", cmd},
           {"seconds", 0},
@@ -323,11 +353,13 @@ void App::start(bool cmd) {
           {"review_token", ""},
           {"target_note", ""},
           {"preferred_raw", false},
+          {"revision_instruction", ""},
+          {"action_note", ""},
           {"retry_result", false},
           {"context_note", contextual ? "读取当前输入框前文…" : ""}});
   if (worker_.joinable())
     worker_.join();
-  worker_ = std::thread([this, scene, selected, target, contextual, cmd,
+  worker_ = std::thread([this, scene, original_body, target, contextual, cmd,
                          version] {
     try {
       // Capture before the bounded accessibility query so a slow application
@@ -343,7 +375,8 @@ void App::start(bool cmd) {
         origin_guard_ = guard;
       }
       asr_->begin(&cancel_);
-      updateSession(version, {{"phase", "recording"}, {"text", ""}});
+      updateSession(version, cmd ? Json{{"phase", "recording"}}
+                                 : Json{{"phase", "recording"}, {"text", ""}});
       std::string history;
       bool protected_field = guard.value("protected", false);
       protected_field =
@@ -406,7 +439,8 @@ void App::start(bool cmd) {
         auto text = asr_->push(pcm);
         preview_chars = g_utf8_strlen(text.c_str(), -1);
         if (!text.empty())
-          updateSession(version, {{"text", text}});
+          updateSession(version,
+                        {{cmd ? "revision_instruction" : "text", text}});
       };
       while (!stop_ && !cancel_) {
         consume(audio_.take());
@@ -450,12 +484,29 @@ void App::start(bool cmd) {
             version,
             {{"phase", "idle"}, {"text", ""}, {"raw", ""}, {"error", ""}});
       } else {
-        updateSession(version, {{"phase", "finalizing"}, {"text", ""}});
+        updateSession(version,
+                      cmd ? Json{{"phase", "finalizing"}}
+                          : Json{{"phase", "finalizing"}, {"text", ""}});
         auto result = asr_->finish(&cancel_);
         if (cancel_)
           updateSession(version,
                         {{"phase", "idle"}, {"text", ""}, {"raw", ""}});
-        else if (result.text.empty())
+        else if (cmd) {
+          if (!ValidBody(result.text))
+            throw std::runtime_error("未检测到有效修改要求；原正文已保留");
+          updateSession(version, {{"revision_instruction", result.text}});
+          auto current = desktop_.inputTarget(target);
+          if (target_watch_->changed() || current.value("protected", false) ||
+              !EquivalentInputTarget(guard, current))
+            throw std::runtime_error(
+                "修改录音期间位置已变化；未发送文字处理请求");
+          TextRequest request{
+              "", scene, original_body, "", result.warning, true, result.text};
+          if (rememberRewrite(version, request)) {
+            updateSession(version, {{"phase", "rewriting"}});
+            completeRevision(version, ProcessText(config_, request, cancel_));
+          }
+        } else if (result.text.empty())
           updateSession(
               version,
               {{"phase", "idle"}, {"text", "未检测到可识别语音"}, {"raw", ""}});
@@ -492,39 +543,135 @@ void App::start(bool cmd) {
                            privacy_protected
                                ? "密码输入框 · 不读取、复制或发送文字处理请求"
                                : "位置已变化或无法核验 · 未发送文字处理请求"}});
-            if (cmd) {
-              output.text.clear();
-              output.error = "编辑位置已变化；选区指令未发送，请取消后重新选择";
-            }
           }
-          if (request_allowed && (cmd || scene != "raw" || !history.empty())) {
-            TextRequest request{
-                result.text,    scene == "raw" ? "correct" : scene,
-                selected,       history,
-                result.warning, cmd};
+          if (request_allowed && (scene != "raw" || !history.empty())) {
+            TextRequest request{result.text,
+                                scene == "raw" ? "correct" : scene,
+                                "",
+                                history,
+                                result.warning,
+                                false,
+                                ""};
             if (rememberRewrite(version, request)) {
               updateSession(version, {{"phase", "rewriting"}});
               output = ProcessText(config_, request, cancel_);
             }
           }
-          updateSession(
-              version,
-              {{"insertion_status", insertion_status},
-               {"phase", cmd && output.text.empty() ? "error" : "ready"},
-               {"text", output.text},
-               {"error", output.error}});
+          updateSession(version, {{"insertion_status", insertion_status},
+                                  {"phase", "ready"},
+                                  {"text", output.text},
+                                  {"error", output.error}});
         }
       }
     } catch (const std::exception &e) {
       audio_.stop();
       asr_->cancel();
-      updateSession(version, {{"phase", cancel_ ? "idle" : "error"},
-                              {"text", ""},
-                              {"error", cancel_ ? "" : e.what()}});
+      if (cmd) {
+        std::lock_guard lock(mutex_);
+        if (version == session_version_ && !cancel_)
+          restoreRevisionLocked(e.what());
+      } else
+        updateSession(version, {{"phase", cancel_ ? "idle" : "error"},
+                                {"text", ""},
+                                {"error", cancel_ ? "" : e.what()}});
     }
     target_watch_.reset();
     finishSession(version);
   });
+}
+void App::restoreRevisionLocked(const std::string &error) {
+  if (!revision_base_)
+    return;
+  auto instruction = state_.value("revision_instruction", std::string());
+  state_ = *revision_base_;
+  revision_base_.reset();
+  preferred_raw_ = state_.value("preferred_raw", false);
+  manual_confirmation_ = true;
+  review_token_.clear();
+  reviewed_guard_ = Json();
+  reviewed_text_.clear();
+  state_["phase"] = "ready";
+  state_["command_mode"] = false;
+  state_["revision_instruction"] = instruction;
+  state_["review_token"] = "";
+  state_["target_note"] = "";
+  if (!error.empty()) {
+    auto previous = state_.at("error").get<std::string>();
+    state_["error"] = previous.empty() ? error : previous + "\n" + error;
+  }
+}
+void App::completeRevision(uint64_t version, const TextResult &output) {
+  std::lock_guard lock(mutex_);
+  if (version != session_version_ || cancel_ || !revision_base_ ||
+      revision_base_version_ != result_revision_)
+    return;
+  auto before = *revision_base_;
+  if (!output.processed || !ValidBody(output.text)) {
+    restoreRevisionLocked(output.error.empty() ? "修改结果无效，原正文已保留"
+                                               : output.error);
+    return;
+  }
+  restoreRevisionLocked("");
+  revision_undo_.push_back(std::move(before));
+  // Bound retained full versions to avoid unbounded memory use in long
+  // sessions.
+  if (revision_undo_.size() > 20)
+    revision_undo_.erase(revision_undo_.begin());
+  preferred_raw_ = false;
+  state_["preferred_raw"] = false;
+  updateLocked({{"phase", "ready"}, {"text", output.text}});
+  // Even an unchanged successful response creates a new version/undo boundary.
+  if (revision_base_version_ == result_revision_)
+    ++result_revision_;
+  if (!output.error.empty()) {
+    auto previous = state_.at("error").get<std::string>();
+    state_["error"] =
+        previous.empty() ? output.error : previous + "\n" + output.error;
+  }
+  rewrite_request_.reset();
+}
+void App::undoRevision() {
+  std::lock_guard lock(mutex_);
+  if (busy_ || delivered_ || state_.at("phase") != "ready" ||
+      revision_undo_.empty())
+    throw std::runtime_error("没有可撤销的语音修改");
+  state_ = std::move(revision_undo_.back());
+  revision_undo_.pop_back();
+  preferred_raw_ = state_.value("preferred_raw", false);
+  ++session_version_;
+  ++result_revision_;
+  manual_confirmation_ = true;
+  rewrite_request_.reset();
+  review_token_.clear();
+  reviewed_guard_ = Json();
+  reviewed_text_.clear();
+  state_["review_token"] = "";
+  state_["target_note"] = "";
+  state_["command_mode"] = false;
+}
+void App::editResult(const std::string &arg) {
+  auto edit = Json::parse(arg);
+  auto text = edit.at("text").get<std::string>();
+  if (!ValidBody(text))
+    throw std::runtime_error("正文不能为空或包含无效文字；原正文已保留");
+  std::lock_guard lock(mutex_);
+  if (busy_ || delivered_ || state_.at("phase") != "ready" ||
+      edit.at("session_id") != session_id_ ||
+      edit.at("base_revision") != result_revision_)
+    throw std::runtime_error("本次结果已变化，未保存过期编辑");
+  preferred_raw_ = false;
+  ++session_version_;
+  ++result_revision_;
+  manual_confirmation_ = true;
+  rewrite_request_.reset();
+  revision_undo_.clear();
+  review_token_.clear();
+  reviewed_guard_ = Json();
+  reviewed_text_.clear();
+  state_.update({{"text", text},
+                 {"preferred_raw", false},
+                 {"review_token", ""},
+                 {"target_note", ""}});
 }
 void App::retry() {
   if (busy_)
@@ -548,6 +695,14 @@ void App::retry() {
         (phase != "ready" && phase != "error"))
       throw std::runtime_error("没有可重试的本次文字，请先录音");
     request = *rewrite_request_;
+    if (request.command_mode) {
+      if ((preferred_raw_ ? state_.at("raw") : state_.at("text")) !=
+          request.original_body)
+        throw std::runtime_error("正文已变化，请重新口述修改要求");
+      revision_base_ = state_;
+      revision_cancel_base_ = state_;
+      revision_base_version_ = result_revision_;
+    }
     version = session_version_;
     manual_confirmation_ = true;
     review_token_.clear();
@@ -567,12 +722,12 @@ void App::retry() {
     worker_.join();
   worker_ = std::thread([this, request, version] {
     auto output = ProcessText(config_, request, cancel_);
-    updateSession(
-        version,
-        {{"phase",
-          request.command_mode && output.text.empty() ? "error" : "ready"},
-         {"text", output.text},
-         {"error", output.error}});
+    if (request.command_mode)
+      completeRevision(version, output);
+    else
+      updateSession(
+          version,
+          {{"phase", "ready"}, {"text", output.text}, {"error", output.error}});
     finishSession(version);
   });
 }
@@ -581,6 +736,11 @@ void App::selectText(bool raw) {
   if (busy_ || delivered_ || state.at("phase") != "ready" ||
       state.at("command_mode").get<bool>())
     throw std::runtime_error("没有可切换显示的听写文字");
+  if (preferred_raw_ != raw) {
+    ++result_revision_;
+    rewrite_request_.reset();
+    revision_undo_.clear();
+  }
   preferred_raw_ = raw;
   manual_confirmation_ = true;
   review_token_.clear();
@@ -603,27 +763,22 @@ void App::commit(bool raw) {
   auto state = snapshot();
   if (state.at("phase") != "ready")
     throw std::runtime_error("没有待提交的结果");
-  if (raw && state.at("command_mode").get<bool>())
-    throw std::runtime_error("指令模式的识别原文是指令，不能用于替换选区");
   preferred_raw_ = raw;
   review_token_.clear();
   reviewed_guard_ = Json();
   reviewed_text_.clear();
   update({{"preferred_raw", raw}, {"review_token", ""}, {"target_note", ""}});
   auto text = state.at(raw ? "raw" : "text").get<std::string>();
-  if (!state.at("command_mode").get<bool>() &&
-      origin_guard_.value("selections", Json::array()).size() > 0)
+  if (origin_guard_.value("selections", Json::array()).size() > 0)
     throw std::runtime_error("普通听写不能覆盖选区；请取消选区后核对当前位置");
   if (capture_changed_)
     throw std::runtime_error("录音期间编辑位置曾变化或无法核验；请核对当前位置"
-                             "后确认，指令模式须取消重录");
+                             "后确认");
   deliver(text, origin_guard_);
 }
 void App::deliver(const std::string &text, const Json &guard) {
   try {
-    desktop_.paste(target_, text, guard,
-                   !snapshot().at("command_mode").get<bool>() &&
-                       WindowOnlyInputTarget(guard));
+    desktop_.paste(target_, text, guard, WindowOnlyInputTarget(guard));
   } catch (const PasteUncertain &error) {
     delivered_ = true;
     {
@@ -653,9 +808,6 @@ void App::review() {
   auto state = snapshot();
   if (busy_ || delivered_ || state.at("phase") != "ready")
     throw std::runtime_error("没有可确认的本次结果");
-  if (state.at("command_mode").get<bool>())
-    throw std::runtime_error(
-        "指令替换绑定原控件和原选区，请恢复原选区后确认修改");
   auto next_target = desktop_.rebind(target_);
   auto guard = desktop_.inputTarget(next_target);
   if (guard.value("protected", false))
@@ -681,8 +833,7 @@ void App::review() {
 }
 void App::confirm(const std::string &token) {
   auto state = snapshot();
-  if (busy_ || delivered_ || state.at("phase") != "ready" ||
-      state.at("command_mode").get<bool>() || token.empty() ||
+  if (busy_ || delivered_ || state.at("phase") != "ready" || token.empty() ||
       token != review_token_ || reviewed_version_ != session_version_)
     throw std::runtime_error("当前位置确认已失效，请重新核对");
   try {
@@ -857,13 +1008,25 @@ Json App::command(const std::string &cmd, const std::string &arg) {
     }
     if (cmd == "start")
       start(false);
-    else if (cmd == "command")
-      start(true);
-    else if (cmd == "stop")
+    else if (cmd == "command" || cmd == "revise") {
+      auto phase = snapshot().at("phase");
+      if (busy_ && snapshot().value("command_mode", false) &&
+          (phase == "starting" || phase == "recording"))
+        stop_ = true;
+      else {
+        start(true);
+        revision_pressed_ = cmd == "command";
+      }
+    } else if (cmd == "command-release") {
+      if (revision_pressed_ && busy_ && snapshot().value("command_mode", false))
+        stop_ = true;
+      revision_pressed_ = false;
+    } else if (cmd == "stop")
       stop_ = true;
     else if (cmd == "toggle") {
-      if (busy_ && (snapshot()["phase"] == "recording" ||
-                    snapshot()["phase"] == "starting"))
+      if (busy_ && !snapshot().value("command_mode", false) &&
+          (snapshot()["phase"] == "recording" ||
+           snapshot()["phase"] == "starting"))
         stop_ = true;
       else
         start(false);
@@ -871,8 +1034,9 @@ Json App::command(const std::string &cmd, const std::string &arg) {
       if (!pressed_) {
         pressed_ = true;
         pressed_at_ = g_get_monotonic_time();
-        if (busy_ && (snapshot()["phase"] == "recording" ||
-                      snapshot()["phase"] == "starting")) {
+        if (busy_ && !snapshot().value("command_mode", false) &&
+            (snapshot()["phase"] == "recording" ||
+             snapshot()["phase"] == "starting")) {
           stop_ = true;
           pressed_ = false;
         } else
@@ -882,17 +1046,27 @@ Json App::command(const std::string &cmd, const std::string &arg) {
       if (pressed_ && g_get_monotonic_time() - pressed_at_ >= 250000)
         stop_ = true;
       pressed_ = false;
-    } else if (cmd == "cancel") {
+    } else if (cmd == "cancel" || cmd == "discard") {
       copy_notice_until_ = 0;
       if (settings_saving_) {
         settings_cancel_ = true;
         return {{"ok", true}, {"saving", true}};
       }
       pressed_ = false;
+      revision_pressed_ = false;
       std::lock_guard lock(mutex_);
       cancel_ = true;
       stop_ = true;
+      if (cmd == "cancel" && revision_cancel_base_) {
+        revision_base_ = revision_cancel_base_;
+        ++session_version_;
+        rewrite_request_.reset();
+        updateLocked({{"phase", "cancelling"}, {"review_token", ""}});
+        return {{"ok", true}, {"state", state_}};
+      }
       delivered_ = true;
+      revision_base_.reset();
+      revision_cancel_base_.reset();
       ++session_version_;
       rewrite_request_.reset();
       review_token_.clear();
@@ -905,10 +1079,14 @@ Json App::command(const std::string &cmd, const std::string &arg) {
                     {"context_note", ""},
                     {"review_token", ""},
                     {"target_note", ""}});
-    } else if (cmd == "retry")
+    } else if (cmd == "undo-revision")
+      undoRevision();
+    else if (cmd == "edit-result")
+      editResult(arg);
+    else if (cmd == "retry")
       retry();
     else if (cmd == "commit")
-      commit(false);
+      commit(preferred_raw_);
     else if (cmd == "raw")
       commit(true);
     else if (cmd == "select-text") {
@@ -967,7 +1145,12 @@ Json App::command(const std::string &cmd, const std::string &arg) {
           }
         }
       }
-      update({{"error", e.what()}});
+      if (snapshot().at("phase") == "ready" &&
+          (cmd == "edit-result" || cmd == "undo-revision" ||
+           cmd == "select-text" || cmd == "revise" || cmd == "command"))
+        update({{"action_note", e.what()}});
+      else
+        update({{"error", e.what()}});
     }
     return {{"ok", false}, {"error", e.what()}};
   }
@@ -997,17 +1180,19 @@ void App::registerOverlay() {
     if (connect(fd, reinterpret_cast<const sockaddr *>(&address),
                 sizeof(address)) < 0)
       throw std::runtime_error("No desktop broker");
-    const auto message = Json{{"id", "voice-" + std::to_string(getpid())},
-                              {"method", "register-local-overlay"},
-                              {"params", {{"namespaces", Json::array({"hyprvoice"})}}}}
-                             .dump() +
-                         "\n";
+    const auto message =
+        Json{{"id", "voice-" + std::to_string(getpid())},
+             {"method", "register-local-overlay"},
+             {"params", {{"namespaces", Json::array({"hyprvoice"})}}}}
+            .dump() +
+        "\n";
     if (send(fd, message.data(), message.size(), MSG_NOSIGNAL) !=
         static_cast<ssize_t>(message.size()))
       throw std::runtime_error("Registration write failed");
     pollfd response{fd, POLLIN, 0};
-    if (poll(&response, 1, 1500) <= 0 ||
-        !Json::parse(Receive(fd)).value("result", Json::object()).value("registered", false))
+    if (poll(&response, 1, 1500) <= 0 || !Json::parse(Receive(fd))
+                                              .value("result", Json::object())
+                                              .value("registered", false))
       throw std::runtime_error("Registration unavailable");
     overlay_socket_ = fd;
   } catch (...) {
@@ -1117,13 +1302,15 @@ void App::ui() {
   auto text = state.at("text").get<std::string>();
   if (ready && state.value("preferred_raw", false))
     text = state.at("raw").get<std::string>();
-  if (phase == "starting" || phase == "idle" || phase == "loading")
+  if ((phase == "starting" && !command_mode) || phase == "idle" ||
+      phase == "loading")
     recording_text_.clear();
-  if (recording && !text.empty() && state.at("backend") == "x-asr")
+  if (recording && !command_mode && !text.empty() &&
+      state.at("backend") == "x-asr")
     recording_text_ = text;
-  if (phase == "finalizing")
+  if (phase == "finalizing" && !command_mode)
     text = recording_text_;
-  if (phase == "loading" || phase == "starting")
+  if (phase == "loading" || (phase == "starting" && !command_mode))
     text.clear();
   const bool placeholder = text.empty();
   if (placeholder) {
@@ -1168,9 +1355,12 @@ void App::ui() {
   auto error = state.at("error").get<std::string>();
   std::string hint;
   if (recording)
-    hint = RecordingHint(command_mode, pressed_);
+    hint = command_mode ? "请说修改要求，结束后先检查新版正文"
+                        : RecordingHint(false, pressed_);
   else if (phase == "retrying")
     hint = "不用再说一遍";
+  else if (command_mode)
+    hint = "原正文已保留，修改完成后等待确认";
   else if (copied_notice || copy_only) {
     bool terminal = false;
     for (const auto &app : config_.data.at("terminal_classes"))

@@ -28,6 +28,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.server.bodies.append(wire_body)
             self.server.headers_seen.append(dict(self.headers))
         mode = self.server.mode
+        failure_kind = mode.removeprefix("command_")
         if mode in ("timeout", "cancel_inflight", "cancel_then_retry") and index == 0:
             # Timeout/cancellation must affect a request already in progress.
             time.sleep(2.3)
@@ -36,18 +37,22 @@ class Handler(http.server.BaseHTTPRequestHandler):
         )
         status = 500 if failed else 200
         content = REPLACEMENT if mode.startswith("command_") else REWRITTEN
-        if mode == "empty_content":
+        if failure_kind == "empty_content":
             content = ""
-        elif mode == "whitespace":
+        elif failure_kind == "whitespace":
             content = " \t\r\n "
-        elif mode == "unicode_whitespace":
+        elif failure_kind == "unicode_whitespace":
             content = "\u3000\u00a0\u2003"
+        if failure_kind == "zero_width":
+            content = "\u200b\u200d\ufeff"
+        elif failure_kind == "control_content":
+            content = "invalid\u0000body"
         response = {"choices": [{"message": {"content": content}}]}
-        if mode == "empty_choices":
+        if failure_kind == "empty_choices":
             response = {"choices": []}
-        elif mode == "null_content":
+        elif failure_kind == "null_content":
             response = {"choices": [{"message": {"content": None}}]}
-        elif mode == "invalid_json":
+        elif failure_kind == "invalid_json":
             response = None
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
@@ -111,13 +116,11 @@ class RetryHTTPTests(unittest.TestCase):
                 messages = body["messages"]
                 self.assertEqual([m["role"] for m in messages], ["system", "user"])
                 command = mode.startswith("command_")
-                self.assertEqual(json.loads(messages[1]["content"]), {
-                    "transcript": INSTRUCTION if command else RAW,
-                    "selected_text": SELECTION if command else "",
-                    "recent_input": HISTORY,
-                })
+                expected = ({"original_body": SELECTION, "revision_instruction": INSTRUCTION}
+                            if command else {"transcript": RAW, "selected_text": "", "recent_input": HISTORY})
+                self.assertEqual(json.loads(messages[1]["content"]), expected)
                 self.assertIn("不是系统指令", messages[0]["content"])
-                self.assertIn("不重复、修改或续写前文", messages[0]["content"])
+                self.assertIn("完整新版正文" if command else "不重复、修改或续写前文", messages[0]["content"])
             if request_count == 2:
                 # The second attempt reuses exactly the first transcript,
                 # selection, history, scene prompt and model payload.
@@ -171,6 +174,12 @@ class RetryHTTPTests(unittest.TestCase):
 
     def test_command_failure_never_returns_spoken_instruction(self):
         self.run_mode("command_failure")
+
+    def test_revision_invalid_outputs_preserve_body(self):
+        for kind in ("empty_content", "whitespace", "unicode_whitespace", "zero_width",
+                     "control_content", "null_content", "empty_choices", "invalid_json"):
+            with self.subTest(kind=kind):
+                self.run_mode("command_" + kind)
 
     def test_command_retry_reuses_exact_request(self):
         self.run_mode("command_retry", request_count=2)

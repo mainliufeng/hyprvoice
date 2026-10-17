@@ -25,8 +25,13 @@ int main(int argc, char **argv) {
     Require(!fixture.is_null(), "Unknown synthetic case");
     const std::string selected = fixture.at("selected");
     const hv::TextRequest request{
-        fixture.at("transcript"), scene, selected,
-        fixture.at("history"),    "",    !selected.empty()};
+        selected.empty() ? fixture.at("transcript").get<std::string>() : "",
+        scene,
+        selected,
+        fixture.at("history"),
+        "",
+        !selected.empty(),
+        selected.empty() ? "" : fixture.at("transcript").get<std::string>()};
     const auto expected = mode == "bad"
                               ? fixture.at("bad").get<std::string>()
                               : fixture.at("expected")
@@ -35,7 +40,8 @@ int main(int argc, char **argv) {
     std::atomic<bool> cancel = false;
     const auto result = hv::ProcessText(config, request, cancel);
     if (mode == "failure" || mode == "empty" || mode == "retry") {
-      Require(result.text == (request.command_mode ? "" : request.raw),
+      Require(result.text ==
+                  (request.command_mode ? request.original_body : request.raw),
               "Failure did not preserve original or empty command fallback");
       Require(!result.error.empty(), "Failure did not report an error");
     } else {

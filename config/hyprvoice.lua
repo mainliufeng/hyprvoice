@@ -3,7 +3,7 @@
 hl.bind("F8", hl.dsp.exec_cmd("hyprvoice press"))
 hl.bind("F8", hl.dsp.exec_cmd("hyprvoice release"), { release = true })
 hl.bind("F9", hl.dsp.exec_cmd("hyprvoice command"))
-hl.bind("F9", hl.dsp.exec_cmd("hyprvoice stop"), { release = true })
+hl.bind("F9", hl.dsp.exec_cmd("hyprvoice command-release"), { release = true })
 hl.bind("SUPER + ALT + return", hl.dsp.exec_cmd("hyprvoice commit"))
 hl.bind("SUPER + ALT + o", hl.dsp.exec_cmd("hyprvoice raw"))
 hl.bind("SUPER + ALT + escape", hl.dsp.exec_cmd("hyprvoice cancel"))

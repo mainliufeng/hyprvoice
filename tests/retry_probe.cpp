@@ -27,7 +27,7 @@ void CheckSuccess(const hv::TextResult &result, bool command) {
 }
 
 void CheckFailure(const hv::TextResult &result, bool command) {
-  Require(result.text == (command ? "" : raw),
+  Require(result.text == (command ? selection : raw),
           "Unsafe failure fallback: original text or empty command required");
   Require(result.error.find(warning) != std::string::npos,
           "Failed processing lost the ASR warning");
@@ -43,12 +43,13 @@ int main(int argc, char **argv) {
     hv::Config config(argv[1]);
     const std::string mode = argv[2];
     const bool command = mode.starts_with("command_");
-    const hv::TextRequest request{command ? instruction : raw,
+    const hv::TextRequest request{command ? "" : raw,
                                   "correct",
                                   command ? selection : "",
                                   history,
                                   warning,
-                                  command};
+                                  command,
+                                  command ? instruction : ""};
     std::atomic<bool> cancel = mode == "cancel_pre";
     const bool cancelling =
         mode == "cancel_inflight" || mode == "cancel_then_retry";

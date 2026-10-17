@@ -294,6 +294,13 @@ for line in sys.stdin:
     raw = '合成原文：不会支付2400元'
     processed = '合成结果：不会支付2400元。'
 
+    if os.environ.get('HYPRVOICE_REVISION_QA'):
+        from revision_cases import run as run_revision
+        run_revision(globals())
+        result['http_requests'] = len(server.bodies)
+        result['binary_sha256'] = hashlib.sha256((repo/'build/hyprvoice').read_bytes()).hexdigest()
+        raise SystemExit(0)
+
     # Reuse the isolated production App fixture for the result-button flow.
     if os.environ.get('HYPRVOICE_RESULT_ACTIONS_QA'):
         from result_actions_cases import run as run_result_actions
@@ -453,33 +460,8 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     assert command('cancel')[0] == 0
     phase('idle')
 
-    # Command retry keeps the originally selected text, even after the live
-    # selection changes. Submission still checks the original selection.
-    boot()
-    focus(first)
-    key('ctrl a'); key('type public selected budget 2400.'); key('ctrl a')
-    selected = first_path.read_text()
-    instruction, replacement = '合成指令：金额改为3000', 'Public selected budget 3000.'
-    set_transcripts(instruction)
-    index = plan('failure', 'success', output=replacement)
-    begin('command')
-    failed = finish('error')
-    check('command-failure-never-offers-spoken-instruction', failed['text'] == '' and
-          failed['raw'] == instruction and failed['retry_available'] and command('raw')[0] == 1)
-    widgets = accessible()['widgets']
-    check('command-has-no-raw-button', not any(w['name'] == '撤销修改' and w['showing'] for w in widgets))
-    key('key Left')
-    click('再试一次')
-    ready = phase('ready')
-    check('command-retry-request-byte-identical', server.bodies[index] == server.bodies[index + 1])
-    check('command-retry-success-is-replacement', ready['text'] == replacement and ready['manual_confirmation'])
-    label('替换选中文字')
-    check('changed-selection-commit-rejected', command('commit')[0] == 1 and first_path.read_text() == selected)
-    key('ctrl a')
-    click('替换选中文字')
-    phase('idle')
-    wait(lambda: first_path.read_text() == replacement)
-    check('command-replaces-selection-exactly-once', first_path.read_text() == replacement and command('commit')[0] == 1)
+    # Selection replacement was removed. Current-result command/retry and
+    # immutable raw behavior are covered by revision_cases in the same fixture.
 
     # Protected input never creates a retryable cloud request.
     config['context']['enabled'] = False
@@ -634,22 +616,6 @@ os.execv('/usr/bin/wl-copy', ['/usr/bin/wl-copy', *sys.argv[1:]])
     check('uncertain-result-explicit-copy-once-without-second-input',run('/usr/bin/wl-paste','--no-newline')==processed and
           Path(str(pair_path)+'.second').read_text()==before+processed and command('copy')[0]==1)
     env['PATH'] = original_path
-    boot(auto=False)
-    twins, twins_path = editor('abcde', 'command-twin-fields', two=True)
-    key('ctrl a')
-    set_transcripts(instruction); plan('success', output='replacement')
-    begin('command'); finish()
-    key('ctrl Tab'); key('ctrl a')
-    check('command-identical-selection-other-control-blocked', command('commit')[0] == 1 and
-          twins_path.read_text() == 'abcde' and Path(str(twins_path)+'.second').read_text() == 'abcde')
-    check('command-cannot-retarget-by-position-review', command('review')[0] == 1)
-    key('ctrl Tab'); key('ctrl Tab'); key('ctrl a')
-    assert command('commit')[0] == 0
-    phase('idle')
-    wait(lambda: twins_path.read_text() == 'replacement')
-    check('command-original-control-and-selection-restore-once', command('commit')[0] == 1 and
-          Path(str(twins_path)+'.second').read_text() == 'abcde')
-
     key('ctrl End')
     boot(auto=False)
     set_transcripts(raw)

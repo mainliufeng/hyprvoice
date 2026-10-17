@@ -44,14 +44,23 @@ private:
   std::atomic<bool> busy_ = false, stop_ = false, cancel_ = false;
   std::atomic<float> level_ = 0;
   bool delivered_ = true, focus_changed_ = false, pressed_ = false;
+  bool revision_pressed_ = false;
   bool input_status_refresh_ = true;
   gint64 pressed_at_ = 0, copy_notice_until_ = 0;
   Target target_;
-  std::string selected_, scene_;
-  // A pending request keeps target_/selected_ fixed until commit or cancel.
+  std::string scene_;
+  // A pending request keeps target_ fixed until commit or cancel.
   // mutex_ protects this snapshot, its version, and result publication.
   std::optional<TextRequest> rewrite_request_;
-  uint64_t session_version_ = 0;
+  uint64_t session_version_ = 0, session_id_ = 0, result_revision_ = 0;
+  std::optional<Json> revision_base_, revision_cancel_base_;
+  std::vector<Json> revision_undo_;
+  uint64_t revision_base_version_ = 0;
+  void restoreRevisionLocked(const std::string &error);
+  void completeRevision(uint64_t version, const TextResult &output);
+  void undoRevision();
+  void editResult(const std::string &arg);
+
   bool manual_confirmation_ = false;
   Json origin_guard_, reviewed_guard_;
   std::string review_token_;

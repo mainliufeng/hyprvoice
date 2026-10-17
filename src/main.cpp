@@ -16,6 +16,8 @@ int main(int argc, char **argv) {
           << "hyprvoice init | serve | doctor | transcribe WAV | replay "
              "MANIFEST\n"
           << "hyprvoice start | stop | toggle | press | release | command | "
+             "command-release | revise | undo-revision | edit-result JSON | "
+             "discard | "
              "cancel | retry | commit | raw | review | confirm TOKEN | copy | "
              "status | scene NAME | backend "
              "fun|x-asr "

@@ -97,7 +97,7 @@ Lua 配置使用 `config/hyprvoice.lua` 的绑定；仍使用 hyprlang 时参考
 | 按键示例 | 动作 |
 |---|---|
 | F8 | 轻按开始／结束，按住说话后松开结束 |
-| F9 | 选中文字后按住说修改指令，松开处理 |
+| F9 | 对当前待确认正文口述修改要求，松开处理（无需应用选区） |
 | Super+Alt+Enter | 提交处理结果 |
 | Super+Alt+O | 提交识别原文 |
 | Super+Alt+Escape | 取消当前会话 |
@@ -148,3 +148,5 @@ Fun 使用独立 FSMN VAD，结束录音后识别完整语音段；录音时显�
 
 Cornice 多 seat 特性分支的 F8 输入路由、只读边界及隔离验证见
 [多 seat 语音输入](docs/cornice-seats.md)。
+
+当前结果语音修改的状态/UI接口与待确认边界见 [语音修改契约](docs/voice-revision/contract.md)。

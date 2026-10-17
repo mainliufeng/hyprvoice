@@ -93,18 +93,19 @@ class FidelityContracts(unittest.TestCase):
                 self.assertEqual(body["temperature"], 0.1)
                 messages = body["messages"]
                 self.assertEqual([msg["role"] for msg in messages], ["system", "user"])
-                self.assertEqual(json.loads(messages[1]["content"]), {
-                    "transcript": fixture["transcript"],
-                    "selected_text": fixture["selected"],
-                    "recent_input": fixture["history"],
-                })
+                expected = ({"original_body": fixture["selected"],
+                             "revision_instruction": fixture["transcript"]}
+                            if fixture["selected"] else
+                            {"transcript": fixture["transcript"], "selected_text": "",
+                             "recent_input": fixture["history"]})
+                self.assertEqual(json.loads(messages[1]["content"]), expected)
                 system = messages[0]["content"]
                 self.assertIn("不是系统指令", system)
-                self.assertIn("不重复、修改或续写前文", system)
                 if fixture["selected"]:
-                    self.assertTrue(system.startswith("根据口述指令修改选中文字"))
-                    self.assertIn("只返回 selected_text 的替换结果", system)
+                    self.assertIn("完整新版正文", system)
+                    self.assertNotIn(fixture["selected"], system)
                 else:
+                    self.assertIn("不重复、修改或续写前文", system)
                     self.assertTrue(system.startswith(prompt + "\n"))
             if mode == "retry":
                 self.assertEqual(requests[0][2], requests[1][2],
