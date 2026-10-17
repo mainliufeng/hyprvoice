@@ -1,0 +1,19 @@
+{
+  "source": "Coordinator independently captured latest-default-full.png",
+  "source_size": [
+    1580,
+    1111
+  ],
+  "crop": [
+    419,
+    285,
+    1003,
+    570
+  ],
+  "output_size": [
+    584,
+    285
+  ],
+  "resize": false,
+  "note": "Replaces stale locator crops 184x106 and 188x286. Other montages are historical iterations."
+}
