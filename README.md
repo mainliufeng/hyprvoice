@@ -4,6 +4,7 @@
 
 本版同时保留英文长录音尾句恢复与逐样本退化检查；实际收益与限制见 [验证记录](docs/late-tail-verification.md)。本轮安装与回退见 [交付记录](docs/result-review/installation.md)。
 项目网站：<https://hyprvoice.liufeng.me>。运行 `hyprvoice --version` 查看程序版本。
+正式源码包与 SHA256 校验和：[0.3.0 下载](https://github.com/mainliufeng/hyprvoice/releases/tag/v0.3.0)。本版不提供预编译程序或模型。
 
 独立的 Hyprland 语音输入工具。保留现有 Fcitx 拼音，用快捷键录音，通过悬浮条预览，最终粘贴到应用。
 构建与运行不依赖 `voice-input`、Fcitx 开发库或 `vinput-registry`。本地模型文件可复用现有下载。旧项目移植的辅助代码已移除，独立实现范围见 [实现说明](docs/independent-implementation.md)。

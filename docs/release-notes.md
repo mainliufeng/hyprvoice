@@ -10,6 +10,31 @@
 
 验收与边界见 [结果检查](result-review.md)、[语音修改契约](voice-revision/contract.md)。隔离桌面测试不使用日常麦克风；合成 HTTP 契约不代表真实模型质量。安装与最终构建 SHA 见 [交付记录](result-review/installation.md)。
 
+本版也包含 0.2.1 之后的英文长录音尾句修复：仅对符合条件的最后一段尝试重识别，保留完整前文，恢复结果等待确认。固定回归中一个公开长音频尾句改善，其余样本没有字符退化；不代表自然口述准确率普遍提升，详见 [逐样本验证](late-tail-verification.md)。
+
+### 安装与升级
+
+这是源码正式版，不提供预编译二进制、模型或可选 Fun worker。可下载 [源码包与 SHA256SUMS](https://github.com/mainliufeng/hyprvoice/releases/tag/v0.3.0)，或固定版本克隆：
+
+```sh
+git clone --branch v0.3.0 --depth 1 https://github.com/mainliufeng/hyprvoice.git
+cd hyprvoice
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j2
+ctest --test-dir build --output-on-failure
+build/hyprvoice --version
+```
+
+依赖、模型路径与首次启动见 [README](../README.md)。升级前完成或取消待处理结果，备份旧程序，保留现有配置和模型。F9 松开绑定需从旧的 `hyprvoice stop` 更新为 `hyprvoice command-release`；按下仍使用 `hyprvoice command`。示例见 `config/hyprvoice.conf` / `config/hyprvoice.lua`，二选一合入自己的快捷键配置。不要同时加载两份绑定。
+
+### 验证范围与限制
+
+0.3.0 冻结功能已通过 13 组 CTest、45 项原语音修改回归、8 项实际私有 PipeWire 故障检查、70 项恢复/候选/草稿/重试检查，以及独立主桌面 15 项、多 seat 29 项检查。部分故障使用明确的 Audio/ASR 替身或本地 HTTP 合约；这些数字包含跨组重复场景，不能当成真实口述质量分数。最终公开 WAV 的真实 X-ASR 回放与同模型基线逐字、前缀、尾句及评分一致，详见 [验收记录](result-review/verification.md)。
+
+正式发布另外从干净 checkout 与将要上传的源码包执行 Release 构建、完整 CTest、无配置版本查询及包校验，结果见 [发布核验](releases/0.3.0-verification.md)。仓库未配置 GitHub Actions；本次自动测试在本机执行。
+
+真实麦克风口述与外部文字模型的语义质量没有验收。既有中英词改写、英文中间句遗漏及 Fun-ASR 否定错误仍可能出现；候选和差异只提供检查线索，不保证哪一版正确。没有声称对标商业输入法。
+
 ## 0.2.1 · 2026-10-08
 
 中英混说时，如果录音过程中和结束后的两次识别对局部英文词有不同结果，面板会提示“英文词可能听错了，请检查后再点‘输入’”，保留文字并等待确认。正常识别仍按原设置自动输入。这个提示不能判断哪次识别正确，也不会自动改词。
