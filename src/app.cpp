@@ -4,6 +4,7 @@
 #include "overlay_style.h"
 #include "process.h"
 #include "rewrite.h"
+#include "sherpa_runtime.h"
 #include "ui_text.h"
 #include <algorithm>
 #include <chrono>
@@ -310,8 +311,11 @@ void App::start(bool cmd) {
     throw std::runtime_error("请先关闭设置窗口，再回到输入位置开始录音");
   if (busy_)
     throw std::runtime_error("正在处理上一段语音，请稍候");
-  if (!asr_)
+  if (!asr_) {
+    if (config_.data.at("asr").at("backend") == "x-asr")
+      RequireSherpaRuntime();
     throw std::runtime_error("本地模型不可用，请检查配置并重启");
+  }
   const auto before = snapshot();
   if (cmd) {
     if (delivered_ || before.at("phase") != "ready" ||
@@ -2265,6 +2269,8 @@ void App::run() {
     try {
       asr_ = std::make_unique<Asr>(config_, &cancel_);
       update({{"phase", "idle"}, {"text", ""}, {"model_ready", true}});
+    } catch (const SherpaRuntimeMismatch &e) {
+      update({{"phase", "error"}, {"text", ""}, {"error", e.what()}});
     } catch (const std::exception &e) {
       update({{"phase", "error"},
               {"text", ""},

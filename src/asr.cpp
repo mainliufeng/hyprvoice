@@ -1,5 +1,6 @@
 #include "asr.h"
 #include "fun_backend.h"
+#include "sherpa_runtime.h"
 #include "transcript_text.h"
 #include <algorithm>
 #include <cmath>
@@ -21,6 +22,7 @@ Asr::Asr(const Config &c, const std::atomic<bool> *cancelled) {
     fun_ = std::make_unique<FunBackend>(c, cancelled);
     return;
   }
+  RequireSherpaRuntime();
   std::string hotwords;
   if (!c.path("hotwords").empty()) {
     hotwords = ReadFile(c.path("hotwords"));

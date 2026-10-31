@@ -1,4 +1,5 @@
 #include "speech.h"
+#include "sherpa_runtime.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -10,6 +11,7 @@ void SpeechDetector::Destroy::operator()(
   SherpaOnnxDestroyVoiceActivityDetector(p);
 }
 SpeechDetector::SpeechDetector(const std::string &model) {
+  RequireSherpaRuntime();
   SherpaOnnxVadModelConfig settings{};
   settings.sample_rate = 16000;
   settings.num_threads = 1;

@@ -41,6 +41,10 @@ cmake --build build -j2
 ctest --test-dir build --output-on-failure
 ```
 
+系统升级 `sherpa-onnx` 后，重新运行上述构建、测试并更新已安装程序，再重启
+`hyprvoice.service`。程序会在传入模型配置前核对构建时与运行时的语音库版本；
+版本变化时拒绝加载并提示重新构建，避免 C API 结构布局变化被误报成模型不可用。
+
 ## 配置真实模型
 
 只支持以下两套 transducer 文件名，其他模型不能直接替换。模型参考：[sherpa-onnx 模型文档](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/index.html)。

@@ -8,11 +8,31 @@ pkg_check_modules(PW REQUIRED IMPORTED_TARGET libpipewire-0.3)
 pkg_check_modules(CURL REQUIRED IMPORTED_TARGET libcurl)
 pkg_check_modules(ATSPI REQUIRED IMPORTED_TARGET atspi-2>=2.52)
 find_library(SHERPA sherpa-onnx-c-api REQUIRED)
+find_path(SHERPA_INCLUDE_DIR sherpa-onnx/c-api/c-api.h REQUIRED)
+# The shared C API passes structs whose layout can change between releases.
+# Record the linked library version, then refuse mismatches before passing any
+# structs to it. Reconfigure when the installed headers or library change.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  "${SHERPA}" "${SHERPA_INCLUDE_DIR}/sherpa-onnx/c-api/c-api.h")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/sherpa_version.cpp"
+  "#include <cstdio>\n#include <sherpa-onnx/c-api/c-api.h>\nint main() { std::printf(\"%s\", SherpaOnnxGetVersionStr()); }\n")
+try_run(SHERPA_VERSION_RUN SHERPA_VERSION_COMPILED
+  "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/sherpa_version.cpp"
+  CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${SHERPA_INCLUDE_DIR}"
+  LINK_LIBRARIES "${SHERPA}" RUN_OUTPUT_VARIABLE SHERPA_BUILD_VERSION)
+string(STRIP "${SHERPA_BUILD_VERSION}" SHERPA_BUILD_VERSION)
+if(NOT SHERPA_VERSION_COMPILED OR NOT SHERPA_VERSION_RUN EQUAL 0
+   OR NOT SHERPA_BUILD_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+[-+.a-zA-Z0-9]*$")
+  message(FATAL_ERROR "Cannot determine the linked sherpa-onnx version")
+endif()
+message(STATUS "sherpa-onnx build version: ${SHERPA_BUILD_VERSION}")
 add_library(hyprvoice_json INTERFACE)
 target_include_directories(hyprvoice_json INTERFACE third_party)
 find_package(Threads REQUIRED)
 add_library(hyprvoice_core src/config.cpp src/diagnostics.cpp src/context.cpp src/browser_text.cpp src/input_watch.cpp src/process.cpp src/asr.cpp src/fun_backend.cpp src/speech.cpp src/transcript_text.cpp src/result_review.cpp src/audio.cpp src/desktop.cpp src/rewrite.cpp)
 target_include_directories(hyprvoice_core PUBLIC src)
+target_include_directories(hyprvoice_core PUBLIC "${SHERPA_INCLUDE_DIR}")
+target_compile_definitions(hyprvoice_core PUBLIC HYPRVOICE_SHERPA_VERSION="${SHERPA_BUILD_VERSION}")
 target_link_libraries(hyprvoice_core PUBLIC PkgConfig::GTK PkgConfig::PW PkgConfig::CURL PkgConfig::ATSPI ${SHERPA} hyprvoice_json Threads::Threads)
 target_compile_options(hyprvoice_core PRIVATE -Wall -Wextra -Wpedantic)
 add_executable(hyprvoice src/main.cpp src/app.cpp src/settings_panel.cpp)
@@ -56,6 +76,9 @@ if(BUILD_TESTING)
   target_link_libraries(input_target_test PRIVATE hyprvoice_core)
   add_test(NAME input_target_snapshot COMMAND input_target_test)
   find_package(Python3 COMPONENTS Interpreter REQUIRED)
+  add_test(NAME sherpa_runtime_compatibility COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/sherpa_runtime_test.py $<TARGET_FILE:hyprvoice>
+    ${CMAKE_CXX_COMPILER})
   add_test(NAME benchmark_metrics COMMAND ${Python3_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR}/tests -p test_benchmark_score.py)
   add_test(NAME replay_regression_guard COMMAND ${Python3_EXECUTABLE} -m unittest discover -s ${CMAKE_CURRENT_SOURCE_DIR}/tests -p test_score.py)
   add_test(NAME fun_worker_contract COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/fun_worker_test.py $<TARGET_FILE:hyprvoice>)
