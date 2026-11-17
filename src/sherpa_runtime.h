@@ -10,9 +10,16 @@ public:
       : std::runtime_error(
             "本地语音库版本已变化，请重新构建并安装 HyprVoice 后重启") {}
 };
-inline void RequireSherpaRuntime() {
+// Empty when the loaded library does not expose a version string.
+inline std::string_view SherpaRuntimeVersion() {
   const char *version = SherpaOnnxGetVersionStr();
-  if (!version || std::string_view(version) != HYPRVOICE_SHERPA_VERSION)
+  return version ? std::string_view(version) : std::string_view();
+}
+inline bool SherpaRuntimeCompatible() {
+  return SherpaRuntimeVersion() == HYPRVOICE_SHERPA_VERSION;
+}
+inline void RequireSherpaRuntime() {
+  if (!SherpaRuntimeCompatible())
     throw SherpaRuntimeMismatch();
 }
 } // namespace hv

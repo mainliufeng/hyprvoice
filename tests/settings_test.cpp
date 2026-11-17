@@ -142,6 +142,22 @@ int main() {
           "unperformed tests reported successful");
     check(diagnostic.at("text_configured") == true,
           "text config completeness wrong");
+    check(diagnostic.at("sherpa_build_version") ==
+                  diagnostic.at("sherpa_runtime_version") &&
+              diagnostic.at("sherpa_compatible") == true,
+          "linked speech library version not reported");
+    check(DiagnosticText(diagnostic).find("语音库：与构建时不一致") ==
+              std::string::npos,
+          "compatible speech library reported as replaced");
+    // A replaced library must be named as the cause, not left as "models
+    // missing", so the fix (rebuild and reinstall) is stated.
+    auto replaced = diagnostic;
+    replaced["sherpa_runtime_version"] = "0.0.0";
+    replaced["sherpa_compatible"] = false;
+    check(DiagnosticText(replaced).find("语音库：与构建时不一致") !=
+                  std::string::npos &&
+              DiagnosticText(replaced).find("重新构建") != std::string::npos,
+          "replaced speech library not explained");
     auto exposed = diagnostic.dump() + DiagnosticText(diagnostic);
     check(exposed.find("canary") == std::string::npos &&
               exposed.find("HV_DIAGNOSTIC_TEST_KEY") == std::string::npos,
