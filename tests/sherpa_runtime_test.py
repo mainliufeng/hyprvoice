@@ -54,6 +54,19 @@ extern "C" void *SherpaOnnxCreateOnlineRecognizer(const void *) {
                                 text=True, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0)
         self.assertTrue(result.stdout.startswith("hyprvoice "))
+        # `--version` is the first command run after an upgrade; it must name a
+        # replaced library instead of printing a version that looks healthy.
+        self.assertIn("语音库：与构建时不一致", result.stdout)
+        self.assertIn("重新构建并安装", result.stdout)
+        self.assertNotIn("private-hotword-canary", result.stdout)
+
+    def test_version_with_matching_library_keeps_one_line(self):
+        env = {k: v for k, v in os.environ.items()
+               if k not in ("LD_PRELOAD", "HV_TEST_NULL_VERSION")}
+        result = subprocess.run([str(BINARY), "--version"], env=env, text=True,
+                                capture_output=True, timeout=5)
+        self.assertEqual(result.returncode, 0)
+        self.assertRegex(result.stdout, r"^hyprvoice \S+\n$")
 
 
 unittest.main()

@@ -13,6 +13,6 @@
 系统升级 sherpa-onnx 后模型文件仍在但后端起不来时，诊断会直接写明版本不一致并给出重新构建安装的修复方向，
 不再只显示“模型已发现、未就绪”让人以为模型缺失。发现文件、曾完成初始化或发现音源都不代表本次识别或试麦成功；未指定音源时实际默认路由仍未验证。文本服务只检查配置和环境凭据是否齐全，明确显示未联网验证；界面及诊断 IPC 不返回密钥、环境变量名、模型名或接口地址。当前没有麦克风切换或网络测试按钮。
 
-CLI `hyprvoice settings-status` 返回四项设置、保存状态和消息；`hyprvoice diagnose` 返回上述脱敏本地诊断。`hyprvoice settings-save '{"scene":"correct","auto_commit":false}'` 只接受这四项的 JSON 子集，开始异步保存；以 `settings-status.saving=false` 后的 `message` 检查成功或失败。`settings-previous` 只读取上一版四项，`settings-cancel` 请求取消保存。旧 `backend fun|x-asr` 共用此事务，失败原因在 `status.state.settings_note`；旧 `scene NAME` 仍只改变运行时场景，设置窗口保存场景才会写回文件。
+CLI `hyprvoice settings-status` 返回四项设置、保存状态和消息；`hyprvoice diagnose` 返回上述脱敏本地诊断。`--version` 只打印程序版本，语音库与构建时不一致时再加一行写明原因与修复方向（不读配置、不启动录音），因此升级后先看这一条即可判断是否要重建。`hyprvoice settings-save '{"scene":"correct","auto_commit":false}'` 只接受这四项的 JSON 子集，开始异步保存；以 `settings-status.saving=false` 后的 `message` 检查成功或失败。`settings-previous` 只读取上一版四项，`settings-cancel` 请求取消保存。旧 `backend fun|x-asr` 共用此事务，失败原因在 `status.state.settings_note`；旧 `scene NAME` 仍只改变运行时场景，设置窗口保存场景才会写回文件。
 
 测试方法：构建后 CTest 包含配置事务／诊断检查；`tests/settings_desktop_test.py PRIVATE_RUNTIME EVIDENCE_DIR` 需要预先建立空的私有 Hyprland、AT-SPI 与 D-Bus 会话，脚本自行创建只有虚拟静音来源的 PipeWire 和 loopback 文本服务。它拒绝日常 runtime，所有录音样本须为零。实际生产 App 的键盘操作、失败保留、取消、前文提示及忙碌保护在这个环境验收；不能替代真人麦克风、真实模型质量或日常应用兼容性验收。

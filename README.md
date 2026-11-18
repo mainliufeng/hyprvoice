@@ -3,7 +3,8 @@
 当前版本 **0.3.1**（2026-10-31）；更新内容及验证范围见 [版本说明](docs/release-notes.md)。
 
 本版同时保留英文长录音尾句恢复与逐样本退化检查；实际收益与限制见 [验证记录](docs/late-tail-verification.md)。本轮安装与回退见 [交付记录](docs/result-review/installation.md)。
-项目网站：<https://hyprvoice.liufeng.me>。运行 `hyprvoice --version` 查看程序版本。
+项目网站：<https://hyprvoice.liufeng.me>。运行 `hyprvoice --version` 查看程序版本；语音库与构建时不一致时，
+这条命令会直接写出原因和“重新构建并安装”的修复方向，不必等到录音被拒绝才发现。
 正式源码包与 SHA256 校验和：[0.3.1 下载](https://github.com/mainliufeng/hyprvoice/releases/tag/v0.3.1)。本版不提供预编译程序或模型。
 
 独立的 Hyprland 语音输入工具。保留现有 Fcitx 拼音，用快捷键录音，通过悬浮条预览，最终粘贴到应用。
@@ -41,8 +42,9 @@ cmake --build build -j2
 ctest --test-dir build --output-on-failure
 ```
 
-系统升级 `sherpa-onnx` 后，重新运行上述构建、测试并更新已安装程序，再重启
-`hyprvoice.service`。程序会在传入模型配置前核对构建时与运行时的语音库版本；
+系统升级 `sherpa-onnx` 后，先 `git pull --ff-only` 取到最新源码，再重新运行上述构建、测试并更新已安装程序，
+最后重启 `hyprvoice.service`；`hyprvoice --version` 在语音库不一致时会直接写明要重新构建。只重建旧检出会漏掉
+已合入的修复。程序会在传入模型配置前核对构建时与运行时的语音库版本；
 版本变化时拒绝加载并提示重新构建，避免 C API 结构布局变化被误报成模型不可用。
 本机 2.0.0 升级后的修复与安装核验见 [2026-10-31 修复记录](docs/local-model-repair-20261031.md)。
 

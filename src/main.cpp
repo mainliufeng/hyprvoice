@@ -1,6 +1,7 @@
 #include "app.h"
 #include "context.h"
 #include "process.h"
+#include "sherpa_runtime.h"
 #include <fstream>
 #include <iostream>
 #include <sys/resource.h>
@@ -9,6 +10,13 @@ int main(int argc, char **argv) {
   try {
     if (argc == 2 && std::string(argv[1]) == "--version") {
       std::cout << "hyprvoice " << HYPRVOICE_VERSION << '\n';
+      // First command run after an upgrade. A replaced speech library already
+      // blocks recognition, so name it here too instead of printing a version
+      // that looks healthy. No config is read and no recording starts.
+      auto replaced = SherpaVersionNote(HYPRVOICE_SHERPA_VERSION,
+                                        SherpaRuntimeVersion());
+      if (!replaced.empty())
+        std::cout << replaced << '\n';
       return 0;
     }
     if (argc < 2 || std::string(argv[1]) == "--help") {

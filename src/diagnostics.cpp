@@ -132,10 +132,10 @@ std::string DiagnosticText(const Json &r) {
              : "\n模型文件／执行程序：缺少或不可访问";
   if (r.value("sherpa_runtime_version", std::string("unknown")) !=
       r.value("sherpa_build_version", std::string()))
-    out += "\n语音库：与构建时不一致（构建 " +
-           r.value("sherpa_build_version", std::string("未知")) + "，当前 " +
-           r.value("sherpa_runtime_version", std::string("unknown")) +
-           "）；请重新构建并安装后重启，只重启程序不会修复";
+    out += "\n" +
+           SherpaVersionNote(r.value("sherpa_build_version", std::string()),
+                             r.value("sherpa_runtime_version",
+                                     std::string()));
   out += r.at("text_configured") == true ? "\n文本服务：配置齐全，未联网验证"
                                          : "\n文本服务：配置不完整，未联网验证";
   auto source = r.at("configured_source").get<std::string>();
