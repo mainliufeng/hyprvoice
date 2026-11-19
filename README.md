@@ -99,6 +99,7 @@ systemctl --user enable --now hyprvoice.service
 ```
 
 可选密钥文件 `~/.config/hyprvoice/llm.env` 只供服务加载，设置权限为 600。安装脚本不创建配置、不启动服务、不修改 Fcitx 或 Hyprland。
+脚本先打印本次构建的源码提交；检出落后于上次 fetch 记录的 `origin/main` 时会提示先 `git fetch && git pull --ff-only`（源码包没有 `.git`，显示 commit unknown），装完再打印 `hyprvoice --version` 的实际输出。
 Hyprland 重启后应从该会话重新导入环境；也可在 Hyprland 自动启动项中运行环境导入与服务重启。
 
 Lua 配置使用 `config/hyprvoice.lua` 的绑定；仍使用 hyprlang 时参考 `config/hyprvoice.conf`。二者选一，根据自己的配置合并。
