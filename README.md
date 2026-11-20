@@ -50,7 +50,7 @@ ctest --test-dir build --output-on-failure
 
 ## 配置真实模型
 
-只支持以下两套 transducer 文件名，其他模型不能直接替换。模型参考：[sherpa-onnx 模型文档](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/index.html)。
+只支持以下两套 transducer 文件名，其他模型不能直接替换。模型来自 [X-ASR](https://github.com/Gilgamesh-J/X-ASR) 的 sherpa-onnx 导出（Apache-2.0），更多模型见 [sherpa-onnx 模型文档](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/index.html)。模型文件不在源码包或 Release 里，`scripts/configure.py` 会逐个核对文件名，缺文件直接报 `missing model file`，不会写出半份配置。
 先确认自己的模型目录和 Silero VAD 文件；可保留已下载的模型，也可复制到 `~/.local/share/hyprvoice/` 后使用。
 
 ```bash
