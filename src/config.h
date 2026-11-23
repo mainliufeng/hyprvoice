@@ -11,7 +11,7 @@ std::filesystem::path RuntimePath();
 Json DefaultConfig();
 void ValidateConfig(const Json &data);
 void ValidateSettingsPatch(const Json &patch);
-// Only the four settings exposed by the UI may be patched. Concurrent edits,
+// Only the settings exposed by the UI may be patched. Concurrent edits,
 // invalid candidates and cancellation leave the original file untouched.
 std::string SaveSettings(const std::filesystem::path &path,
                          const std::string &expected, const Json &patch,

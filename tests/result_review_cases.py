@@ -14,7 +14,8 @@ def run(namespace):
         (f.runtime / 'recovery-scenario.json').write_text(json.dumps(scenario, ensure_ascii=False))
         f.boot(auto=auto)
         before = f.first_path.read_text()
-        assert f.command('start')[0] == 0
+        code, reply = f.command('start')
+        assert code == 0, reply.get('error', 'start failed')
         if not scenario.get('interrupt') or scenario.get('error_at_stop'):
             f.phase('recording')
             assert f.command('stop')[0] == 0
@@ -43,9 +44,41 @@ def run(namespace):
             f.check(name+'-copy-body-without-warning', f.run('wl-paste', '--no-newline') == expected)
             f.check(name+'-copy-clears-consumed-warning', not f.state()['incomplete'] and not f.state()['recognition_warning'])
 
-    # Two actual recognizer outputs are kept separately. Text processing is not
-    # offered through these ASR selectors.
     stream, refined = '项目预算2400元，不批准。', '项目预算2400元，暂不批准。'
+    # An old profile missing the key is simple even if it previously used a
+    # custom scene and context. It should not send text or offer editing.
+    f.config.pop('detailed_review', None)
+    f.config.update(scene='correct', context={'enabled': True})
+    requests = len(f.server.bodies)
+    simple, before = record({'text': refined, 'streaming': stream, 'refined': refined}, auto=False)
+    f.check('legacy-profile-simple-uses-one-result-with-no-model', simple['effective_text'] == refined and
+            not simple['manual_confirmation'] and not simple['asr_parts'] and
+            not simple['asr_streaming'] and not simple['asr_refined'] and
+            not simple['context'] and len(f.server.bodies) == requests)
+    f.check('simple-hidden-editor-also-rejects-explicit-commands', f.command('edit-begin')[0] == 1 and
+            f.command('revise')[0] == 1 and f.state()['effective_text'] == refined)
+    code, reply = f.command('commit')
+    assert code == 0 and reply['state']['phase'] == 'idle', reply['state']['error']
+    f.wait(lambda: f.first_path.read_text() == before + refined)
+    f.check('simple-manual-output-uses-one-selected-result', f.state()['phase'] == 'idle')
+    f.focus(f.first); f.key('ctrl End')
+    before_auto = f.first_path.read_text()
+    f.boot(auto=True)
+    assert f.command('start')[0] == 0
+    f.phase('recording')
+    assert f.command('stop')[0] == 0
+    f.wait(lambda: f.first_path.read_text() == before_auto + refined)
+    f.phase('idle')
+    time.sleep(.25)
+    f.check('simple-disagreement-automatically-inserts-once', f.first_path.read_text() == before_auto + refined and
+            len(f.server.bodies) == requests)
+    assert f.command('settings-save', json.dumps({'detailed_review': True}))[0] == 0
+    f.wait(lambda: (status := f.command('settings-status')[1])['settings']['detailed_review'] and
+           not status['saving'])
+    f.config.update(scene='raw', context={'enabled': False}, detailed_review=True)
+
+    # Two actual recognizer outputs are kept separately in detailed mode.
+    # Text processing is not offered through these ASR selectors.
     s, before = record({'text': refined, 'streaming': stream, 'refined': refined}, auto=False)
     f.check('actual-two-source-candidates', s['asr_candidates_active'] and s['asr_streaming'] == stream and s['asr_refined'] == refined)
     f.photo('asr-default')

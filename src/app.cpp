@@ -317,6 +317,9 @@ void App::start(bool cmd) {
     throw std::runtime_error("本地模型不可用，请检查配置并重启");
   }
   const auto before = snapshot();
+  const bool detailed = config_.data.at("detailed_review").get<bool>();
+  if (cmd && !detailed)
+    throw std::runtime_error("语音修改需要先开启详细模式");
   if (cmd) {
     if (delivered_ || before.at("phase") != "ready" ||
         !ValidBody(before.at("effective_text").get<std::string>()))
@@ -402,7 +405,8 @@ void App::start(bool cmd) {
   auto original_body =
       cmd ? before.at("effective_text").get<std::string>() : "";
   auto target = target_;
-  bool contextual = !cmd && config_.data.at("context").value("enabled", false);
+  bool contextual = detailed && !cmd &&
+                    config_.data.at("context").value("enabled", false);
   update({{"insertion_status", InsertionStatus(next_guard)},
           {"phase", "starting"},
           {"text", cmd ? original_body : "正在连接麦克风…"},
@@ -423,7 +427,7 @@ void App::start(bool cmd) {
   if (worker_.joinable())
     worker_.join();
   worker_ = std::thread([this, scene, original_body, target, contextual, cmd,
-                         version] {
+                         detailed, version] {
     std::string last_preview, capture_error;
     bool recognizer_started = false, finish_attempted = false;
     size_t count = 0;
@@ -590,23 +594,21 @@ void App::start(bool cmd) {
               version,
               {{"phase", "idle"}, {"text", "未检测到可识别语音"}, {"raw", ""}});
         else {
-          auto choices = RecognitionChoices(result.streaming, result.refined);
-          const bool differences =
-              std::any_of(choices.begin(), choices.end(), [](const Json &part) {
-                return part.value("selectable", false);
-              });
-          if (differences) {
-            if (result.warning.empty())
-              result.warning = "两次音频识别有不同片段，请检查后确认输入。";
+          // The recognizer has already chosen the whole accepted refinement,
+          // falling back to streaming if offline fails or loses coverage.
+          auto presentation = PresentRecognition(result, detailed);
+          result.warning = std::move(presentation.warning);
+          if (presentation.confirm) {
             std::lock_guard lock(mutex_);
             if (version == session_version_)
               manual_confirmation_ = true;
           }
           TextResult output{result.text, result.warning};
-          updateSession(version, {{"asr_parts", choices},
-                                  {"asr_candidates_active", differences},
-                                  {"asr_streaming", result.streaming},
-                                  {"asr_refined", result.refined}});
+          updateSession(version,
+                        {{"asr_parts", std::move(presentation.choices)},
+                         {"asr_candidates_active", presentation.differences},
+                         {"asr_streaming", detailed ? result.streaming : ""},
+                         {"asr_refined", detailed ? result.refined : ""}});
           updateSession(version, {{"raw", result.text},
                                   {"text", result.text},
                                   {"recognition_warning", result.warning}});
@@ -641,7 +643,8 @@ void App::start(bool cmd) {
                                ? "密码输入框 · 不读取、复制或发送文字处理请求"
                                : "位置已变化或无法核验 · 未发送文字处理请求"}});
           }
-          if (request_allowed && (scene != "raw" || !history.empty())) {
+          if (detailed && request_allowed &&
+              (scene != "raw" || !history.empty())) {
             TextRequest request{result.text,
                                 scene == "raw" ? "correct" : scene,
                                 "",
@@ -822,6 +825,8 @@ bool App::draftPendingLocked() const {
                             .get_ref<const std::string &>();
 }
 void App::beginEdit() {
+  if (!config_.data.at("detailed_review").get<bool>())
+    throw std::runtime_error("手动编辑需要先开启详细模式");
   auto refreshed = desktop_.rebind(target_);
   std::lock_guard lock(mutex_);
   const auto body = (preferred_raw_ ? state_.at("raw") : state_.at("text"))
@@ -1258,6 +1263,7 @@ Json App::settingsValues() const {
   return {{"asr", {{"backend", config_.data.at("asr").at("backend")}}},
           {"scene", scene_},
           {"auto_commit", config_.data.at("auto_commit")},
+          {"detailed_review", config_.data.at("detailed_review")},
           {"context", {{"enabled", config_.data.at("context").at("enabled")}}}};
 }
 void App::requireSettingsIdle() {
@@ -1268,14 +1274,15 @@ void App::applySettings(const Json &patch) {
   requireSettingsIdle();
   auto next = config_;
   // Runtime scene selection remains in effect when the legacy backend command
-  // saves only its own field. The settings panel explicitly saves all four.
+  // saves only its own field. The settings panel explicitly saves every field
+  // exposed by the UI.
   next.data["scene"] = scene_;
   try {
     ValidateSettingsPatch(patch);
     next.data.merge_patch(patch);
     ValidateConfig(next.data);
   } catch (...) {
-    throw std::runtime_error("设置值无效；仅接受后端、有效场景和两个布尔开关");
+    throw std::runtime_error("设置值无效；仅接受后端、有效场景和布尔开关");
   }
   auto previous = settingsValues();
   const bool replace = !asr_ || next.data.at("asr").at("backend") !=
@@ -1898,9 +1905,12 @@ void App::ui() {
   gtk_widget_set_visible(copy_button_, ready && !editing);
   gtk_widget_set_sensitive(copy_button_,
                            ready && !busy_ && !editing && !pending_draft);
-  gtk_widget_set_visible(edit_button_, ready && !uncertain && !editing);
+  const bool detailed = config_.data.at("detailed_review").get<bool>();
+  gtk_widget_set_visible(edit_button_,
+                         detailed && ready && !uncertain && !editing);
   gtk_widget_set_sensitive(edit_button_, can_act);
-  gtk_widget_set_visible(voice_button_, ready && !uncertain && !editing);
+  gtk_widget_set_visible(voice_button_,
+                         detailed && ready && !uncertain && !editing);
   gtk_widget_set_sensitive(voice_button_, can_act);
   gtk_widget_set_visible(commit_button_, ready && !editing);
   gtk_widget_set_sensitive(commit_button_, can_insert);

@@ -15,6 +15,14 @@ std::vector<TextDifference> CompareText(const std::string &before,
 bool MaterialDifference(const std::string &before, const std::string &after);
 Json RecognitionChoices(const std::string &streaming,
                         const std::string &refined);
+struct Transcript;
+struct RecognitionPresentation {
+  Json choices;
+  bool differences;
+  bool confirm;
+  std::string warning;
+};
+RecognitionPresentation PresentRecognition(const Transcript &result, bool detailed);
 std::string ChoiceText(const Json &parts);
 std::string EscapeMarkup(const std::string &text);
 std::string ChoiceMarkup(const Json &parts, bool compare, int active);

@@ -281,7 +281,7 @@ for line in sys.stdin:
     threading.Thread(target=lambda: server.serve_forever(poll_interval=.02), daemon=True).start()
     env.update(HYPRVOICE_RETRY_TEST_KEY='synthetic-retry-key',
                NO_PROXY='127.0.0.1,localhost', no_proxy='127.0.0.1,localhost')
-    config = {'asr': {'backend': 'fun'}, 'fun': {'worker': str(worker), 'model_dir': str(models)},
+    config = {'detailed_review': True, 'asr': {'backend': 'fun'}, 'fun': {'worker': str(worker), 'model_dir': str(models)},
               'scene': 'correct', 'context': {'enabled': True}, 'audio_source': 'hv-qa-silence',
               'llm': {'model': 'local-test-double', 'allow_http': True,
                       'api_key_env': 'HYPRVOICE_RETRY_TEST_KEY',

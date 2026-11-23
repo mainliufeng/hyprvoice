@@ -27,6 +27,8 @@ void SettingsPanel::load(const Json &settings) {
       gtk_drop_down_set_selected(GTK_DROP_DOWN(scene_), i);
   gtk_check_button_set_active(GTK_CHECK_BUTTON(automatic_),
                               settings.at("auto_commit").get<bool>());
+  gtk_check_button_set_active(GTK_CHECK_BUTTON(detailed_),
+                              settings.at("detailed_review").get<bool>());
   gtk_check_button_set_active(GTK_CHECK_BUTTON(context_),
                               settings.at("context").at("enabled").get<bool>());
 }
@@ -42,6 +44,8 @@ void SettingsPanel::save() {
       {"scene", scenes_[index]},
       {"auto_commit",
        gtk_check_button_get_active(GTK_CHECK_BUTTON(automatic_)) != 0},
+      {"detailed_review",
+       gtk_check_button_get_active(GTK_CHECK_BUTTON(detailed_)) != 0},
       {"context",
        {{"enabled",
          gtk_check_button_get_active(GTK_CHECK_BUTTON(context_)) != 0}}}};
@@ -151,13 +155,24 @@ void SettingsPanel::show(const Config &config, const std::string &scene) {
   scene_ = dropdown("文字场景", list);
   automatic_ =
       gtk_check_button_new_with_label("完成后自动插入（位置核验通过时）");
+  detailed_ = gtk_check_button_new_with_label("详细模式：比较识别结果、编辑和文字处理");
+  gtk_box_append(GTK_BOX(controls_), detailed_);
   context_ = gtk_check_button_new_with_label("前文辅助：会发送光标前已有文字");
   gtk_box_append(GTK_BOX(controls_), automatic_);
   gtk_box_append(GTK_BOX(controls_), context_);
+  g_signal_connect(detailed_, "toggled",
+                   G_CALLBACK(+[](GtkCheckButton *toggle, gpointer data) {
+                     auto panel = static_cast<SettingsPanel *>(data);
+                     const auto on = gtk_check_button_get_active(toggle);
+                     gtk_widget_set_sensitive(panel->scene_, on);
+                     gtk_widget_set_sensitive(panel->context_, on);
+                   }), this);
+  gtk_widget_set_sensitive(scene_, false);
+  gtk_widget_set_sensitive(context_, false);
   auto scope = gtk_label_new(
       ("前文上限沿用配置：" +
        std::to_string(config.data.at("context").at("max_chars").get<int>()) +
-       " 个字符。选择处理场景会发送本次转录。")
+       " 个字符。场景与前文辅助仅在详细模式生效；文字处理会发送本次转录。")
           .c_str());
   gtk_label_set_wrap(GTK_LABEL(scope), true);
   gtk_label_set_xalign(GTK_LABEL(scope), 0);
