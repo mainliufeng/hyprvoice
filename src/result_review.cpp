@@ -1,4 +1,5 @@
 #include "result_review.h"
+#include "asr.h"
 #include <algorithm>
 #include <glib.h>
 #include <span>
@@ -172,6 +173,20 @@ Json RecognitionChoices(const std::string &streaming,
          {"checked", false},
          {"granularity", part.passage ? "passage" : "fragment"}});
   return parts;
+}
+RecognitionPresentation PresentRecognition(const Transcript &result,
+                                            bool detailed) {
+  auto choices = detailed ? RecognitionChoices(result.streaming, result.refined)
+                          : Json::array();
+  const bool differences =
+      std::any_of(choices.begin(), choices.end(), [](const Json &part) {
+        return part.value("selectable", false);
+      });
+  auto warning = (detailed || !result.speech) ? result.warning : "";
+  if (differences && warning.empty())
+    warning = "两次音频识别有不同片段，请检查后确认输入。";
+  return {std::move(choices), differences, differences || !result.speech,
+          std::move(warning)};
 }
 std::string ChoiceText(const Json &parts) {
   std::string text;

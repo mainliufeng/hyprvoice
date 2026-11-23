@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(hyprvoice VERSION 0.3.1 LANGUAGES C CXX)
+project(hyprvoice VERSION 0.3.2 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(PkgConfig REQUIRED)
@@ -92,7 +92,8 @@ if(BUILD_TESTING)
   add_executable(seat_input_probe tests/seat_input_probe.cpp)
   target_link_libraries(seat_input_probe PRIVATE hyprvoice_core)
   add_test(NAME desktop_target_fallback COMMAND ${Python3_EXECUTABLE}
-    ${CMAKE_CURRENT_SOURCE_DIR}/tests/desktop_target_test.py $<TARGET_FILE:seat_input_probe>)
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/desktop_target_test.py
+    $<TARGET_FILE:seat_input_probe>)
   add_executable(test_editor tests/editor.cpp)
   target_link_libraries(test_editor PRIVATE PkgConfig::GTK)
   pkg_check_modules(WAYLAND REQUIRED IMPORTED_TARGET wayland-client xkbcommon)

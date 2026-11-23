@@ -295,7 +295,7 @@ for line in sys.stdin:
     threading.Thread(target=lambda: server.serve_forever(poll_interval=.02), daemon=True).start()
     env.update(HYPRVOICE_RETRY_TEST_KEY='synthetic-retry-key',
                NO_PROXY='127.0.0.1,localhost', no_proxy='127.0.0.1,localhost')
-    config = {'asr': {'backend': 'fun'}, 'fun': {'worker': str(worker), 'model_dir': str(models)},
+    config = {'detailed_review': True, 'asr': {'backend': 'fun'}, 'fun': {'worker': str(worker), 'model_dir': str(models)},
               'scene': 'correct', 'context': {'enabled': True}, 'audio_source': 'hv-qa-silence',
               'llm': {'model': 'local-test-double', 'allow_http': True,
                       'api_key_env': 'HYPRVOICE_RETRY_TEST_KEY',
@@ -353,8 +353,8 @@ for line in sys.stdin:
     key('key Return')
     wait(lambda: not command('settings-status')[1]['saving'])
     saved = command('settings-status')[1]['settings']
-    check('keyboard-save-persists-and-applies-four-settings', saved['scene'] == 'custom <b>&' and
-          saved['auto_commit'] and not saved['context']['enabled'] and saved['asr']['backend'] == 'fun' and
+    check('keyboard-save-persists-and-applies-settings', saved['scene'] == 'custom <b>&' and
+          saved['auto_commit'] and saved['detailed_review'] and not saved['context']['enabled'] and saved['asr']['backend'] == 'fun' and
           json.loads(config_path.read_text())['scene'] == 'custom <b>&')
     stored = json.loads(config_path.read_text())
     check('save-preserves-unexposed-values', stored['llm'] == config['llm'] and

@@ -33,18 +33,18 @@ Target Desktop::target() {
     }
     seat_input_ = supported;
   }
-  Json route;
+  Json route = Json::object();
   if (*seat_input_) {
     route = Json::parse(
         Checked({"hyprctl", "-j", "seat",
                  local_editor_ ? "input-target-v2" : "input-target"}));
     if (!route.is_object())
-      throw std::runtime_error("Invalid seat input target");
+      throw std::runtime_error("Invalid desktop input route");
     if (!route.value("allowed", false))
       throw std::runtime_error(route.value(
           "reason", std::string("当前桌面不可输入；请先接管并聚焦应用输入框")));
   }
-  if (*seat_input_ && route.value("kind", std::string()) == "local-editor") {
+  if (route.value("kind", std::string()) == "local-editor") {
     Target t{"",
              route.at("namespace"),
              route.at("surfaceId"),
@@ -197,7 +197,17 @@ void Desktop::shortcut(const Target &t, const std::string &key) {
           dialect = value.value("configProvider", std::string());
       }
     }
-    lua_dispatch_ = dialect == "lua";
+    bool lua = dialect == "lua";
+    if (dialect.empty()) {
+      // Older stock Hyprland may not expose configProvider. Query the Lua
+      // function without dispatching a key or altering compositor state.
+      const auto probe = Run({"hyprctl", "repl", "type(hl.dsp.send_shortcut)"});
+      const auto start = probe.out.find_first_not_of(" \t\r\n");
+      const auto end = probe.out.find_last_not_of(" \t\r\n");
+      lua = !probe.code && start != std::string::npos &&
+            probe.out.substr(start, end - start + 1) == "function";
+    }
+    lua_dispatch_ = lua;
   }
   std::vector<std::string> args{"hyprctl"};
   if (!t.route_token.empty()) {
