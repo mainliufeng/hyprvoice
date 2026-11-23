@@ -38,11 +38,13 @@ Target Desktop::target() {
     route = Json::parse(
         Checked({"hyprctl", "-j", "seat",
                  local_editor_ ? "input-target-v2" : "input-target"}));
+    if (!route.is_object())
+      throw std::runtime_error("Invalid seat input target");
     if (!route.value("allowed", false))
       throw std::runtime_error(route.value(
           "reason", std::string("当前桌面不可输入；请先接管并聚焦应用输入框")));
   }
-  if (route.value("kind", std::string()) == "local-editor") {
+  if (*seat_input_ && route.value("kind", std::string()) == "local-editor") {
     Target t{"",
              route.at("namespace"),
              route.at("surfaceId"),
@@ -57,6 +59,8 @@ Target Desktop::target() {
   auto j = *seat_input_
                ? route.at("window")
                : Json::parse(Checked({"hyprctl", "activewindow", "-j"}));
+  if (!j.is_object())
+    throw std::runtime_error("No active application window");
   Target t{j.value("address", std::string()),
            j.value("class", std::string()),
            j.value("stableId", std::string()),
@@ -176,15 +180,24 @@ bool Desktop::terminal(const Target &t) {
 void Desktop::shortcut(const Target &t, const std::string &key) {
   requireTarget(t);
   std::string mods = terminal(t) ? "CTRL SHIFT" : "CTRL";
-  if (!lua_dispatch_) {
+  if (t.route_token.empty() && !lua_dispatch_) {
     auto caps = Run({"hyprctl", "-j", "seat", "capabilities"});
-    bool lua = false;
+    std::string dialect;
     if (!caps.code) {
       auto value = Json::parse(caps.out, nullptr, false);
       if (value.is_object())
-        lua = value.value("dialect", std::string()) == "lua";
+        dialect = value.value("dialect", std::string());
     }
-    lua_dispatch_ = lua;
+    if (dialect.empty()) {
+      // Stock Hyprland reports the active config dialect through status.
+      const auto status = Run({"hyprctl", "-j", "status"});
+      if (!status.code) {
+        const auto value = Json::parse(status.out, nullptr, false);
+        if (value.is_object())
+          dialect = value.value("configProvider", std::string());
+      }
+    }
+    lua_dispatch_ = dialect == "lua";
   }
   std::vector<std::string> args{"hyprctl"};
   if (!t.route_token.empty()) {
