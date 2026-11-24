@@ -62,6 +62,7 @@ Json DefaultConfig() {
           {"gain", 1.0},
           {"max_recording_seconds", 180},
           {"auto_commit", true},
+          {"detailed_review", false},
           {"scene", "raw"},
           {"clipboard_restore", false},
           {"context", {{"enabled", false}, {"max_chars", 1024}}},
@@ -111,9 +112,10 @@ void ValidateConfig(const Json &data) {
     if (!data.is_object())
       throw std::runtime_error("Configuration must be an object");
     if (!data.at("auto_commit").is_boolean() ||
+        !data.at("detailed_review").is_boolean() ||
         !data.at("context").at("enabled").is_boolean())
       throw std::runtime_error(
-          "auto_commit and context.enabled must be booleans");
+          "auto_commit, detailed_review and context.enabled must be booleans");
     if (!data.at("audio_source").is_string() ||
         data.at("audio_source").get<std::string>().find('\0') !=
             std::string::npos)
@@ -165,7 +167,8 @@ void ValidateSettingsPatch(const Json &patch) {
     throw std::runtime_error("Settings patch must be a non-empty object");
   for (const auto &[key, value] : patch.items()) {
     bool valid = key == "scene"         ? value.is_string()
-                 : key == "auto_commit" ? value.is_boolean()
+                 : (key == "auto_commit" || key == "detailed_review")
+                     ? value.is_boolean()
                  : key == "asr"     ? value.is_object() && value.size() == 1 &&
                                           value.contains("backend") &&
                                           value.at("backend").is_string()
@@ -175,7 +178,7 @@ void ValidateSettingsPatch(const Json &patch) {
                                     : false;
     if (!valid)
       throw std::runtime_error(
-          "Only backend, scene, auto_commit and context.enabled may be saved");
+          "Only backend, scene, auto_commit, detailed_review and context.enabled may be saved");
   }
 }
 std::string SaveSettings(const std::filesystem::path &path,

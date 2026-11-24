@@ -17,7 +17,8 @@ public:
 private:
   Action action_;
   GtkWidget *window_ = nullptr, *backend_ = nullptr, *scene_ = nullptr,
-            *automatic_ = nullptr, *context_ = nullptr, *controls_ = nullptr,
+            *automatic_ = nullptr, *detailed_ = nullptr, *context_ = nullptr,
+            *controls_ = nullptr,
             *message_ = nullptr, *diagnostic_ = nullptr, *save_ = nullptr,
             *restore_ = nullptr, *refresh_ = nullptr, *cancel_ = nullptr;
   std::vector<std::string> scenes_;

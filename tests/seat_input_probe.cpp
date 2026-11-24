@@ -49,16 +49,17 @@ int main(int argc, char **argv) {
       }
       return 0;
     }
-    if (argc < 4)
-      return 2;
-    if (action == "capture") {
+    if (action == "target" || (action == "capture" && argc == 4)) {
       const auto target = desktop.target();
       hv::Json value{
           {"address", target.address}, {"app", target.app},
           {"stable", target.stable},   {"pid", target.pid},
           {"seat", target.seat},       {"token", target.route_token},
-          {"kind", target.kind},       {"guard", desktop.inputTarget(target)}};
-      std::ofstream(argv[3]) << value.dump();
+          {"kind", target.kind}};
+      if (action == "capture") {
+        value["guard"] = desktop.inputTarget(target);
+        std::ofstream(argv[3]) << value.dump();
+      }
       std::cout << value.dump() << '\n';
     } else if (action == "paste" && argc == 5) {
       std::ifstream input(argv[3]);

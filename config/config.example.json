@@ -1,6 +1,7 @@
 {
   "audio_source": "",
   "auto_commit": true,
+  "detailed_review": false,
   "clipboard_restore": false,
   "gain": 1.0,
   "hotwords": "",

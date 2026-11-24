@@ -91,6 +91,9 @@ if(BUILD_TESTING)
   target_link_libraries(workflow_probe PRIVATE hyprvoice_core)
   add_executable(seat_input_probe tests/seat_input_probe.cpp)
   target_link_libraries(seat_input_probe PRIVATE hyprvoice_core)
+  add_test(NAME desktop_target_capability_fallback COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/desktop_target_test.py
+    $<TARGET_FILE:seat_input_probe>)
   add_executable(test_editor tests/editor.cpp)
   target_link_libraries(test_editor PRIVATE PkgConfig::GTK)
   pkg_check_modules(WAYLAND REQUIRED IMPORTED_TARGET wayland-client xkbcommon)

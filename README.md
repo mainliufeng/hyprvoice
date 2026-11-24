@@ -2,6 +2,8 @@
 
 当前版本 **0.3.1**（2026-10-31）；更新内容及验证范围见 [版本说明](docs/release-notes.md)。
 
+开发版新增可选的详细模式，以下模式说明适用于包含此功能的源码构建。
+
 本版同时保留英文长录音尾句恢复与逐样本退化检查；实际收益与限制见 [验证记录](docs/late-tail-verification.md)。本轮安装与回退见 [交付记录](docs/result-review/installation.md)。
 项目网站：<https://hyprvoice.liufeng.me>。运行 `hyprvoice --version` 查看程序版本；语音库与构建时不一致时，
 这条命令会直接写出原因和“重新构建并安装”的修复方向，不必等到录音被拒绝才发现。
@@ -16,9 +18,9 @@
 - 同一快捷键轻按切换录音、按住说话；停止、取消和原文提交。
 - 固定 X-ASR 中英流式模型＋离线二次精修，热词、Silero VAD 无语音拒绝、长录音保护。
 - 本地听写无需网络；可选 OpenAI 兼容接口提供纠错、整理和翻译。
-- F9 口述修改当前待确认正文；支持整段手动编辑、草稿保留与语音修改撤销。
+- 默认极简模式直接输出一份本地识别结果。开启设置中的「详细模式」后，再使用 F9 口述修改、手动编辑或查看两次识别的差异。
 - 录音异常后收尾已有有效音频，失败时保留最后预览；恢复结果标记可能不完整，等待确认。
-- 实时与精修识别只有不同片段显示可点标记，可就地选择实际来源候选；文字处理差异单独查看。
+- 详细模式下，实时与精修识别只有不同片段显示可点标记，可就地选择实际来源候选；文字处理差异单独查看。
 - 默认自动提交普通听写。录音期间切换窗口则保留结果，返回原窗口手动提交。
 - 非抢焦点的 GTK4 layer-shell 悬浮条；普通应用 Ctrl+C/V，配置中的终端 Ctrl+Shift+C/V。
 
@@ -42,8 +44,8 @@ cmake --build build -j2
 ctest --test-dir build --output-on-failure
 ```
 
-系统升级 `sherpa-onnx` 后，先 `git pull --ff-only` 取到最新源码，再重新运行上述构建、测试并更新已安装程序，
-最后重启 `hyprvoice.service`；`hyprvoice --version` 在语音库不一致时会直接写明要重新构建。只重建旧检出会漏掉
+系统升级 `sherpa-onnx` 后，用新版本源码重新构建、测试并更新已安装程序。跟踪主分支的 Git 检出可以 `git pull --ff-only`；固定版本标签和源码包请下载较新的正式源码并在新目录构建，不在原目录直接 pull。
+安装后重启 `hyprvoice.service`；`hyprvoice --version` 在语音库不一致时会直接写明要重新构建。只重建旧检出会漏掉
 已合入的修复。程序会在传入模型配置前核对构建时与运行时的语音库版本；
 版本变化时拒绝加载并提示重新构建，避免 C API 结构布局变化被误报成模型不可用。
 本机 2.0.0 升级后的修复与安装核验见 [2026-10-31 修复记录](docs/local-model-repair-20261031.md)。
@@ -57,13 +59,12 @@ ctest --test-dir build --output-on-failure
 python3 scripts/configure.py \
   --streaming ~/.local/share/hyprvoice/models/x-asr-960ms-streaming-zipformer-transducer-zh-en-punct-int8 \
   --offline ~/.local/share/hyprvoice/models/x-asr-zipformer-transducer-zh-en-punct-int8 \
-  --vad ~/.local/share/hyprvoice/silero_vad.onnx \
-  --hotwords ~/.config/hyprvoice/hotwords.txt
+  --vad ~/.local/share/hyprvoice/silero_vad.onnx
 build/hyprvoice doctor
 build/hyprvoice serve
 ```
 
-`--hotwords` 可省略。每行一个词，可写 `Hyprland:5.0`；UTF-8，支持 `#` 注释。配置存在时脚本拒绝覆盖。
+已有热词文件时可选 `--hotwords ~/.config/hyprvoice/hotwords.txt`。每行一个词，可写 `Hyprland:5.0`；UTF-8，支持 `#` 注释。配置存在时脚本拒绝覆盖。
 `hyprvoice init` 仅生成默认配置，不下载或伪造模型；使用前必须核对里面的实际路径。
 `HYPRVOICE_CONFIG=/绝对路径/config.json` 可以隔离配置和测试。
 
@@ -85,7 +86,7 @@ build/hyprvoice serve
 
 场景提示词位于 `prompts`，**键名就是场景名**；自己加一个键（例如 `polish`）后 `hyprvoice scene polish` 就能用。`scene` 是运行时状态，`hyprvoice scene` 不写回配置，重启服务回到配置里的值（`backend` 相反，切换成功后会保存）。
 
-默认 `scene=raw`、`context.enabled=false`，两者同时满足才完全不调用大模型。启用纠错／整理／翻译或指令模式会发送本次转录与选中文字；启用前文辅助还会发送当前输入框光标前最多 1024 个字符（可设置 1..2048）。不再缓存不同窗口的最近提交记录，不发送录音。转录和前文不写入持久日志；本地 CLI `status` 会返回本次转录与实际使用的前文，回到待机时清除前文。文本处理失败保留识别原文并等待用户确认，不自动插入失败后的替代结果。
+极简模式（`detailed_review=false`，旧配置缺省也是此模式）不使用文字场景、前文辅助或大模型。双识别时优先使用通过覆盖检查的离线精修；本次离线解码失败或裁掉太多字则保留流式结果。位置不安全、录音中断、语音检测未确认等情况仍不自动粘贴。切回详细模式（`detailed_review=true`）后继续使用原有场景、前文和编辑设置。详细模式内默认 `scene=raw`、`context.enabled=false`，普通听写不调用大模型。启用纠错／整理／翻译或指令模式会发送本次转录与选中文字；启用前文辅助还会发送当前输入框光标前最多 1024 个字符（可设置 1..2048）。不再缓存不同窗口的最近提交记录，不发送录音。转录和前文不写入持久日志；本地 CLI `status` 会返回本次转录与实际使用的前文，回到待机时清除前文。文本处理失败保留识别原文并等待用户确认，不自动插入失败后的替代结果。
 
 ## 日常运行
 

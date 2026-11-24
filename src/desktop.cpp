@@ -33,11 +33,13 @@ Target Desktop::target() {
     }
     seat_input_ = supported;
   }
-  Json route;
+  Json route = Json::object();
   if (*seat_input_) {
     route = Json::parse(
         Checked({"hyprctl", "-j", "seat",
                  local_editor_ ? "input-target-v2" : "input-target"}));
+    if (!route.is_object())
+      throw std::runtime_error("Invalid desktop input route");
     if (!route.value("allowed", false))
       throw std::runtime_error(route.value(
           "reason", std::string("当前桌面不可输入；请先接管并聚焦应用输入框")));
@@ -57,6 +59,8 @@ Target Desktop::target() {
   auto j = *seat_input_
                ? route.at("window")
                : Json::parse(Checked({"hyprctl", "activewindow", "-j"}));
+  if (!j.is_object())
+    throw std::runtime_error("No active application window");
   Target t{j.value("address", std::string()),
            j.value("class", std::string()),
            j.value("stableId", std::string()),
@@ -183,6 +187,15 @@ void Desktop::shortcut(const Target &t, const std::string &key) {
       auto value = Json::parse(caps.out, nullptr, false);
       if (value.is_object())
         lua = value.value("dialect", std::string()) == "lua";
+    }
+    if (!lua && t.route_token.empty()) {
+      // Stock Hyprland has no Cornice seat capabilities. Detect the active
+      // Lua config with a read-only query before any shortcut is attempted.
+      const auto probe = Run({"hyprctl", "repl", "type(hl.dsp.send_shortcut)"});
+      const auto start = probe.out.find_first_not_of(" \t\r\n");
+      const auto end = probe.out.find_last_not_of(" \t\r\n");
+      lua = !probe.code && start != std::string::npos &&
+            probe.out.substr(start, end - start + 1) == "function";
     }
     lua_dispatch_ = lua;
   }

@@ -1,10 +1,29 @@
 #include "result_review.h"
+#include "asr.h"
 #include <cassert>
 #include <chrono>
 #include <iostream>
 
 using namespace hv;
 int main() {
+  Transcript conflict{"可以输入", "不可以输入", "存在识别差异", true, "不可以输入"};
+  auto simple = PresentRecognition(conflict, false);
+  assert(!simple.confirm && !simple.differences && simple.choices.empty() &&
+         simple.warning.empty());
+  assert(conflict.text == "不可以输入"); // Mode never changes the selected whole transcript.
+  auto detailed = PresentRecognition(conflict, true);
+  assert(detailed.confirm && detailed.differences &&
+         ChoiceText(detailed.choices) == conflict.text);
+  Transcript fallback{"原始流式文本", "原始流式文本", "", true, ""};
+  for (bool detail : {true, false}) {
+    const auto presentation = PresentRecognition(fallback, detail);
+    assert(!presentation.confirm && presentation.choices.empty());
+    assert(fallback.text == fallback.streaming);
+  }
+  fallback.speech = false;
+  fallback.warning = "未确认讲话";
+  simple = PresentRecognition(fallback, false);
+  assert(simple.confirm && simple.warning == fallback.warning);
   const std::vector<std::pair<std::string, std::string>> cases = {
       {"请保留识别结果。", "请保留识别记录。"},
       {"可以输入", "不可以输入"},

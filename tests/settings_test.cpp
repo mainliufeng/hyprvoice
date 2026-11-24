@@ -36,6 +36,7 @@ int main() {
                       {"model_dir", root.string()}}}};
     std::ofstream(path) << initial.dump();
     Config config(path);
+    check(config.data.at("detailed_review") == false, "legacy config must load simple mode");
     auto original = config.source_text;
     auto reject = [&](const Json &patch) {
       bool failed = false;
@@ -51,6 +52,8 @@ int main() {
          std::vector<Json>{Json::array(),
                            Json::object(),
                            {{"auto_commit", 1}},
+                           {{"detailed_review", "true"}},
+                           {{"detailed_review", nullptr}},
                            {{"context", {{"enabled", "yes"}}}},
                            {{"context", {{"max_chars", 2048}}}},
                            {{"asr", {{"backend", "bad"}}}},
@@ -91,9 +94,11 @@ int main() {
     auto saved = SaveSettings(path, original,
                               {{"scene", "custom <b>&"},
                                {"auto_commit", false},
+                               {"detailed_review", true},
                                {"context", {{"enabled", true}}},
                                {"asr", {{"backend", "fun"}}}});
     auto document = Json::parse(saved);
+    check(Config(path).data.at("detailed_review") == true, "detailed mode did not persist");
     check(Config(path).data.at("scene") == "custom <b>&",
           "custom scene save failed");
     check(document.at("llm") == initial.at("llm") &&
