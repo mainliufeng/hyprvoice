@@ -22,6 +22,13 @@ Asr::Asr(const Config &c, const std::atomic<bool> *cancelled) {
     fun_ = std::make_unique<FunBackend>(c, cancelled);
     return;
   }
+  // Sherpa's model-loading calls are synchronous. On exit, finish the
+  // current call and skip any remaining model loads.
+  const auto check_cancelled = [cancelled] {
+    if (cancelled && cancelled->load())
+      throw std::runtime_error("已取消");
+  };
+  check_cancelled();
   RequireSherpaRuntime();
   std::string hotwords;
   if (!c.path("hotwords").empty()) {
@@ -66,10 +73,12 @@ Asr::Asr(const Config &c, const std::atomic<bool> *cancelled) {
   cfg.hotwords_score = 1.5;
   cfg.hotwords_buf = hotwords.c_str();
   cfg.hotwords_buf_size = hotwords.size();
+  check_cancelled();
   online_ = SherpaOnnxCreateOnlineRecognizer(&cfg);
   if (!online_)
     throw std::runtime_error("Streaming model initialization failed");
   try {
+    check_cancelled();
     dir = c.path("offline_model");
     encoder = Asset(dir, "encoder-epoch-99-avg-1.int8.onnx");
     decoder = Asset(dir, "decoder-epoch-99-avg-1.onnx");
@@ -106,6 +115,7 @@ Asr::Asr(const Config &c, const std::atomic<bool> *cancelled) {
       std::filesystem::remove(hotFile);
     if (!offline_)
       throw std::runtime_error("Offline model initialization failed");
+    check_cancelled();
     Asset(std::filesystem::path(c.path("vad_model")).parent_path().string(),
           std::filesystem::path(c.path("vad_model")).filename().string());
     speech_ = std::make_unique<SpeechDetector>(c.path("vad_model"));

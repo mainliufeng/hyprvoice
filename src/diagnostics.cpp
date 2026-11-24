@@ -1,7 +1,7 @@
 #include "diagnostics.h"
+#include "launcher_env.h"
 #include "process.h"
 #include "sherpa_runtime.h"
-#include <cstdlib>
 #include <glib.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -62,14 +62,13 @@ Json LocalDiagnostics(const Config &config, bool recognizer_loaded) {
   bool text_configured = false;
   try {
     const auto &llm = data.at("llm");
-    auto env = llm.at("api_key_env").get<std::string>();
     auto model = llm.at("model").get<std::string>();
     auto url = llm.at("base_url").get<std::string>();
-    auto key = std::getenv(env.c_str());
-    text_configured =
-        !model.empty() && key && *key &&
-        (url.starts_with("https://") ||
-         (llm.value("allow_http", false) && url.starts_with("http://")));
+    text_configured = !model.empty() &&
+                      (url.starts_with("https://") ||
+                       (llm.value("allow_http", false) &&
+                        url.starts_with("http://"))) &&
+                      !TextCredential(config).empty();
   } catch (...) {
   }
   result["text_configured"] = text_configured;

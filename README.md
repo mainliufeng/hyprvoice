@@ -1,13 +1,13 @@
 # Hyprvoice
 
-当前版本 **0.3.2**（2026-11-23）；更新内容及验证范围见 [版本说明](docs/release-notes.md)。
+当前版本 **0.4.0**（2026-11-24）。更新内容及验证范围见 [版本说明](docs/release-notes.md)。
 
-开发版新增可选的详细模式，以下模式说明适用于包含此功能的源码构建。
+从应用启动器打开 HyprVoice，程序会留在系统托盘。重复打开会复用同一实例。托盘菜单可以切换极简或详细模式、打开设置和退出。F8 在程序运行后控制听写。
 
 本版同时保留英文长录音尾句恢复与逐样本退化检查；实际收益与限制见 [验证记录](docs/late-tail-verification.md)。本轮安装与回退见 [交付记录](docs/result-review/installation.md)。
 项目网站：<https://hyprvoice.liufeng.me>。运行 `hyprvoice --version` 查看程序版本；语音库与构建时不一致时，
 这条命令会直接写出原因和“重新构建并安装”的修复方向，不必等到录音被拒绝才发现。
-正式源码包与 SHA256 校验和：[0.3.2 下载](https://github.com/mainliufeng/hyprvoice/releases/tag/v0.3.2)。本版不提供预编译程序或模型。
+正式发布提供源码包和 SHA256 校验和。识别模型需另行下载。 [下载 0.4.0](https://github.com/mainliufeng/hyprvoice/releases/tag/v0.4.0)
 
 独立的 Hyprland 语音输入工具。保留现有 Fcitx 拼音，用快捷键录音，通过悬浮条预览，最终粘贴到应用。
 构建与运行不依赖 `voice-input`、Fcitx 开发库或 `vinput-registry`。本地模型文件可复用现有下载。旧项目移植的辅助代码已移除，独立实现范围见 [实现说明](docs/independent-implementation.md)。
@@ -45,7 +45,7 @@ ctest --test-dir build --output-on-failure
 ```
 
 系统升级 `sherpa-onnx` 后，用新版本源码重新构建、测试并更新已安装程序。跟踪主分支的 Git 检出可以 `git pull --ff-only`；固定版本标签和源码包请下载较新的正式源码并在新目录构建，不在原目录直接 pull。
-安装后重启 `hyprvoice.service`；`hyprvoice --version` 在语音库不一致时会直接写明要重新构建。只重建旧检出会漏掉
+安装后退出当前 HyprVoice，再从启动器打开。使用 systemd 托管时，重新加载用户单元后重启 `hyprvoice.service`。`hyprvoice --version` 在语音库不一致时会直接写明要重新构建。只重建旧检出会漏掉
 已合入的修复。程序会在传入模型配置前核对构建时与运行时的语音库版本；
 版本变化时拒绝加载并提示重新构建，避免 C API 结构布局变化被误报成模型不可用。
 本机 2.0.0 升级后的修复与安装核验见 [2026-10-31 修复记录](docs/local-model-repair-20261031.md)。
@@ -80,7 +80,7 @@ build/hyprvoice serve
 | `timeout_seconds` | 1..60，默认 15；接口慢的服务商可以调大 |
 | `allow_http` | 默认 false，只接受 HTTPS；只有可信的本地服务才设 true |
 
-密钥放在 `~/.config/hyprvoice/llm.env`（权限 600），由 systemd 的 `EnvironmentFile` 注入服务环境，不写在 `config.json` 里；改完配置或密钥后重启服务。
+密钥可以写在与 `config.json` 同目录的 `llm.env`（默认 `~/.config/hyprvoice/llm.env`，权限 600），格式为 `HYPRVOICE_API_KEY=你的密钥`。程序优先使用启动时继承的变量，否则只从该文件读取所配置的密钥，不执行 shell 语句。由 systemd 托管时，默认路径下的文件也由服务加载，修改后需重启服务。
 
 常用地址：DeepSeek `https://api.deepseek.com/v1`、OpenAI `https://api.openai.com/v1`、本地 Ollama `http://127.0.0.1:11434/v1`（同时设 `allow_http: true`）。换服务商只改 `base_url` 和 `model`。
 
@@ -94,18 +94,27 @@ build/hyprvoice serve
 
 ```bash
 bash scripts/install.sh
+```
+
+配置本地模型后，从应用启动器打开 **HyprVoice**。HyprVoice 会留在系统托盘，重复打开仍使用同一实例。托盘菜单可切换极简／详细模式、打开现有设置窗口或退出；没有托盘组件时可运行 `hyprvoice settings` 和 `hyprvoice quit`。
+
+安装脚本写入程序、应用启动器和可选的 systemd 用户服务，不启用自启，也不修改 Fcitx 或 Hyprland。脚本先打印本次构建的源码提交；检出落后于上次 fetch 记录的 `origin/main` 时会提示先 `git fetch && git pull --ff-only`（源码包没有 `.git`，显示 commit unknown），装完再打印 `hyprvoice --version` 的实际输出。
+
+需要登录后自动常驻时，使用 `graphical-session.target` 管理会话的桌面可在会话内导入环境并启用服务。
+
+```bash
 systemctl --user import-environment WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE DISPLAY
 systemctl --user daemon-reload
 systemctl --user enable --now hyprvoice.service
 ```
 
-可选密钥文件 `~/.config/hyprvoice/llm.env` 只供服务加载，设置权限为 600。安装脚本不创建配置、不启动服务、不修改 Fcitx 或 Hyprland。
-脚本先打印本次构建的源码提交；检出落后于上次 fetch 记录的 `origin/main` 时会提示先 `git fetch && git pull --ff-only`（源码包没有 `.git`，显示 commit unknown），装完再打印 `hyprvoice --version` 的实际输出。
-Hyprland 重启后应从该会话重新导入环境；也可在 Hyprland 自动启动项中运行环境导入与服务重启。
+会话启动时应先导入对应的 Wayland 和 Hyprland 环境。未使用这个 systemd 目标的会话可以在合成器启动项中运行 `~/.local/bin/hyprvoice serve`（hyprlang 中为 `exec-once = ~/.local/bin/hyprvoice serve`）。Cornice Shell-only 可直接使用应用启动器和其托盘组件，登录自启同样可交由当前 Wayland 会话。选择一种自启方式。退出托盘会结束当前实例，启用自启的实例会在下次登录时重新启动。
 
-Lua 配置使用 `config/hyprvoice.lua` 的绑定；仍使用 hyprlang 时参考 `config/hyprvoice.conf`。二者选一，根据自己的配置合并。
+从旧版升级时，手动运行的旧实例应在替换程序前用旧版 `hyprvoice quit` 退出，安装后再从启动器打开。由用户服务运行的旧实例应在安装后执行 `systemctl --user daemon-reload` 和 `systemctl --user restart hyprvoice.service`。旧实例仍在运行时，新版 F8 保持无动作。曾自己配置 `hyprvoice.socket` 的用户可用 `systemctl --user disable --now hyprvoice.socket` 停用该单元；热键中如果写了启动服务的命令，请换成下方示例。
+
+Lua 配置使用 `config/hyprvoice.lua` 的绑定；仍使用 hyprlang 时参考 `config/hyprvoice.conf`。二者选一，根据自己的配置合并。示例按用户安装路径 `~/.local/bin/hyprvoice` 配置，使用其他安装路径时改为相应的命令。
 [Hyprland 官方绑定文档](https://wiki.hypr.land/Configuring/Basics/Binds/)。
-快捷键不写在 hyprvoice 自己的配置里：每条绑定只是调用一条下面的 CLI 命令，所以可以换成任意按键；“轻按切换＋按住说话”就是同一个键的 `press` 加一条 `bindr release`。两个示例文件等价，改完执行 `hyprctl reload`，不需要重启服务。
+快捷键在 Hyprland 中配置，每条绑定调用一条 CLI 命令，所以可以更换按键。“轻按切换＋按住说话”由同一个键的 `press` 和 `release` 配合完成。F8 仅控制已运行的 HyprVoice；启动前或退出后按 F8 没有动作。两个示例文件等价，改完执行 `hyprctl reload` 即可。
 悬浮窗使用“录音快捷键／指令快捷键”的通用动作提示，不自动读取外部绑定或假定实际按键是 F8/F9。自定义场景在悬浮窗中直接显示 `prompts` 的键名，内置场景仍显示中文标签；场景名须非空，提示词须为字符串。
 
 | 按键示例 | 动作 |

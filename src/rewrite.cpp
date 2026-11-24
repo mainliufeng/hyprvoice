@@ -1,6 +1,6 @@
 #include "rewrite.h"
+#include "launcher_env.h"
 #include <algorithm>
-#include <cstdlib>
 #include <curl/curl.h>
 #include <glib.h>
 #include <stdexcept>
@@ -23,14 +23,13 @@ std::string Rewrite(const Config &c, const std::string &text,
   if (cancel)
     throw std::runtime_error("已取消");
   auto llm = c.data.at("llm");
-  std::string base = llm.at("base_url"), model = llm.at("model"),
-              env = llm.at("api_key_env");
+  std::string base = llm.at("base_url"), model = llm.at("model");
   if (!base.starts_with("https://") &&
       !(llm.value("allow_http", false) && base.starts_with("http://")))
     throw std::runtime_error("LLM URL requires HTTPS (allow_http is only for a "
                              "trusted local endpoint)");
-  const char *key = std::getenv(env.c_str());
-  if (!key || !*key || model.empty())
+  const auto key = model.empty() ? std::string{} : TextCredential(c);
+  if (key.empty())
     throw std::runtime_error("文本处理模型未配置，可使用原文或取消");
   while (base.ends_with('/'))
     base.pop_back();
@@ -76,8 +75,8 @@ std::string Rewrite(const Config &c, const std::string &text,
   if (!curl)
     throw std::runtime_error("Cannot initialize HTTP client");
   auto headers = curl_slist_append(nullptr, "Content-Type: application/json");
-  headers = curl_slist_append(
-      headers, ("Authorization: Bearer " + std::string(key)).c_str());
+  headers =
+      curl_slist_append(headers, ("Authorization: Bearer " + key).c_str());
   std::string response;
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);

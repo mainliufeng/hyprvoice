@@ -14,15 +14,19 @@
 #include <optional>
 #include <thread>
 namespace hv {
+class Tray;
+class ResidentLock;
+
 class App {
 public:
   explicit App(Config config);
   ~App();
-  void run();
+  void run(const ResidentLock &lock);
   Json command(const std::string &cmd, const std::string &arg = "");
 
 private:
   Config config_;
+  std::unique_ptr<Tray> tray_;
   std::unique_ptr<SettingsPanel> settings_panel_;
   std::atomic<bool> settings_cancel_ = false;
   bool settings_saving_ = false;
@@ -110,11 +114,15 @@ private:
   std::array<float, 21> meter_history_{};
   std::string display_text_, display_phase_, recording_text_;
   GMainLoop *loop_ = nullptr;
-  int socket_ = -1, lock_ = -1, focus_socket_ = -1, overlay_socket_ = -1;
+  bool quitting_ = false;
+  int socket_ = -1, focus_socket_ = -1, overlay_socket_ = -1;
   gint64 overlay_retry_at_ = 0;
   std::string focus_events_;
   Json settingsValues() const;
+  bool canConfigure(const Json &state) const;
   void requireSettingsIdle();
+  void setDetailed(bool detailed);
+  void quit();
   void applySettings(const Json &patch);
   void finishSettings();
   void start(bool command);
@@ -138,5 +146,7 @@ private:
   void bindSocket();
   void registerOverlay();
 };
-Json SendCommand(const std::string &command, const std::string &arg = "");
+void RunApp();
+std::optional<Json> SendCommand(const std::string &command,
+                                const std::string &arg = "");
 } // namespace hv

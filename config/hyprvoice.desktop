@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=HyprVoice
+Comment=Voice input for Hyprland
+Comment[zh_CN]=Hyprland 语音输入
+Exec=hyprvoice
+Icon=audio-input-microphone
+Terminal=false
+StartupNotify=false
+Categories=Utility;Accessibility;

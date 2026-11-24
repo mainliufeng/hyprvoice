@@ -18,7 +18,7 @@ struct Keyboard {
   xkb_keymap *map = nullptr;
   zwlr_virtual_pointer_manager_v1 *pointer_manager = nullptr;
   zwlr_virtual_pointer_v1 *pointer = nullptr;
-  void key(xkb_keysym_t symbol) {
+  void key(xkb_keysym_t symbol, bool press = true, bool release = true) {
     for (auto code = xkb_keymap_min_keycode(map);
          code <= xkb_keymap_max_keycode(map); ++code) {
       const xkb_keysym_t *syms = nullptr;
@@ -27,10 +27,12 @@ struct Keyboard {
         auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
                        std::chrono::steady_clock::now().time_since_epoch())
                        .count();
-        zwp_virtual_keyboard_v1_key(keyboard, now, code - 8,
-                                    WL_KEYBOARD_KEY_STATE_PRESSED);
-        zwp_virtual_keyboard_v1_key(keyboard, now + 1, code - 8,
-                                    WL_KEYBOARD_KEY_STATE_RELEASED);
+        if (press)
+          zwp_virtual_keyboard_v1_key(keyboard, now, code - 8,
+                                      WL_KEYBOARD_KEY_STATE_PRESSED);
+        if (release)
+          zwp_virtual_keyboard_v1_key(keyboard, now + 1, code - 8,
+                                      WL_KEYBOARD_KEY_STATE_RELEASED);
         return;
       }
     }
@@ -112,7 +114,12 @@ int main() {
       else if (line.starts_with("key "))
         k.key(xkb_keysym_from_name(line.substr(4).c_str(),
                                    XKB_KEYSYM_CASE_INSENSITIVE));
-      else if (line.starts_with("ctrl ") || line.starts_with("shift ")) {
+      else if (line.starts_with("down ") || line.starts_with("up ")) {
+        const bool down = line.starts_with("down ");
+        k.key(xkb_keysym_from_name(line.substr(down ? 5 : 3).c_str(),
+                                   XKB_KEYSYM_CASE_INSENSITIVE),
+              down, !down);
+      } else if (line.starts_with("ctrl ") || line.starts_with("shift ")) {
         bool shift = line.starts_with("shift ");
         auto mod = xkb_keymap_mod_get_index(k.map, shift ? XKB_MOD_NAME_SHIFT
                                                          : XKB_MOD_NAME_CTRL);

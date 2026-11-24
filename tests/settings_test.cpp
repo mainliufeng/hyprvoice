@@ -1,5 +1,6 @@
 #include "config.h"
 #include "diagnostics.h"
+#include "launcher_env.h"
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
@@ -37,6 +38,29 @@ int main() {
     std::ofstream(path) << initial.dump();
     Config config(path);
     check(config.data.at("detailed_review") == false, "legacy config must load simple mode");
+    auto credential_path = root / "llm.env";
+    unsetenv("HV_DIAGNOSTIC_TEST_KEY");
+    std::ofstream(credential_path)
+        << "# HV_DIAGNOSTIC_TEST_KEY=ignored\n"
+           "HV_DIAGNOSTIC_TEST_KEY=first-value\n"
+           "UNRELATED='multiline\nHV_DIAGNOSTIC_TEST_KEY=ignored'\n"
+           "HV_DIAGNOSTIC_TEST_KEY=\"synthetic-\\\nprivate-\\$canary\"\n";
+    chmod(credential_path.c_str(), 0644);
+    check(TextCredential(config).empty(), "accepted shared credentials file");
+    chmod(credential_path.c_str(), 0600);
+    check(TextCredential(config) == "synthetic-private-$canary",
+          "launcher credential did not parse the last assignment literally");
+    check(getenv("HV_DIAGNOSTIC_TEST_KEY") == nullptr,
+          "launcher credential leaked into process environment");
+    setenv("HV_DIAGNOSTIC_TEST_KEY", "inherited-canary", 1);
+    check(TextCredential(config) == "inherited-canary",
+          "inherited credential did not take precedence");
+    unsetenv("HV_DIAGNOSTIC_TEST_KEY");
+    const auto private_file = root / "private.env";
+    std::filesystem::rename(credential_path, private_file);
+    std::filesystem::create_symlink(private_file, credential_path);
+    check(TextCredential(config).empty(), "accepted a credential symlink");
+    std::filesystem::remove(credential_path);
     auto original = config.source_text;
     auto reject = [&](const Json &patch) {
       bool failed = false;
@@ -136,7 +160,7 @@ int main() {
     chmod((root / "pw-dump").c_str(), 0700);
     auto old_path = std::string(getenv("PATH") ? getenv("PATH") : "");
     setenv("PATH", (root.string() + ":" + old_path).c_str(), 1);
-    setenv("HV_DIAGNOSTIC_TEST_KEY", "synthetic-private-canary", 1);
+    std::filesystem::rename(private_file, credential_path);
     auto diagnostic = LocalDiagnostics(Config(path), false);
     check(diagnostic.at("assets_present") == true &&
               diagnostic.at("recognizer_loaded") == false,

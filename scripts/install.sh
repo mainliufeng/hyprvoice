@@ -31,6 +31,32 @@ cmake --build "$app_root/build" -j2
 ctest --test-dir "$app_root/build" --output-on-failure
 install -Dm755 "$app_root/build/hyprvoice" "$HOME/.local/bin/hyprvoice"
 install -Dm644 "$app_root/config/hyprvoice.service" "$HOME/.config/systemd/user/hyprvoice.service"
+desktop_entry=$(mktemp)
+trap 'rm -f -- "$desktop_entry"' EXIT
+# Graphical launchers may omit ~/.local/bin from PATH. Quote the exact path
+# for Exec, then escape it again for the Desktop Entry string format.
+python3 - "$app_root/config/hyprvoice.desktop" "$HOME/.local/bin/hyprvoice" >"$desktop_entry" <<'PY'
+from pathlib import Path
+import sys
+
+template = Path(sys.argv[1]).read_text(encoding="utf-8")
+
+def desktop_arg(value):
+    value = value.replace("%", "%%")
+    quoted = '"' + "".join("\\" + char if char in '\\"`$' else char for char in value) + '"'
+    return (quoted.replace("\\", "\\\\").replace("\n", "\\n")
+            .replace("\r", "\\r").replace("\t", "\\t"))
+
+executable = sys.argv[2]
+command = desktop_arg(executable)
+if "%" in executable or "=" in executable:
+    # Some launchers validate argv[0] before expanding %% and the spec bars
+    # '=' in argv[0]. Pass these paths as an argument to a fixed exec script.
+    exec_path = desktop_arg('exec "$1"')
+    command = f"/bin/sh -c {exec_path} hyprvoice {command}"
+print(template.replace("\nExec=hyprvoice\n", f"\nExec={command}\n", 1), end="")
+PY
+install -Dm644 "$desktop_entry" "${XDG_DATA_HOME:-$HOME/.local/share}/applications/hyprvoice.desktop"
 if [[ "$with_fun" == ON ]]; then
   python3 "$app_root/scripts/fun_models.py" --cache "$app_root/build/benchmark-20261004"
   install -Dm755 "$app_root/build/fun-worker" "$HOME/.local/libexec/hyprvoice/fun-worker"
@@ -42,4 +68,5 @@ fi
 # free even on the install host.
 printf '%s\n' 'install: installed binary reports:'
 "$app_root/build/hyprvoice" --version || true
-printf '%s\n' 'Installed binary and service. Configure models, then import Hyprland session variables and start the service as documented in README.md.'
+printf '%s\n' 'Installed HyprVoice, its application launcher, and the optional user service.'
+printf '%s\n' 'Configure models, then open HyprVoice from the application launcher. See README.md for optional session autostart.'

@@ -5,10 +5,13 @@
 #include "process.h"
 #include "rewrite.h"
 #include "sherpa_runtime.h"
+#include "tray.h"
 #include "ui_text.h"
 #include <algorithm>
+#include <cerrno>
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
 #include <glib-unix.h>
@@ -38,6 +41,80 @@ static sockaddr_un Address(const std::string &path) {
   std::memcpy(a.sun_path, path.c_str(), path.size() + 1);
   return a;
 }
+class ResidentLock {
+public:
+  ResidentLock() {
+    const auto dir = RuntimePath();
+    if (mkdir(dir.c_str(), 0700) < 0 && errno != EEXIST)
+      throw std::runtime_error("Cannot create runtime directory");
+    struct stat st{};
+    if (lstat(dir.c_str(), &st) < 0 || !S_ISDIR(st.st_mode) ||
+        st.st_uid != getuid() || chmod(dir.c_str(), 0700) < 0)
+      throw std::runtime_error("Unsafe runtime directory");
+    fd_ = open((dir / "lock").c_str(), O_CREAT | O_RDWR | O_CLOEXEC | O_NOFOLLOW,
+               0600);
+    if (fd_ < 0)
+      throw std::runtime_error("Cannot open Hyprvoice instance lock");
+    if (flock(fd_, LOCK_EX | LOCK_NB) == 0)
+      return;
+    const auto error = errno;
+    close(fd_);
+    fd_ = -1;
+    if (error != EWOULDBLOCK)
+      throw std::runtime_error("Cannot acquire Hyprvoice instance lock");
+  }
+  ResidentLock(const ResidentLock &) = delete;
+  ResidentLock &operator=(const ResidentLock &) = delete;
+  ~ResidentLock() {
+    if (fd_ >= 0)
+      close(fd_);
+  }
+  bool acquired() const { return fd_ >= 0; }
+  // Linux flock and fcntl record locks are independent. Keep the existing
+  // singleton lock from startup and publish readiness on the same file later.
+  void markReady() const {
+    auto ready = readyRange();
+    if (fcntl(fd_, F_SETLK, &ready) < 0)
+      throw std::runtime_error("Cannot publish Hyprvoice control readiness");
+  }
+  static bool ready() {
+    const auto runtime = std::getenv("XDG_RUNTIME_DIR");
+    if (!runtime || !*runtime)
+      return false;
+    const auto fd = open((RuntimePath() / "lock").c_str(),
+                         O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
+    if (fd < 0) {
+      if (errno == ENOENT)
+        return false;
+      throw std::runtime_error("Cannot open Hyprvoice instance lock");
+    }
+    auto ready = readyRange();
+    const int result = fcntl(fd, F_GETLK, &ready);
+    close(fd);
+    if (result < 0)
+      throw std::runtime_error("Cannot check Hyprvoice control readiness");
+    return ready.l_type == F_WRLCK;
+  }
+
+private:
+  static struct flock readyRange() {
+    struct flock ready{};
+    ready.l_type = F_WRLCK;
+    ready.l_whence = SEEK_SET;
+    ready.l_len = 1;
+    return ready;
+  }
+  int fd_ = -1;
+};
+
+void RunApp() {
+  ResidentLock lock;
+  if (lock.acquired()) {
+    App app{Config(ConfigPath())};
+    app.run(lock);
+  }
+}
+
 static std::string Receive(int fd) {
   std::string out;
   auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
@@ -55,15 +132,24 @@ static std::string Receive(int fd) {
   }
   throw std::runtime_error("Incomplete or oversized IPC message");
 }
-Json SendCommand(const std::string &command, const std::string &arg) {
+std::optional<Json> SendCommand(const std::string &command,
+                                const std::string &arg) {
+  // The resident marks readiness only after binding its own socket. This also
+  // keeps a stale systemd listener from activating while a new app starts.
+  if (!ResidentLock::ready())
+    return std::nullopt;
+  auto addr = Address((RuntimePath() / "control.sock").string());
   int fd = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
   if (fd < 0)
     throw std::runtime_error("Cannot create control socket");
   try {
-    auto addr = Address((RuntimePath() / "control.sock").string());
-    if (connect(fd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0)
-      throw std::runtime_error(
-          "Hyprvoice is not running; start hyprvoice serve");
+    if (connect(fd, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0) {
+      if (errno == ENOENT || errno == ECONNREFUSED) {
+        close(fd);
+        return std::nullopt;
+      }
+      throw std::runtime_error("Cannot connect to the Hyprvoice resident");
+    }
     auto message = Json{{"command", command}, {"arg", arg}}.dump() + "\n";
     if (send(fd, message.data(), message.size(), MSG_NOSIGNAL) !=
         static_cast<ssize_t>(message.size()))
@@ -109,6 +195,11 @@ App::App(Config c) : config_(std::move(c)), desktop_(config_) {
   state_["insertion_status"] = "unknown";
 }
 App::~App() {
+  if (socket_ >= 0) {
+    close(socket_);
+    unlink((RuntimePath() / "control.sock").c_str());
+  }
+  tray_.reset();
   settings_cancel_ = true;
   cancel_ = true;
   stop_ = true;
@@ -119,12 +210,6 @@ App::~App() {
     close(focus_socket_);
   if (overlay_socket_ >= 0)
     close(overlay_socket_);
-  if (socket_ >= 0) {
-    close(socket_);
-    unlink((RuntimePath() / "control.sock").c_str());
-  }
-  if (lock_ >= 0)
-    close(lock_);
   if (loop_)
     g_main_loop_unref(loop_);
   if (secondary_editor_window_)
@@ -224,24 +309,6 @@ Json App::snapshot() {
 }
 void App::bindSocket() {
   auto dir = RuntimePath();
-  std::filesystem::create_directories(dir);
-  struct stat st{};
-  if (lstat(dir.c_str(), &st) < 0 || !S_ISDIR(st.st_mode) ||
-      st.st_uid != getuid())
-    throw std::runtime_error("Unsafe runtime directory");
-  chmod(dir.c_str(), 0700);
-  lock_ = open((dir / "lock").c_str(),
-               O_CREAT | O_RDWR | O_CLOEXEC | O_NOFOLLOW, 0600);
-  if (lock_ < 0 || flock(lock_, LOCK_EX | LOCK_NB) < 0)
-    throw std::runtime_error("Another hyprvoice instance is running");
-  socket_ = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
-  auto address = Address((dir / "control.sock").string());
-  unlink(address.sun_path);
-  if (bind(socket_, reinterpret_cast<sockaddr *>(&address), sizeof(address)) <
-          0 ||
-      listen(socket_, 8) < 0)
-    throw std::runtime_error("Cannot bind control socket");
-  chmod(address.sun_path, 0600);
   const char *signature = std::getenv("HYPRLAND_INSTANCE_SIGNATURE");
   if (!signature)
     throw std::runtime_error("Run from a Hyprland session");
@@ -254,6 +321,16 @@ void App::bindSocket() {
               sizeof(focusAddress)) < 0)
     throw std::runtime_error("Cannot monitor Hyprland focus events");
   fcntl(focus_socket_, F_SETFL, O_NONBLOCK);
+  auto address = Address((dir / "control.sock").string());
+  socket_ = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
+  if (socket_ < 0)
+    throw std::runtime_error("Cannot create control socket");
+  unlink(address.sun_path);
+  if (bind(socket_, reinterpret_cast<sockaddr *>(&address), sizeof(address)) <
+          0 ||
+      listen(socket_, 8) < 0)
+    throw std::runtime_error("Cannot bind control socket");
+  chmod(address.sun_path, 0600);
 }
 void App::focusEvents() {
   char buf[4096];
@@ -1267,8 +1344,25 @@ Json App::settingsValues() const {
           {"context", {{"enabled", config_.data.at("context").at("enabled")}}}};
 }
 void App::requireSettingsIdle() {
-  if (busy_ || !delivered_ || snapshot().at("phase") == "delivery-uncertain")
+  if (!canConfigure(snapshot()))
     throw std::runtime_error("请先结束、提交或取消本次语音，再打开或保存设置");
+}
+bool App::canConfigure(const Json &state) const {
+  return !busy_ && delivered_ && state.at("phase") != "delivery-uncertain";
+}
+void App::setDetailed(bool detailed) {
+  if (!canConfigure(snapshot()) ||
+      (settings_panel_ && settings_panel_->visible()) ||
+      config_.data.at("detailed_review") == detailed)
+    return;
+  applySettings({{"detailed_review", detailed}});
+}
+void App::quit() {
+  quitting_ = true;
+  settings_cancel_ = true;
+  cancel_ = true;
+  stop_ = true;
+  g_main_loop_quit(loop_);
 }
 void App::applySettings(const Json &patch) {
   requireSettingsIdle();
@@ -1553,10 +1647,7 @@ Json App::command(const std::string &cmd, const std::string &arg) {
       scene_ = arg;
       update({{"scene", scene_}});
     } else if (cmd == "quit") {
-      settings_cancel_ = true;
-      cancel_ = true;
-      stop_ = true;
-      g_main_loop_quit(loop_);
+      quit();
     } else
       throw std::runtime_error("Unknown command: " + cmd);
     return {{"ok", true}, {"state", snapshot()}};
@@ -1651,7 +1742,7 @@ void App::registerOverlay() {
 }
 void App::sockets() {
   registerOverlay();
-  for (int i = 0; i < 8; ++i) {
+  for (int i = 0; i < 8 && !quitting_; ++i) {
     int fd = accept4(socket_, nullptr, nullptr, SOCK_CLOEXEC);
     if (fd < 0)
       break;
@@ -1675,8 +1766,17 @@ void App::sockets() {
 void App::ui() {
   finishSettings();
   sockets();
+  if (quitting_)
+    return;
   focusEvents();
   auto state = snapshot();
+  if (tray_) {
+    const bool settings = canConfigure(state);
+    const bool mode =
+        settings && (!settings_panel_ || !settings_panel_->visible());
+    tray_->set_state(config_.data.at("detailed_review").get<bool>(), mode,
+                     settings);
+  }
   if (settings_panel_)
     settings_panel_->tick(settings_saving_, state.at("settings_note"));
   std::string phase = state.at("phase");
@@ -1954,7 +2054,8 @@ void App::ui() {
   if (!editing && secondary_editor_window_)
     gtk_widget_set_visible(secondary_editor_window_, false);
   gtk_widget_set_visible(
-      window_, (phase != "idle" || !error.empty() || copied) &&
+      window_, phase != "loading" &&
+                   (phase != "idle" || !error.empty() || copied) &&
                    !(editing && secondary_editor_window_ &&
                      gtk_widget_get_visible(secondary_editor_window_)));
   int screen_height = 720;
@@ -1977,11 +2078,10 @@ void App::ui() {
   display_phase_ = phase;
 }
 
-void App::run() {
+void App::run(const ResidentLock &lock) {
   gtk_init();
   if (!gtk_layer_is_supported())
     throw std::runtime_error("A Wayland layer-shell compositor is required");
-  bindSocket();
   window_ = gtk_window_new();
   gtk_widget_add_css_class(window_, "hyprvoice");
   gtk_window_set_title(GTK_WINDOW(window_), "Hyprvoice");
@@ -2274,6 +2374,30 @@ void App::run() {
   gtk_label_set_xalign(GTK_LABEL(hint_), 0);
   gtk_box_append(GTK_BOX(box), hint_);
   loop_ = g_main_loop_new(nullptr, false);
+  bindSocket();
+  if (auto bus = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, nullptr)) {
+    const bool detailed = config_.data.at("detailed_review").get<bool>();
+    tray_ = std::make_unique<Tray>(
+        bus, detailed, [this](TrayAction action) {
+          switch (action) {
+          case TrayAction::Simple:
+            setDetailed(false);
+            break;
+          case TrayAction::Detailed:
+            setDetailed(true);
+            break;
+          case TrayAction::Settings:
+            command("settings");
+            break;
+          case TrayAction::Quit:
+            quit();
+            break;
+          }
+        });
+    tray_->set_state(detailed, false, false);
+    g_object_unref(bus);
+  }
+  lock.markReady();
   busy_ = true;
   worker_ = std::thread([this] {
     try {
@@ -2300,11 +2424,7 @@ void App::run() {
       },
       this);
   auto onSignal = +[](gpointer data) -> gboolean {
-    auto self = static_cast<App *>(data);
-    self->settings_cancel_ = true;
-    self->cancel_ = true;
-    self->stop_ = true;
-    g_main_loop_quit(self->loop_);
+    static_cast<App *>(data)->quit();
     return G_SOURCE_CONTINUE;
   };
   auto sigint = g_unix_signal_add(SIGINT, onSignal, this);

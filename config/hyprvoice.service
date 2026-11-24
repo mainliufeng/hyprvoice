@@ -1,6 +1,6 @@
 [Unit]
-Description=Hyprvoice independent voice input
-After=graphical-session.target pipewire.service
+Description=HyprVoice tray and voice input
+After=graphical-session-pre.target pipewire.service
 PartOf=graphical-session.target
 
 [Service]

@@ -19,8 +19,13 @@ int main(int argc, char **argv) {
         std::cout << replaced << '\n';
       return 0;
     }
-    if (argc < 2 || std::string(argv[1]) == "--help") {
+    if (argc == 1 || (argc == 2 && std::string(argv[1]) == "serve")) {
+      RunApp();
+      return 0;
+    }
+    if (std::string(argv[1]) == "--help") {
       std::cout
+          << "hyprvoice             Start Hyprvoice in the system tray\n"
           << "hyprvoice init | serve | doctor | transcribe WAV | replay "
              "MANIFEST\n"
           << "hyprvoice start | stop | toggle | press | release | command | "
@@ -138,11 +143,6 @@ int main(int argc, char **argv) {
       std::cout << report.dump(2) << '\n';
       return ok ? 0 : 1;
     }
-    if (cmd == "serve") {
-      App app{Config(ConfigPath())};
-      app.run();
-      return 0;
-    }
     if (cmd == "transcribe" || cmd == "replay") {
       if (argc != 3)
         throw std::runtime_error("Expected WAV or JSONL manifest path");
@@ -198,8 +198,15 @@ int main(int argc, char **argv) {
       return 0;
     }
     auto result = SendCommand(cmd, argc > 2 ? argv[2] : "");
-    std::cout << result.dump(2) << '\n';
-    return result.value("ok", false) ? 0 : 1;
+    if (!result) {
+      if (cmd == "press" || cmd == "release" || cmd == "toggle" ||
+          cmd == "command" || cmd == "command-release" || cmd == "commit" ||
+          cmd == "raw" || cmd == "cancel" || cmd == "scene")
+        return 0;
+      throw std::runtime_error("Hyprvoice is not running; open Hyprvoice first");
+    }
+    std::cout << result->dump(2) << '\n';
+    return result->value("ok", false) ? 0 : 1;
   } catch (const std::exception &e) {
     std::cerr << "hyprvoice: " << e.what() << '\n';
     return 1;
