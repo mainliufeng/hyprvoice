@@ -1,5 +1,9 @@
 # Hyprvoice
 
+Local dictation for Hyprland on Wayland: hold a key, speak, read the preview, and the text lands in the focused field. Streaming X-ASR recognition and offline refinement run on your machine, recordings are not uploaded, and your Fcitx pinyin input method stays exactly as it is. No discrete GPU is needed: recognition uses CPU int8 models, downloaded separately (~271 MB: 134 MB streaming + 136 MB offline + 0.6 MB Silero VAD). Releases are source-only — clone the release tag, run `bash scripts/install.sh`, then point `scripts/configure.py` at the extracted models. Project page: <https://hyprvoice.liufeng.me>. GPL-3.0.
+
+以下各节为中文说明。
+
 当前版本 **0.4.0**（2026-11-24）。更新内容及验证范围见 [版本说明](docs/release-notes.md)。
 
 从应用启动器打开 HyprVoice，程序会留在系统托盘。重复打开会复用同一实例。托盘菜单可以切换极简或详细模式、打开设置和退出。F8 在程序运行后控制听写。
@@ -53,6 +57,7 @@ ctest --test-dir build --output-on-failure
 ## 配置真实模型
 
 只支持以下两套 transducer 文件名，其他模型不能直接替换。模型来自 [X-ASR](https://github.com/Gilgamesh-J/X-ASR) 的 sherpa-onnx 导出（Apache-2.0），更多模型见 [sherpa-onnx 模型文档](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/index.html)。模型文件不在源码包或 Release 里，`scripts/configure.py` 会逐个核对文件名，缺文件直接报 `missing model file`，不会写出半份配置。
+下载量可以预期：流式 int8 归档 134 MB、离线 int8 归档 136 MB、`silero_vad.onnx` 0.6 MB，合计约 271 MB（sherpa-onnx 发布页，2026-11-26 核对）。识别使用 CPU 版 sherpa-onnx 与 int8 模型，构建依赖里没有 CUDA 或显卡驱动；实际速度取决于 CPU。
 先确认自己的模型目录和 Silero VAD 文件；可保留已下载的模型，也可复制到 `~/.local/share/hyprvoice/` 后使用。
 
 ```bash
