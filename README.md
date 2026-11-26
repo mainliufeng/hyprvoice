@@ -59,15 +59,29 @@ ctest --test-dir build --output-on-failure
 只支持以下两套 transducer 文件名，其他模型不能直接替换。模型来自 [X-ASR](https://github.com/Gilgamesh-J/X-ASR) 的 sherpa-onnx 导出（Apache-2.0），更多模型见 [sherpa-onnx 模型文档](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/index.html)。模型文件不在源码包或 Release 里，`scripts/configure.py` 会逐个核对文件名，缺文件直接报 `missing model file`，不会写出半份配置。
 下载量可以预期：流式 int8 归档 134 MB、离线 int8 归档 136 MB、`silero_vad.onnx` 0.6 MB，合计约 271 MB（sherpa-onnx 发布页，2026-11-26 核对）。识别使用 CPU 版 sherpa-onnx 与 int8 模型，构建依赖里没有 CUDA 或显卡驱动；实际速度取决于 CPU。
 先确认自己的模型目录和 Silero VAD 文件；可保留已下载的模型，也可复制到 `~/.local/share/hyprvoice/` 后使用。
+直接从 sherpa-onnx 发布页下载这两套模型和 VAD（2026-11-27 核对，返回体积与上面一致；解压出的目录名等于归档名去掉 `.tar.bz2`）：
+
+```bash
+M=https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models
+mkdir -p ~/.local/share/hyprvoice/models
+cd ~/.local/share/hyprvoice/models
+curl -LO "$M/sherpa-onnx-x-asr-960ms-streaming-zipformer-transducer-zh-en-punct-int8-2026-06-05.tar.bz2"
+curl -LO "$M/sherpa-onnx-x-asr-zipformer-transducer-zh-en-punct-int8-2026-06-03.tar.bz2"
+tar xf sherpa-onnx-x-asr-960ms-streaming-zipformer-transducer-zh-en-punct-int8-2026-06-05.tar.bz2
+tar xf sherpa-onnx-x-asr-zipformer-transducer-zh-en-punct-int8-2026-06-03.tar.bz2
+curl -LO "$M/silero_vad.onnx"
+```
 
 ```bash
 python3 scripts/configure.py \
-  --streaming ~/.local/share/hyprvoice/models/x-asr-960ms-streaming-zipformer-transducer-zh-en-punct-int8 \
-  --offline ~/.local/share/hyprvoice/models/x-asr-zipformer-transducer-zh-en-punct-int8 \
-  --vad ~/.local/share/hyprvoice/silero_vad.onnx
+  --streaming ~/.local/share/hyprvoice/models/sherpa-onnx-x-asr-960ms-streaming-zipformer-transducer-zh-en-punct-int8-2026-06-05 \
+  --offline ~/.local/share/hyprvoice/models/sherpa-onnx-x-asr-zipformer-transducer-zh-en-punct-int8-2026-06-03 \
+  --vad ~/.local/share/hyprvoice/models/silero_vad.onnx
 build/hyprvoice doctor
 build/hyprvoice serve
 ```
+
+两个归档只含 `bpe.model`，`configure.py` 还要求同目录的 `bpe.vocab`；缺它会报 `missing model file`。用 SentencePiece 从 `bpe.model` 生成（Arch 包 `python-sentencepiece`），命令见项目站安装区「配置识别模型」一节：<https://hyprvoice.liufeng.me/#setup>。
 
 已有热词文件时可选 `--hotwords ~/.config/hyprvoice/hotwords.txt`。每行一个词，可写 `Hyprland:5.0`；UTF-8，支持 `#` 注释。配置存在时脚本拒绝覆盖。
 `hyprvoice init` 仅生成默认配置，不下载或伪造模型；使用前必须核对里面的实际路径。
