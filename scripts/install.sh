@@ -69,4 +69,12 @@ fi
 printf '%s\n' 'install: installed binary reports:'
 "$app_root/build/hyprvoice" --version || true
 printf '%s\n' 'Installed HyprVoice, its application launcher, and the optional user service.'
+# The binary goes to $HOME/.local/bin, which is not on the default PATH of a
+# stock Arch install (/etc/profile only appends /usr/local/bin). Without this
+# line the last step of install and every hyprvoice command in the docs fails
+# with "command not found" on a fresh shell, which reads as a broken install.
+case ":${PATH}:" in
+  *":$HOME/.local/bin:"*) ;;
+  *) printf '%s\n' "install: $HOME/.local/bin is not on PATH in this shell; hyprvoice will not be found until you add it, e.g. export PATH=\"\$HOME/.local/bin:\$PATH\"" >&2 ;;
+esac
 printf '%s\n' 'Configure models, then open HyprVoice from the application launcher. See README.md for optional session autostart.'

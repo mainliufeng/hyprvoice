@@ -118,6 +118,7 @@ bash scripts/install.sh
 配置本地模型后，从应用启动器打开 **HyprVoice**。HyprVoice 会留在系统托盘，重复打开仍使用同一实例。托盘菜单可切换极简／详细模式、打开现有设置窗口或退出；没有托盘组件时可运行 `hyprvoice settings` 和 `hyprvoice quit`。
 
 安装脚本写入程序、应用启动器和可选的 systemd 用户服务，不启用自启，也不修改 Fcitx 或 Hyprland。脚本先打印本次构建的源码提交；检出落后于上次 fetch 记录的 `origin/main` 时会提示先 `git fetch && git pull --ff-only`（源码包没有 `.git`，显示 commit unknown），装完再打印 `hyprvoice --version` 的实际输出。
+程序装到 `~/.local/bin`，而 Arch 默认 PATH（`/etc/profile` 只追加 `/usr/local/bin`）不含这个目录：新开终端里 `hyprvoice` 报 command not found 时，把 `export PATH="$HOME/.local/bin:$PATH"` 写进 shell 配置，或在当前会话先执行一次。安装脚本在 PATH 里找不到该目录时会自己提示这一行。
 
 需要登录后自动常驻时，使用 `graphical-session.target` 管理会话的桌面可在会话内导入环境并启用服务。
 
